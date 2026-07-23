@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "GamerTrades",
+    "slug": "gamer-trades-mobile",
+    "scheme": "gamertrades",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ],
+    "extra": {
+      "supabaseUrl": "https://prgohtemkyxogijpwovh.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByZ29odGVta3l4b2dpanB3b3ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNzYzNDgsImV4cCI6MjA5Nzc1MjM0OH0.nuCR5svszoT96_GkGpdv5D_-50PeD-_7_4ReCVQD3Ns"
+    }
+  }
+}
