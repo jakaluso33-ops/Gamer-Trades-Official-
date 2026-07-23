@@ -39,6 +39,8 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: https://prgohtemkyxogijpwovh.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByZ29odGVta3l4b2dpanB3b3ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNzYzNDgsImV4cCI6MjA5Nzc1MjM0OH0.nuCR5svszoT96_GkGpdv5D_-50PeD-_7_4ReCVQD3Ns
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

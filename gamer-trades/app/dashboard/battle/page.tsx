@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import MiniChart from '@/components/trading/MiniChart';
+import PvpBattle from '@/components/trading/PvpBattle';
 
 const AI_OPPONENTS = [
   {
@@ -59,6 +61,52 @@ interface BattleAction {
 }
 
 export default function BattlePage() {
+  return (
+    <Suspense fallback={null}>
+      <BattleModeSwitcher />
+    </Suspense>
+  );
+}
+
+function BattleModeSwitcher() {
+  const searchParams = useSearchParams();
+  const challengeId = searchParams.get('challenge');
+  const [battleType, setBattleType] = useState<'ai' | 'friend'>(challengeId ? 'friend' : 'ai');
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        <button
+          onClick={() => setBattleType('ai')}
+          className="pixel-btn"
+          style={{
+            fontSize: '7px', padding: '9px 16px',
+            background: battleType === 'ai' ? '#8b5cf622' : '#0a0e1a',
+            color: battleType === 'ai' ? '#8b5cf6' : '#64748b',
+            borderColor: battleType === 'ai' ? '#8b5cf6' : '#1e3a5f',
+          }}
+        >
+          ★ VS AI
+        </button>
+        <button
+          onClick={() => setBattleType('friend')}
+          className="pixel-btn"
+          style={{
+            fontSize: '7px', padding: '9px 16px',
+            background: battleType === 'friend' ? '#00ffff22' : '#0a0e1a',
+            color: battleType === 'friend' ? '#00ffff' : '#64748b',
+            borderColor: battleType === 'friend' ? '#00ffff' : '#1e3a5f',
+          }}
+        >
+          ⚔ VS FRIEND
+        </button>
+      </div>
+      {battleType === 'ai' ? <AiBattle /> : <PvpBattle presetChallengeId={challengeId ?? undefined} />}
+    </div>
+  );
+}
+
+function AiBattle() {
   const [selectedAI, setSelectedAI] = useState(AI_OPPONENTS[0]);
   const [selectedMode, setSelectedMode] = useState(BATTLE_MODES[0]);
   const [difficulty, setDifficulty] = useState<'ROOKIE' | 'VETERAN' | 'LEGEND'>('VETERAN');

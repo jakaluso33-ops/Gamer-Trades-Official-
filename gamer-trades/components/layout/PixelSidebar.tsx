@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/AuthContext';
 
 const navItems = [
   { label: 'DASHBOARD', icon: '⊞', href: '/dashboard' },
   { label: 'TRADE', icon: '◈', href: '/dashboard/trade' },
   { label: 'PORTFOLIO', icon: '◉', href: '/dashboard/portfolio' },
   { label: 'VS AI', icon: '★', href: '/dashboard/battle' },
+  { label: 'FRIENDS', icon: '♥', href: '/dashboard/friends' },
   { label: 'LEADERBOARD', icon: '♛', href: '/dashboard/leaderboard' },
   { label: 'CHALLENGES', icon: '◆', href: '/dashboard/challenges' },
   { label: 'PROFILE', icon: '◎', href: '/dashboard/profile' },
@@ -15,6 +17,10 @@ const navItems = [
 
 export default function PixelSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { profile, signOut } = useAuth();
+  const xpForLevel = (level: number) => level * 250;
+  const xpNeeded = xpForLevel(profile?.level ?? 1);
 
   return (
     <aside
@@ -101,15 +107,17 @@ export default function PixelSidebar() {
           </div>
           <div>
             <div style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff' }}>
-              PLAYER_01
+              {profile?.username ?? '...'}
             </div>
             <div style={{ fontSize: '6px', color: '#64748b', marginTop: '2px' }}>
-              LVL 12 TRADER
+              LVL {profile?.level ?? 1} TRADER
             </div>
           </div>
         </div>
         {/* XP Bar */}
-        <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '3px' }}>XP: 3,240 / 5,000</div>
+        <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '3px' }}>
+          XP: {(profile?.xp ?? 0).toLocaleString()} / {xpNeeded.toLocaleString()}
+        </div>
         <div
           style={{
             height: '6px',
@@ -120,7 +128,7 @@ export default function PixelSidebar() {
         >
           <div
             style={{
-              width: '64%',
+              width: `${Math.min(100, ((profile?.xp ?? 0) / xpNeeded) * 100)}%`,
               height: '100%',
               background: 'linear-gradient(90deg, #8b5cf6, #00aaff)',
               boxShadow: '0 0 6px #8b5cf6',
@@ -209,6 +217,7 @@ export default function PixelSidebar() {
           ⚙ SET
         </button>
         <button
+          onClick={async () => { await signOut(); router.push('/login'); }}
           className="pixel-btn pixel-btn-red"
           style={{ flex: 1, fontSize: '7px', padding: '6px 8px' }}
         >

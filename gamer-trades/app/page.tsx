@@ -54,7 +54,7 @@ export default function LandingPage() {
       </p>
 
       <Link
-        href="/dashboard"
+        href="/login"
         style={{
           display: 'inline-block',
           fontFamily: "'Press Start 2P', monospace",
