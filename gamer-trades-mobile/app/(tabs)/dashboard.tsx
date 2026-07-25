@@ -6,6 +6,7 @@ import { Card, PixelText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
+import InsightsCard from '../../components/InsightsCard';
 
 const POSITIONS = [
   { symbol: 'AAPL', side: 'LONG', qty: 50, pnl: 107.0 },
@@ -61,6 +62,8 @@ export default function DashboardScreen() {
           </PixelText>
         </Card>
       </View>
+
+      <InsightsCard />
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>

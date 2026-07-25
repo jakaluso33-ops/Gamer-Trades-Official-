@@ -7,6 +7,7 @@ import XPBar from '@/components/gamification/XPBar';
 import AchievementBadge, { ACHIEVEMENTS } from '@/components/gamification/AchievementBadge';
 import { logEvent } from '@/lib/activity';
 import { useAuth } from '@/lib/AuthContext';
+import InsightsCard from '@/components/gamification/InsightsCard';
 
 // ─── Static mock data ────────────────────────────────────────────────
 const POSITIONS = [
@@ -188,6 +189,8 @@ export default function DashboardPage() {
           icon="🤖"
         />
       </div>
+
+      <InsightsCard />
 
       {/* ── Main content grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px', marginBottom: '16px' }}>
