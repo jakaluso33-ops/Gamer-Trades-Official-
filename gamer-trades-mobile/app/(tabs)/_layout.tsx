@@ -25,6 +25,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="portfolio" options={{ href: null }} />
       <Tabs.Screen name="leaderboard" options={{ href: null }} />
       <Tabs.Screen name="challenges" options={{ href: null }} />
+      <Tabs.Screen name="academy" options={{ href: null }} />
     </Tabs>
   );
 }

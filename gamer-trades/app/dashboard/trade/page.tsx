@@ -7,6 +7,8 @@ import GameOverScreen from '@/components/modals/GameOverScreen';
 import Link from 'next/link';
 import { logEvent } from '@/lib/activity';
 import { useAuth } from '@/lib/AuthContext';
+import { DetectorId, StrategySignal } from '@/lib/strategyEngine';
+import { getStrategy } from '@/lib/strategyContent';
 
 const SYMBOLS = [
   { symbol: 'AAPL', name: 'Apple Inc.', price: 182.34, class: 'STOCK' },
@@ -20,6 +22,15 @@ const SYMBOLS = [
 ];
 
 const INDICATORS = ['RSI', 'MACD', 'BB', 'EMA'];
+
+const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
+  { id: 'breakout', label: 'BREAKOUT' },
+  { id: 'orb', label: 'ORB' },
+  { id: 'fibonacci', label: 'FIBONACCI' },
+  { id: 'support_resistance', label: 'S/R' },
+  { id: 'ma_crossover', label: 'MA CROSS' },
+  { id: 'rsi_reversal', label: 'RSI' },
+];
 
 interface Position {
   id: number;
@@ -39,6 +50,8 @@ export default function TradePage() {
   const [timeframe, setTimeframe] = useState('1m');
   const [gameOver, setGameOver] = useState<{ type: 'GAME_OVER' | 'NICE_WORK'; pnl: number } | null>(null);
   const [orderLog, setOrderLog] = useState<string[]>([]);
+  const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(SCANNER_STRATEGIES.map(s => s.id));
+  const [latestSignal, setLatestSignal] = useState<StrategySignal | null>(null);
 
   // Simulate live price ticking
   useEffect(() => {
@@ -237,7 +250,55 @@ export default function TradePage() {
               ))}
             </div>
 
-            <CandlestickChart symbol={selected.symbol} basePrice={selected.price} height={300} />
+            {/* Live strategy scanner toggles */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '6px', color: '#8b5cf6', textShadow: '0 0 6px #8b5cf6' }}>🧠 SCANNER:</span>
+              {SCANNER_STRATEGIES.map(s => {
+                const on = activeStrategies.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setActiveStrategies(prev => on ? prev.filter(x => x !== s.id) : [...prev, s.id])}
+                    className="pixel-btn"
+                    style={{
+                      fontSize: '5px',
+                      padding: '4px 6px',
+                      background: on ? '#8b5cf622' : '#0a0e1a',
+                      color: on ? '#8b5cf6' : '#64748b',
+                      borderColor: on ? '#8b5cf6' : '#1e3a5f',
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <CandlestickChart
+              symbol={selected.symbol}
+              basePrice={selected.price}
+              height={300}
+              enabledStrategies={activeStrategies}
+              onSignal={setLatestSignal}
+            />
+
+            {/* Live signal callout */}
+            {latestSignal && (() => {
+              const strat = getStrategy(latestSignal.strategyId);
+              const color = latestSignal.direction === 'bullish' ? '#00ff88' : '#ff3355';
+              return (
+                <div style={{ padding: '10px 12px', borderTop: '1px solid #1e3a5f', background: `${color}0a`, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '18px' }}>{strat?.icon ?? '🧠'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '7px', color, textShadow: `0 0 6px ${color}` }}>
+                      {strat?.name ?? latestSignal.strategyId} — {latestSignal.label}
+                    </div>
+                    <div style={{ fontSize: '5px', color: '#64748b', marginTop: '3px' }}>{latestSignal.detail}</div>
+                  </div>
+                  <Link href="/dashboard/academy" style={{ fontSize: '5px', color, textDecoration: 'none' }}>▶ LEARN THIS</Link>
+                </div>
+              );
+            })()}
 
             {/* RSI panel (if active) */}
             {activeIndicators.includes('RSI') && (

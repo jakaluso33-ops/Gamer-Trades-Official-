@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 const navItems = [
   { label: 'DASHBOARD', icon: '⊞', href: '/dashboard' },
   { label: 'TRADE', icon: '◈', href: '/dashboard/trade' },
+  { label: 'ACADEMY', icon: '🧠', href: '/dashboard/academy' },
   { label: 'PORTFOLIO', icon: '◉', href: '/dashboard/portfolio' },
   { label: 'VS AI', icon: '★', href: '/dashboard/battle' },
   { label: 'FRIENDS', icon: '♥', href: '/dashboard/friends' },

@@ -17,6 +17,7 @@ const POSITIONS = [
 
 const QUICK_LINKS = [
   { label: 'PORTFOLIO', icon: '◉', href: '/(tabs)/portfolio', color: colors.blue },
+  { label: 'ACADEMY', icon: '🧠', href: '/(tabs)/academy', color: colors.purple },
   { label: 'LEADERBOARD', icon: '♛', href: '/(tabs)/leaderboard', color: colors.gold },
   { label: 'CHALLENGES', icon: '◆', href: '/(tabs)/challenges', color: colors.green },
 ];
@@ -89,9 +90,9 @@ export default function DashboardScreen() {
         </View>
       </Card>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {QUICK_LINKS.map(q => (
-          <PixelButton key={q.href} color={q.color} style={{ flex: 1 }} onPress={() => router.push(q.href as never)}>
+          <PixelButton key={q.href} color={q.color} style={{ flexBasis: '47%', flexGrow: 1 }} onPress={() => router.push(q.href as never)}>
             {q.icon} {q.label}
           </PixelButton>
         ))}

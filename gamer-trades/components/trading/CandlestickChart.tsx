@@ -1,15 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-
-interface Candle {
-  time: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
+import { Candle, DetectorId, StrategySignal, scanStrategies, sma } from '@/lib/strategyEngine';
 
 function generateCandles(count: number, basePrice: number): Candle[] {
   const candles: Candle[] = [];
@@ -38,13 +30,20 @@ interface Props {
   symbol: string;
   basePrice: number;
   height?: number;
+  enabledStrategies?: DetectorId[];
+  onSignal?: (signal: StrategySignal | null) => void;
 }
 
-export default function CandlestickChart({ symbol, basePrice, height = 320 }: Props) {
+const ALL_DETECTORS: DetectorId[] = ['breakout', 'orb', 'fibonacci', 'support_resistance', 'ma_crossover', 'rsi_reversal'];
+
+export default function CandlestickChart({ symbol, basePrice, height = 320, enabledStrategies = ALL_DETECTORS, onSignal }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [candles, setCandles] = useState<Candle[]>(() => generateCandles(80, basePrice));
   const [hovered, setHovered] = useState<Candle | null>(null);
   const [mouseX, setMouseX] = useState<number | null>(null);
+  const [signals, setSignals] = useState<StrategySignal[]>([]);
+  const onSignalRef = useRef(onSignal);
+  useEffect(() => { onSignalRef.current = onSignal; }, [onSignal]);
 
   // Add new candle every 3 seconds
   useEffect(() => {
@@ -69,6 +68,13 @@ export default function CandlestickChart({ symbol, basePrice, height = 320 }: Pr
     }, 3000);
     return () => clearInterval(id);
   }, []);
+
+  // Live strategy scanner — re-runs on every new candle
+  useEffect(() => {
+    const found = scanStrategies(candles, enabledStrategies);
+    setSignals(found);
+    onSignalRef.current?.(found[0] ?? null);
+  }, [candles, enabledStrategies]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -136,6 +142,57 @@ export default function CandlestickChart({ symbol, basePrice, height = 320 }: Pr
 
     ctx.shadowBlur = 0;
 
+    // Strategy overlays
+    if (enabledStrategies.includes('ma_crossover') && visible.length >= 21) {
+      const fast = sma(visible, 9);
+      const slow = sma(visible, 21);
+      const drawMA = (vals: (number | null)[], color: string) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        let started = false;
+        vals.forEach((v, i) => {
+          if (v == null) return;
+          const x = padL + i * cW + cW / 2;
+          const y = toY(v);
+          if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+        });
+        ctx.stroke();
+      };
+      drawMA(slow, 'rgba(100, 116, 139, 0.9)');
+      drawMA(fast, 'rgba(255, 136, 0, 0.9)');
+    }
+
+    if (enabledStrategies.includes('orb') && visible.length > 5) {
+      const orRange = visible.slice(0, 5);
+      const orHigh = Math.max(...orRange.map(c => c.high));
+      const orLow = Math.min(...orRange.map(c => c.low));
+      const xEnd = padL + 5 * cW;
+      ctx.fillStyle = 'rgba(0, 170, 255, 0.08)';
+      ctx.fillRect(padL, toY(orHigh), xEnd - padL, toY(orLow) - toY(orHigh));
+      ctx.strokeStyle = 'rgba(0, 170, 255, 0.5)';
+      ctx.setLineDash([3, 3]);
+      ctx.strokeRect(padL, toY(orHigh), xEnd - padL, toY(orLow) - toY(orHigh));
+      ctx.setLineDash([]);
+    }
+
+    signals.forEach(sig => {
+      if (sig.level == null) return;
+      const color = sig.strategyId === 'fibonacci' ? '#ffd700' : sig.direction === 'bullish' ? '#00ff88' : '#ff3355';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      const y = toY(sig.level);
+      ctx.moveTo(padL, y);
+      ctx.lineTo(W - padR, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = color;
+      ctx.font = '8px monospace';
+      ctx.fillText(sig.label, padL + 4, y - 4);
+    });
+
     // Crosshair
     if (mouseX !== null) {
       const idx = Math.floor((mouseX - padL) / cW);
@@ -179,7 +236,7 @@ export default function CandlestickChart({ symbol, basePrice, height = 320 }: Pr
     ctx.font = '8px monospace';
     ctx.fillText('VOL', padL, volY + 10);
 
-  }, [candles, mouseX]);
+  }, [candles, mouseX, signals, enabledStrategies]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
