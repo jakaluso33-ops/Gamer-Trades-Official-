@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
 import { Candle, DetectorId, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
 import { getStrategy } from '../../lib/strategyContent';
+import AIAgentPanel from '../../components/AIAgentPanel';
 
 const SYMBOLS = ['AAPL', 'TSLA', 'BTC', 'ETH', 'NVDA'];
 
@@ -144,6 +145,15 @@ export default function TradeScreen() {
           <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL</PixelButton>
         </View>
       </Card>
+
+      <AIAgentPanel
+        symbol={symbol}
+        technicalContext={
+          latest
+            ? `${latest.label} (${latest.direction}) via ${latest.strategyId} — ${latest.detail}.`
+            : 'No active strategy signal.'
+        }
+      />
 
       <Card>
         <PixelText color={colors.muted} size={6} style={{ marginBottom: 8 }}>◎ ORDER LOG</PixelText>

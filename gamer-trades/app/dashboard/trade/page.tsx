@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import CandlestickChart from '@/components/trading/CandlestickChart';
 import OrderPanel from '@/components/trading/OrderPanel';
+import AIAgentPanel from '@/components/trading/AIAgentPanel';
 import GameOverScreen from '@/components/modals/GameOverScreen';
 import Link from 'next/link';
 import { logEvent } from '@/lib/activity';
@@ -316,6 +317,16 @@ export default function TradePage() {
               </div>
             )}
           </div>
+
+          {/* AI Market Analyst */}
+          <AIAgentPanel
+            symbol={selected.symbol}
+            technicalContext={
+              latestSignal
+                ? `${latestSignal.label} (${latestSignal.direction}) via ${latestSignal.strategyId} — ${latestSignal.detail}. Current price $${livePrice.toLocaleString()}.`
+                : `No active strategy signal. Current price $${livePrice.toLocaleString()}.`
+            }
+          />
 
           {/* Open Positions */}
           <div className="retro-card" style={{ overflow: 'hidden' }}>
