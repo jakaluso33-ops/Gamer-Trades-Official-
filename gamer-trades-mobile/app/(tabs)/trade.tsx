@@ -2,16 +2,20 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Card, PixelText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
+import { useAuth } from '../../lib/AuthContext';
+import { logEvent } from '../../lib/activity';
 
 const SYMBOLS = ['AAPL', 'TSLA', 'BTC', 'ETH', 'NVDA'];
 
 export default function TradeScreen() {
+  const { user } = useAuth();
   const [symbol, setSymbol] = useState('AAPL');
   const [qty, setQty] = useState(10);
   const [log, setLog] = useState<{ side: string; symbol: string; qty: number; time: string }[]>([]);
 
   const place = (side: 'BUY' | 'SELL') => {
     setLog(prev => [{ side, symbol, qty, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
+    if (user) logEvent(user.id, 'trade_closed', { symbol, side });
   };
 
   return (

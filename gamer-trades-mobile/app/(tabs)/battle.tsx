@@ -4,6 +4,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { Card, PixelText, PixelButton, Avatar } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import PvpBattle from '../../components/PvpBattle';
+import { useAuth } from '../../lib/AuthContext';
+import { logEvent } from '../../lib/activity';
 
 const AI_OPPONENTS = [
   { id: 'algoace', name: 'ALGO ACE', icon: '🤖', difficulty: 'VETERAN', color: colors.blue },
@@ -12,6 +14,7 @@ const AI_OPPONENTS = [
 ];
 
 function AiBattle() {
+  const { user } = useAuth();
   const [selectedAI, setSelectedAI] = useState(AI_OPPONENTS[0]);
   const [phase, setPhase] = useState<'select' | 'battle' | 'result'>('select');
   const [playerPnL, setPlayerPnL] = useState(0);
@@ -53,7 +56,16 @@ function AiBattle() {
   const trade = (side: 'buy' | 'sell') => {
     const delta = (Math.random() - 0.45) * 100;
     setPlayerPnL(p => parseFloat((p + delta).toFixed(2)));
+    if (user) logEvent(user.id, 'trade_closed', { context: 'ai_battle' });
   };
+
+  // Log battle completion once when the result phase is reached
+  useEffect(() => {
+    if (phase !== 'result' || !user) return;
+    logEvent(user.id, 'ai_battle_played', { aiId: selectedAI.id });
+    if (playerPnL > aiPnL) logEvent(user.id, 'ai_battle_won', { aiId: selectedAI.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   const playerWon = playerPnL > aiPnL;

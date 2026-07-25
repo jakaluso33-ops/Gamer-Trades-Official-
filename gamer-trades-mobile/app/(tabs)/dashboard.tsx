@@ -1,8 +1,11 @@
+import { useEffect } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, PixelText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
+import { logEvent } from '../../lib/activity';
 
 const POSITIONS = [
   { symbol: 'AAPL', side: 'LONG', qty: 50, pnl: 107.0 },
@@ -18,9 +21,22 @@ const QUICK_LINKS = [
 ];
 
 export default function DashboardScreen() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
   const totalPnl = POSITIONS.reduce((s, p) => s + p.pnl, 0);
+
+  // Log at most one check-in per day toward the "trade with discipline" goal
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const key = `gt_checkin_${user.id}_${today}`;
+      const already = await AsyncStorage.getItem(key);
+      if (already) return;
+      await AsyncStorage.setItem(key, '1');
+      logEvent(user.id, 'daily_checkin');
+    })();
+  }, [user]);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>

@@ -4,6 +4,7 @@ import { Card, PixelText, PixelButton, Avatar } from './ui';
 import { colors } from '../lib/theme';
 import { supabase, Profile, PvpMatch, PvpMatchTrade, MatchMode } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
+import { logEvent } from '../lib/activity';
 
 const MODES: { id: MatchMode; label: string; duration: string; seconds: number }[] = [
   { id: 'scalp', label: 'SCALP', duration: '5 min', seconds: 300 },
@@ -26,6 +27,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
   const [creating, setCreating] = useState(false);
   const finalizedRef = useRef(false);
   const finishMatchRef = useRef<() => void>(() => {});
+  const loggedResultRef = useRef<Set<string>>(new Set());
 
   const isPlayer1 = activeMatch && user ? activeMatch.player1_id === user.id : false;
   const myPnl = activeMatch ? (isPlayer1 ? activeMatch.player1_pnl : activeMatch.player2_pnl) : 0;
@@ -133,6 +135,15 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
     return () => { supabase.removeChannel(channel); };
   }, [activeMatch?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Log the match result once, from whichever client observes 'finished' first
+  useEffect(() => {
+    if (!activeMatch || activeMatch.status !== 'finished' || !user) return;
+    if (loggedResultRef.current.has(activeMatch.id)) return;
+    loggedResultRef.current.add(activeMatch.id);
+    logEvent(user.id, 'pvp_battle_played', { matchId: activeMatch.id });
+    if (activeMatch.winner_id === user.id) logEvent(user.id, 'pvp_battle_won', { matchId: activeMatch.id });
+  }, [activeMatch, user]);
+
   useEffect(() => {
     if (!activeMatch || activeMatch.status !== 'active' || !activeMatch.ends_at) return;
     finalizedRef.current = false;
@@ -190,6 +201,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
     const syms = ['AAPL', 'BTC', 'TSLA', 'ETH'];
     const symbol = syms[Math.floor(Math.random() * syms.length)];
     await supabase.from('pvp_match_trades').insert({ match_id: activeMatch.id, user_id: user.id, symbol, side, pnl_delta: delta });
+    logEvent(user.id, 'trade_closed', { context: 'pvp_battle', symbol });
     const field = isPlayer1 ? 'player1_pnl' : 'player2_pnl';
     const newPnl = parseFloat((myPnl + delta).toFixed(2));
     const { data } = await supabase.from('pvp_matches').update({ [field]: newPnl }).eq('id', activeMatch.id).select().single();

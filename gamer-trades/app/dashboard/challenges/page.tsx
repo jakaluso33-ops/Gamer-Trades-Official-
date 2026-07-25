@@ -1,185 +1,190 @@
 'use client';
 
-import { useState } from 'react';
-
-const DAILY = [
-  { id: 1, title: 'SCALP MASTER', desc: 'Win 3 scalp trades today', progress: 2, max: 3, xp: 150, done: false, icon: '⚡', expires: '14:32:07' },
-  { id: 2, title: 'BEAT THE BOT', desc: 'Defeat Veteran AI on BTC/USD', progress: 0, max: 1, xp: 300, done: false, icon: '🤖', expires: '14:32:07' },
-  { id: 3, title: 'GREEN DAY', desc: 'Close all trades in profit', progress: 1, max: 1, xp: 200, done: true, icon: '💚', expires: '14:32:07' },
-];
-
-const WEEKLY = [
-  { id: 4, title: 'CRYPTO KING', desc: 'Make $500 profit on crypto trades', progress: 312, max: 500, xp: 800, done: false, icon: '₿', reward: '★ BADGE' },
-  { id: 5, title: 'AI SLAYER', desc: 'Win 5 battles against any AI', progress: 3, max: 5, xp: 1000, done: false, icon: '⚔', reward: '★ BADGE' },
-  { id: 6, title: 'CONSISTENT TRADER', desc: '5 profitable trading days in a row', progress: 4, max: 5, xp: 1500, done: false, icon: '🔥', reward: '★ TITLE' },
-];
-
-const SPECIAL = [
-  { id: 7, title: 'LEGEND SLAYER', desc: 'Defeat a Legend-difficulty AI opponent', progress: 0, max: 1, xp: 2000, done: false, icon: '👑', reward: '★ EXCLUSIVE SKIN', locked: false },
-  { id: 8, title: 'DIAMOND HANDS', desc: 'Hold a position for 24+ hours in profit', progress: 0, max: 1, xp: 500, done: false, icon: '💎', reward: '★ BADGE', locked: false },
-  { id: 9, title: 'TOURNAMENT ACE', desc: 'Win a Weekly Tournament', progress: 0, max: 1, xp: 5000, done: false, icon: '🏆', reward: '★ TROPHY', locked: true },
-];
-
-interface Challenge {
-  id: number; title: string; desc: string; progress: number; max: number;
-  xp: number; done: boolean; icon: string; reward?: string; locked?: boolean;
-  expires?: string;
-}
-
-function ChallengeCard({ c, accent = '#00aaff' }: { c: Challenge; accent?: string }) {
-  const pct = Math.min((c.progress / c.max) * 100, 100);
-  return (
-    <div style={{
-      padding: '14px',
-      background: c.done ? `${accent}0a` : c.locked ? '#0a0e1a' : '#0f1629',
-      border: `2px solid ${c.done ? accent : c.locked ? '#1e3a5f' : '#1e3a5f'}`,
-      boxShadow: c.done ? `4px 4px 0 #000, 0 0 10px ${accent}33` : '4px 4px 0 #000',
-      opacity: c.locked ? 0.5 : 1,
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {c.done && (
-        <div style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '12px' }}>✓</div>
-      )}
-      {c.locked && (
-        <div style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '12px' }}>🔒</div>
-      )}
-
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-        <span style={{ fontSize: '24px', lineHeight: 1, filter: c.locked ? 'grayscale(1)' : 'none' }}>{c.icon}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-            <span style={{ fontSize: '7px', color: c.done ? accent : '#e2e8f0', textShadow: c.done ? `0 0 6px ${accent}` : 'none' }}>
-              {c.done && '✓ '}{c.title}
-            </span>
-            <span style={{ fontSize: '6px', color: '#ffd700', textShadow: '0 0 6px #ffd700' }}>+{c.xp} XP</span>
-          </div>
-          <div style={{ fontSize: '5px', color: '#64748b' }}>{c.desc}</div>
-          {c.reward && (
-            <div style={{ fontSize: '5px', color: '#8b5cf6', marginTop: '3px', textShadow: '0 0 4px #8b5cf6' }}>
-              REWARD: {c.reward}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ height: '6px', background: '#0a0e1a', border: '1px solid #1e3a5f', marginBottom: '4px' }}>
-        <div style={{
-          width: `${pct}%`,
-          height: '100%',
-          background: c.done ? accent : '#00aaff',
-          boxShadow: c.done ? `0 0 6px ${accent}` : '0 0 4px #00aaff',
-          transition: 'width 0.5s',
-        }} />
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '5px', color: '#64748b' }}>
-        <span>{c.progress} / {c.max}</span>
-        <span>{pct.toFixed(0)}%</span>
-        {c.expires && <span>⏱ {c.expires}</span>}
-      </div>
-    </div>
-  );
-}
+import { useState, useEffect, useCallback } from 'react';
+import { supabase, TradingGoal, Task } from '@/lib/supabase';
+import { GOAL_TEMPLATES, syncTasks, TaskPeriod } from '@/lib/goals';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function ChallengesPage() {
-  const [tab, setTab] = useState<'daily' | 'weekly' | 'special'>('daily');
-  const totalXP = DAILY.filter(c => c.done).reduce((s, c) => s + c.xp, 0) +
-    WEEKLY.filter(c => c.done).reduce((s, c) => s + c.xp, 0);
+  const { user, refreshProfile } = useAuth();
+  const [goals, setGoals] = useState<TradingGoal[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [period, setPeriod] = useState<TaskPeriod>('daily');
+  const [loading, setLoading] = useState(true);
+  const [showPicker, setShowPicker] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    const [{ data: g }, { data: t }] = await Promise.all([
+      supabase.from('trading_goals').select('*').eq('user_id', user.id).eq('status', 'active'),
+      supabase.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    ]);
+    setGoals((g ?? []) as TradingGoal[]);
+    setTasks((t ?? []) as Task[]);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      setSyncing(true);
+      await syncTasks(user.id);
+      await load();
+      await refreshProfile();
+      setSyncing(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const addGoal = async (templateId: string, defaultTarget: number) => {
+    if (!user) return;
+    await supabase.from('trading_goals').insert({ user_id: user.id, template_id: templateId, target_value: defaultTarget });
+    setShowPicker(false);
+    setSyncing(true);
+    await syncTasks(user.id);
+    await load();
+    setSyncing(false);
+  };
+
+  const removeGoal = async (goalId: string) => {
+    await supabase.from('trading_goals').update({ status: 'archived' }).eq('id', goalId);
+    await load();
+  };
+
+  const activeTemplateIds = new Set(goals.map(g => g.template_id));
+  const availableTemplates = GOAL_TEMPLATES.filter(t => !activeTemplateIds.has(t.id));
+  const visibleTasks = tasks.filter(t => t.period === period);
+
+  if (loading) {
+    return <div className="grid-bg" style={{ minHeight: '100%', padding: '20px' }}><PixelLoading /></div>;
+  }
 
   return (
     <div className="grid-bg" style={{ minHeight: '100%' }}>
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '4px' }}>◆ MISSIONS</div>
-          <h1 style={{ fontSize: '13px', color: '#00ff88', textShadow: '0 0 12px #00ff88', margin: 0 }}>CHALLENGES</h1>
+          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '6px' }}>◆ TAILORED TO YOU</div>
+          <h1 style={{ fontSize: '14px', color: '#00ff88', textShadow: '0 0 12px #00ff88', margin: 0 }}>GOALS &amp; TASKS</h1>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '2px' }}>TODAY'S XP EARNED</div>
-          <div style={{ fontSize: '10px', color: '#ffd700', textShadow: '0 0 10px #ffd700' }}>{totalXP} / 650 XP</div>
-        </div>
+        {syncing && <div style={{ fontSize: '6px', color: '#64748b' }}>syncing...</div>}
       </div>
 
-      {/* XP progress for today */}
-      <div className="retro-card" style={{ padding: '14px', marginBottom: '14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-          <span style={{ fontSize: '6px', color: '#8b5cf6', textShadow: '0 0 6px #8b5cf6' }}>★ DAILY XP PROGRESS</span>
-          <span style={{ fontSize: '6px', color: '#64748b' }}>RESETS IN 14:32:07</span>
-        </div>
-        <div style={{ height: '10px', background: '#0a0e1a', border: '2px solid #1e3a5f', marginBottom: '4px' }}>
-          <div style={{
-            width: `${(totalXP / 650) * 100}%`,
-            height: '100%',
-            background: 'linear-gradient(90deg, #8b5cf6, #ffd700)',
-            boxShadow: '0 0 8px #8b5cf6',
-            transition: 'width 0.5s',
-          }} />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '5px', color: '#64748b' }}>
-          <span>{totalXP} XP earned</span>
-          <span>{650 - totalXP} XP to max</span>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px' }}>
-        {(['daily', 'weekly', 'special'] as const).map(t => {
-          const colors = { daily: '#00ff88', weekly: '#00aaff', special: '#ffd700' };
-          const active = tab === t;
-          return (
-            <button key={t} onClick={() => setTab(t)} className="pixel-btn"
-              style={{
-                fontSize: '7px', padding: '8px 14px',
-                background: active ? `${colors[t]}11` : '#0a0e1a',
-                color: active ? colors[t] : '#64748b',
-                borderColor: active ? colors[t] : '#1e3a5f',
-                boxShadow: active ? `0 0 8px ${colors[t]}44` : 'none',
-              }}>
-              {t === 'daily' ? '⚡ DAILY' : t === 'weekly' ? '◆ WEEKLY' : '★ SPECIAL'}
+      {/* Goals */}
+      <div className="retro-card" style={{ padding: '16px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>★ YOUR GOALS</span>
+          {goals.length < 3 && availableTemplates.length > 0 && (
+            <button onClick={() => setShowPicker(v => !v)} className="pixel-btn pixel-btn-blue" style={{ fontSize: '6px', padding: '6px 10px' }}>
+              {showPicker ? '✕ CLOSE' : '+ ADD GOAL'}
             </button>
-          );
-        })}
-      </div>
-
-      {tab === 'daily' && (
-        <div>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '10px' }}>
-            ⏱ RESETS IN 14:32:07 — Complete all 3 for bonus XP
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {DAILY.map(c => <ChallengeCard key={c.id} c={c} accent="#00ff88" />)}
-          </div>
-          {DAILY.every(c => c.done) && (
-            <div style={{ marginTop: '14px', padding: '16px', border: '2px solid #ffd700', boxShadow: '0 0 16px #ffd70044', textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🌟</div>
-              <div style={{ fontSize: '9px', color: '#ffd700', textShadow: '0 0 10px #ffd700' }}>ALL DAILY CHALLENGES COMPLETE!</div>
-              <div style={{ fontSize: '6px', color: '#64748b', marginTop: '6px' }}>+100 BONUS XP EARNED</div>
-            </div>
           )}
         </div>
-      )}
 
-      {tab === 'weekly' && (
-        <div>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '10px' }}>
-            ⏱ RESETS SUNDAY 00:00 UTC
+        {goals.length === 0 && !showPicker && (
+          <div style={{ fontSize: '6px', color: '#64748b', textAlign: 'center', padding: '16px' }}>
+            Pick a goal below to get daily, weekly, and monthly tasks tailored to it.
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {WEEKLY.map(c => <ChallengeCard key={c.id} c={c} accent="#00aaff" />)}
-          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+          {goals.map(g => {
+            const t = GOAL_TEMPLATES.find(x => x.id === g.template_id);
+            if (!t) return null;
+            return (
+              <div key={g.id} style={{ padding: '12px', background: `${t.color}0a`, border: `2px solid ${t.color}`, boxShadow: `3px 3px 0 #000, 0 0 8px ${t.color}33` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '18px' }}>{t.icon}</span>
+                  <button onClick={() => removeGoal(g.id)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '9px' }}>✕</button>
+                </div>
+                <div style={{ fontSize: '7px', color: t.color, textShadow: `0 0 6px ${t.color}`, marginTop: '6px' }}>{t.label}</div>
+                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '6px', lineHeight: 1.6 }}>{t.description}</div>
+              </div>
+            );
+          })}
         </div>
-      )}
 
-      {tab === 'special' && (
-        <div>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '10px' }}>
-            ★ PERMANENT CHALLENGES — UNLOCK EXCLUSIVE REWARDS
+        {showPicker && (
+          <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #1e3a5f', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+            {availableTemplates.map(t => (
+              <div
+                key={t.id}
+                onClick={() => addGoal(t.id, t.defaultTarget)}
+                style={{ padding: '12px', background: '#0f1629', border: `2px solid ${t.color}66`, cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: '18px' }}>{t.icon}</span>
+                <div style={{ fontSize: '7px', color: t.color, marginTop: '6px' }}>{t.label}</div>
+                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '6px', lineHeight: 1.6 }}>{t.description}</div>
+              </div>
+            ))}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {SPECIAL.map(c => <ChallengeCard key={c.id} c={c} accent="#ffd700" />)}
-          </div>
+        )}
+      </div>
+
+      {/* Task period tabs */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        {(['daily', 'weekly', 'monthly'] as TaskPeriod[]).map(p => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className="pixel-btn"
+            style={{
+              fontSize: '7px', padding: '9px 16px',
+              background: period === p ? '#00ff8822' : '#0a0e1a',
+              color: period === p ? '#00ff88' : '#64748b',
+              borderColor: period === p ? '#00ff88' : '#1e3a5f',
+            }}
+          >
+            {p.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {visibleTasks.length === 0 ? (
+        <div className="retro-card" style={{ padding: '32px', textAlign: 'center', fontSize: '7px', color: '#64748b' }}>
+          {goals.length === 0 ? 'Add a goal above to generate your tasks.' : 'No tasks for this period yet.'}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+          {visibleTasks.map(task => {
+            const template = GOAL_TEMPLATES.find(t => t.id === goals.find(g => g.id === task.goal_id)?.template_id);
+            const accent = template?.color ?? '#00aaff';
+            const pct = Math.min((task.progress / task.target) * 100, 100);
+            const done = task.status === 'completed';
+            const expired = task.status === 'expired';
+            return (
+              <div
+                key={task.id}
+                className="retro-card"
+                style={{
+                  padding: '14px',
+                  borderColor: done ? accent : expired ? '#1e3a5f' : '#1e3a5f',
+                  opacity: expired ? 0.5 : 1,
+                  boxShadow: done ? `4px 4px 0 #000, 0 0 10px ${accent}33` : '4px 4px 0 #000',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '7px', color: done ? accent : '#e2e8f0', textShadow: done ? `0 0 6px ${accent}` : 'none' }}>
+                    {done ? '✓ ' : ''}{task.title}
+                  </span>
+                  <span style={{ fontSize: '5px', color: '#ffd700', textShadow: '0 0 6px #ffd700' }}>+{task.xp_reward} XP</span>
+                </div>
+                <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '8px' }}>{task.description}</div>
+                <div style={{ height: '6px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: done ? accent : '#00aaff', boxShadow: `0 0 6px ${done ? accent : '#00aaff'}` }} />
+                </div>
+                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '4px', textAlign: 'right' }}>
+                  {Math.min(task.progress, task.target)}/{task.target}{expired ? ' · EXPIRED' : ''}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
+}
+
+function PixelLoading() {
+  return <div style={{ fontSize: '8px', color: '#00ffff', textShadow: '0 0 8px #00ffff' }}>LOADING...</div>;
 }

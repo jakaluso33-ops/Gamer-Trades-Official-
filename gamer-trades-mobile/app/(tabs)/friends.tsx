@@ -5,6 +5,7 @@ import { Card, PixelText, PixelButton, Avatar } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { supabase, Profile, Friendship } from '../../lib/supabase';
 import { useAuth } from '../../lib/AuthContext';
+import { logEvent } from '../../lib/activity';
 
 interface EnrichedFriendship extends Friendship {
   otherProfile: Profile;
@@ -82,6 +83,7 @@ export default function FriendsScreen() {
     setBusyId(targetId);
     await supabase.from('friendships').insert({ requester_id: user.id, addressee_id: targetId });
     setBusyId(null);
+    logEvent(user.id, 'friend_request_sent', { targetId });
     loadRelationships();
   };
 
@@ -89,6 +91,7 @@ export default function FriendsScreen() {
     setBusyId(id);
     await supabase.from('friendships').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     setBusyId(null);
+    if (status === 'accepted' && user) logEvent(user.id, 'friend_added', { friendshipId: id });
     loadRelationships();
   };
 

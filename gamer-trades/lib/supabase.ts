@@ -55,3 +55,33 @@ export interface PvpMatchTrade {
   pnl_delta: number;
   created_at: string;
 }
+
+export type GoalStatus = 'active' | 'archived';
+
+export interface TradingGoal {
+  id: string;
+  user_id: string;
+  template_id: string;
+  target_value: number | null;
+  status: GoalStatus;
+  created_at: string;
+}
+
+export type TaskStatus = 'active' | 'completed' | 'expired';
+
+export interface Task {
+  id: string;
+  user_id: string;
+  goal_id: string | null;
+  period: 'daily' | 'weekly' | 'monthly';
+  event_type: string;
+  title: string;
+  description: string;
+  target: number;
+  progress: number;
+  xp_reward: number;
+  period_start: string;
+  period_end: string;
+  status: TaskStatus;
+  created_at: string;
+}

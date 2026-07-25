@@ -5,6 +5,8 @@ import CandlestickChart from '@/components/trading/CandlestickChart';
 import OrderPanel from '@/components/trading/OrderPanel';
 import GameOverScreen from '@/components/modals/GameOverScreen';
 import Link from 'next/link';
+import { logEvent } from '@/lib/activity';
+import { useAuth } from '@/lib/AuthContext';
 
 const SYMBOLS = [
   { symbol: 'AAPL', name: 'Apple Inc.', price: 182.34, class: 'STOCK' },
@@ -29,6 +31,7 @@ interface Position {
 }
 
 export default function TradePage() {
+  const { user } = useAuth();
   const [selected, setSelected] = useState(SYMBOLS[0]);
   const [livePrice, setLivePrice] = useState(selected.price);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -72,6 +75,8 @@ export default function TradePage() {
 
     const msg = `${order.side} ${order.qty}x ${order.symbol} @ $${(order.price ?? livePrice).toFixed(2)}`;
     setOrderLog(prev => [msg, ...prev.slice(0, 9)]);
+
+    if (user) logEvent(user.id, 'trade_closed', { symbol: order.symbol, side: order.side });
 
     // If stop loss set, simulate it hitting after random delay
     if (order.stopLoss) {

@@ -5,6 +5,8 @@ import MiniChart from '@/components/trading/MiniChart';
 import PnLMoneyFloat from '@/components/trading/PnLMoneyFloat';
 import XPBar from '@/components/gamification/XPBar';
 import AchievementBadge, { ACHIEVEMENTS } from '@/components/gamification/AchievementBadge';
+import { logEvent } from '@/lib/activity';
+import { useAuth } from '@/lib/AuthContext';
 
 // ─── Static mock data ────────────────────────────────────────────────
 const POSITIONS = [
@@ -101,6 +103,7 @@ function PositionRow({ pos }: { pos: typeof POSITIONS[0] }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [totalPnL, setTotalPnL] = useState(759.60);
   const [pnlFlash, setPnlFlash] = useState<'up' | 'down' | null>(null);
 
@@ -113,6 +116,16 @@ export default function DashboardPage() {
     }, 2000);
     return () => clearInterval(id);
   }, []);
+
+  // Log at most one check-in per day toward the "trade with discipline" goal
+  useEffect(() => {
+    if (!user) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `gt_checkin_${user.id}_${today}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, '1');
+    logEvent(user.id, 'daily_checkin');
+  }, [user]);
 
   return (
     <div className="grid-bg crt" style={{ minHeight: '100%', padding: '20px' }}>

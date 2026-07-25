@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, Profile, Friendship } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import { logEvent } from '@/lib/activity';
 
 interface EnrichedFriendship extends Friendship {
   otherProfile: Profile;
@@ -91,6 +92,7 @@ export default function FriendsPage() {
     const { error } = await supabase.from('friendships').insert({ requester_id: user.id, addressee_id: targetId });
     setBusyId(null);
     if (error) { showToast('Could not send request'); return; }
+    logEvent(user.id, 'friend_request_sent', { targetId });
     showToast('Friend request sent!');
     loadRelationships();
   };
@@ -100,6 +102,7 @@ export default function FriendsPage() {
     const { error } = await supabase.from('friendships').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     setBusyId(null);
     if (error) { showToast('Action failed'); return; }
+    if (status === 'accepted' && user) logEvent(user.id, 'friend_added', { friendshipId: id });
     showToast(status === 'accepted' ? 'Friend added!' : 'Request declined');
     loadRelationships();
   };

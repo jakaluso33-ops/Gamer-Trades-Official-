@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import MiniChart from '@/components/trading/MiniChart';
 import PvpBattle from '@/components/trading/PvpBattle';
+import { logEvent } from '@/lib/activity';
+import { useAuth } from '@/lib/AuthContext';
 
 const AI_OPPONENTS = [
   {
@@ -107,6 +109,7 @@ function BattleModeSwitcher() {
 }
 
 function AiBattle() {
+  const { user } = useAuth();
   const [selectedAI, setSelectedAI] = useState(AI_OPPONENTS[0]);
   const [selectedMode, setSelectedMode] = useState(BATTLE_MODES[0]);
   const [difficulty, setDifficulty] = useState<'ROOKIE' | 'VETERAN' | 'LEGEND'>('VETERAN');
@@ -170,10 +173,19 @@ function AiBattle() {
     };
   }, [phase, difficulty, selectedAI]);
 
+  // Log battle completion once when the result phase is reached
+  useEffect(() => {
+    if (phase !== 'result' || !user) return;
+    logEvent(user.id, 'ai_battle_played', { aiId: selectedAI.id });
+    if (playerPnL > aiPnL) logEvent(user.id, 'ai_battle_won', { aiId: selectedAI.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   const handlePlayerTrade = (side: 'BUY' | 'SELL') => {
     const delta = (Math.random() - 0.45) * 100;
     setPlayerPnL(p => parseFloat((p + delta).toFixed(2)));
     setPlayerTrades(t => t + 1);
+    if (user) logEvent(user.id, 'trade_closed', { context: 'ai_battle' });
     const syms = ['AAPL', 'BTC', 'TSLA', 'ETH'];
     const sym = syms[Math.floor(Math.random() * syms.length)];
     setActions(prev => [{
