@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import { DISCLAIMER_TEXT } from '@/lib/legalContent';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -143,6 +144,15 @@ export default function LoginPage() {
             {busy ? '...' : mode === 'signup' ? '▶ CREATE ACCOUNT' : '▶ ENTER'}
           </button>
         </form>
+
+        <p style={{ fontSize: '5px', color: '#1e3a5f', lineHeight: 1.8, marginTop: '18px', textAlign: 'center' }}>
+          {DISCLAIMER_TEXT}
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '14px' }}>
+          <Link href="/privacy" style={{ fontSize: '5px', color: '#64748b', textDecoration: 'none' }}>PRIVACY POLICY</Link>
+          <Link href="/terms" style={{ fontSize: '5px', color: '#64748b', textDecoration: 'none' }}>TERMS OF SERVICE</Link>
+        </div>
 
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
           <Link href="/" style={{ fontSize: '6px', color: '#64748b', textDecoration: 'none' }}>◀ BACK TO HOME</Link>

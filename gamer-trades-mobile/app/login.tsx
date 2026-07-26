@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Screen, Card, PixelText, PixelButton } from '../components/ui';
 import { colors } from '../lib/theme';
 import { supabase } from '../lib/supabase';
+import { DISCLAIMER_TEXT } from '../lib/legalContent';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -101,6 +104,15 @@ export default function LoginScreen() {
             <PixelButton color={colors.green} onPress={submit} disabled={busy}>
               {busy ? '...' : mode === 'signup' ? '▶ CREATE ACCOUNT' : '▶ ENTER'}
             </PixelButton>
+
+            <PixelText color={colors.border} size={4} style={{ marginTop: 14, lineHeight: 8, textAlign: 'center' }}>
+              {DISCLAIMER_TEXT}
+            </PixelText>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginTop: 12 }}>
+              <PixelText color={colors.muted} size={5} onPress={() => router.push('/privacy')}>PRIVACY POLICY</PixelText>
+              <PixelText color={colors.muted} size={5} onPress={() => router.push('/terms')}>TERMS OF SERVICE</PixelText>
+            </View>
           </Card>
         </Screen>
       </ScrollView>

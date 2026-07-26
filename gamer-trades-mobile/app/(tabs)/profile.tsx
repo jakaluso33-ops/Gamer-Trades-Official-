@@ -1,12 +1,42 @@
-import { ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, View, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Card, PixelText, PixelButton, Avatar } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
+import { deleteAccount } from '../../lib/account';
 
 export default function ProfileScreen() {
   const { profile, user, signOut } = useAuth();
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
   const xpForLevel = (level: number) => level * 250;
   const xpNeeded = xpForLevel(profile?.level ?? 1);
+
+  const confirmDelete = () => {
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your account and all trading history, positions, goals, and stats. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteAccount();
+              router.replace('/login');
+            } catch (err) {
+              Alert.alert('Error', err instanceof Error ? err.message : 'Could not delete account');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
@@ -43,6 +73,22 @@ export default function ProfileScreen() {
       </View>
 
       <PixelButton color={colors.red} onPress={signOut}>✕ SIGN OUT</PixelButton>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14 }}>
+        <PixelText color={colors.muted} size={5} onPress={() => router.push('/privacy')}>PRIVACY POLICY</PixelText>
+        <PixelText color={colors.muted} size={5} onPress={() => router.push('/terms')}>TERMS OF SERVICE</PixelText>
+      </View>
+
+      <Card borderColor={colors.red}>
+        <PixelText color={colors.red} size={6} style={{ marginBottom: 8 }}>⚠ DANGER ZONE</PixelText>
+        <PixelText color={colors.muted} size={5} style={{ lineHeight: 9, marginBottom: 10 }}>
+          Deleting your account permanently removes all your data — trades, positions, goals, and stats.
+          This cannot be undone.
+        </PixelText>
+        <PixelButton color={colors.red} onPress={confirmDelete} disabled={deleting}>
+          {deleting ? 'DELETING...' : '🗑 DELETE ACCOUNT'}
+        </PixelButton>
+      </Card>
     </ScrollView>
   );
 }

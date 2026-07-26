@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import XPBar from '@/components/gamification/XPBar';
 import AchievementBadge, { ACHIEVEMENTS } from '@/components/gamification/AchievementBadge';
 import MiniChart from '@/components/trading/MiniChart';
+import Link from 'next/link';
+import { useAuth } from '@/lib/AuthContext';
+import { deleteAccount } from '@/lib/account';
 
 const PLANS = [
   {
@@ -24,10 +28,34 @@ const PLANS = [
 ];
 
 export default function ProfilePage() {
+  const { user, signOut } = useAuth();
+  const router = useRouter();
   const [tab, setTab] = useState<'stats' | 'achievements' | 'settings' | 'upgrade'>('stats');
   const [sound, setSound] = useState(true);
   const [scanlines, setScanlines] = useState(true);
   const [theme, setTheme] = useState('SYNTHWAVE');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      'This permanently deletes your account and all trading history, positions, goals, and stats. This cannot be undone. Continue?'
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      router.push('/login');
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Could not delete account');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="grid-bg" style={{ minHeight: '100%' }}>
@@ -220,7 +248,7 @@ export default function ProfilePage() {
           <div className="retro-card" style={{ padding: '14px' }}>
             <div style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '12px' }}>ACCOUNT</div>
             {[
-              { k: 'EMAIL', v: 'player01@gamertrades.io' },
+              { k: 'EMAIL', v: user?.email ?? '—' },
               { k: 'USERNAME', v: 'PLAYER_01' },
               { k: 'MEMBER SINCE', v: 'June 2026' },
               { k: 'PLAN', v: 'FREE TIER' },
@@ -233,8 +261,27 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
               <button className="pixel-btn pixel-btn-blue" style={{ fontSize: '6px', padding: '8px' }}>✎ EDIT PROFILE</button>
               <button className="pixel-btn pixel-btn-green" style={{ fontSize: '6px', padding: '8px' }}>↺ RESET PORTFOLIO</button>
-              <button className="pixel-btn pixel-btn-red" style={{ fontSize: '6px', padding: '8px' }}>✕ SIGN OUT</button>
+              <button onClick={handleSignOut} className="pixel-btn pixel-btn-red" style={{ fontSize: '6px', padding: '8px' }}>✕ SIGN OUT</button>
             </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '14px', justifyContent: 'center' }}>
+              <Link href="/privacy" style={{ fontSize: '5px', color: '#64748b', textDecoration: 'none' }}>PRIVACY POLICY</Link>
+              <Link href="/terms" style={{ fontSize: '5px', color: '#64748b', textDecoration: 'none' }}>TERMS OF SERVICE</Link>
+            </div>
+          </div>
+
+          <div className="retro-card" style={{ padding: '14px', gridColumn: '1 / -1', borderColor: '#ff335544' }}>
+            <div style={{ fontSize: '7px', color: '#ff3355', textShadow: '0 0 8px #ff3355', marginBottom: '10px' }}>⚠ DANGER ZONE</div>
+            <div style={{ fontSize: '6px', color: '#64748b', lineHeight: 1.9, marginBottom: '10px' }}>
+              Deleting your account permanently removes all your data — trades, positions, goals, and stats. This cannot be undone.
+            </div>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="pixel-btn pixel-btn-red"
+              style={{ fontSize: '6px', padding: '8px 14px', opacity: deleting ? 0.6 : 1 }}
+            >
+              {deleting ? 'DELETING...' : '🗑 DELETE ACCOUNT'}
+            </button>
           </div>
         </div>
       )}
