@@ -1,15 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card, PixelText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
-import { logEvent } from '../../lib/activity';
 import { Candle, DetectorId, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
 import { getStrategy } from '../../lib/strategyContent';
-import AIAgentPanel from '../../components/AIAgentPanel';
+import {
+  getPortfolio,
+  listOpenTrades,
+  openTrade,
+  closeTrade,
+  computePnl,
+  Portfolio,
+  DbTrade,
+  InsufficientFundsError,
+} from '../../lib/trading';
 
-const SYMBOLS = ['AAPL', 'TSLA', 'BTC', 'ETH', 'NVDA'];
+const SYMBOL_PRICE: Record<string, number> = {
+  AAPL: 182.34,
+  TSLA: 245.67,
+  BTC: 67420,
+  ETH: 3521,
+  NVDA: 875.20,
+};
+const SYMBOLS = Object.keys(SYMBOL_PRICE);
 
 const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
   { id: 'breakout', label: 'BREAKOUT' },
@@ -48,10 +63,24 @@ export default function TradeScreen() {
   const router = useRouter();
   const [symbol, setSymbol] = useState('AAPL');
   const [qty, setQty] = useState(10);
-  const [log, setLog] = useState<{ side: string; symbol: string; qty: number; time: string }[]>([]);
+  const [livePrice, setLivePrice] = useState(SYMBOL_PRICE.AAPL);
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+  const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
+  const [log, setLog] = useState<string[]>([]);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(SCANNER_STRATEGIES.map(s => s.id));
   const candlesRef = useRef<Candle[]>(generateCandles(60, 182.34));
   const [signals, setSignals] = useState<StrategySignal[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getPortfolio(user.id).then(setPortfolio).catch(console.error);
+    listOpenTrades(user.id).then(setOpenTrades).catch(console.error);
+  }, [user]);
+
+  useEffect(() => {
+    setLivePrice(SYMBOL_PRICE[symbol]);
+  }, [symbol]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -72,16 +101,50 @@ export default function TradeScreen() {
       };
       candlesRef.current = [...prev.slice(-59), newCandle];
       setSignals(scanStrategies(candlesRef.current, activeStrategies));
+      setLivePrice(p => {
+        const delta = (Math.random() - 0.48) * p * 0.002;
+        return parseFloat((p + delta).toFixed(2));
+      });
     }, 3000);
     return () => clearInterval(id);
   }, [activeStrategies]);
 
-  const place = (side: 'BUY' | 'SELL') => {
-    setLog(prev => [{ side, symbol, qty, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 10));
-    if (user) logEvent(user.id, 'trade_closed', { symbol, side });
+  const priceForSymbol = useCallback((sym: string) => (sym === symbol ? livePrice : SYMBOL_PRICE[sym] ?? livePrice), [symbol, livePrice]);
+
+  const place = async (side: 'BUY' | 'SELL') => {
+    if (!user || !portfolio) return;
+    setOrderError(null);
+    try {
+      const { trade, portfolio: updated } = await openTrade(user.id, portfolio, {
+        symbol,
+        direction: side === 'BUY' ? 'long' : 'short',
+        orderType: 'market',
+        quantity: qty,
+        entryPrice: livePrice,
+      });
+      setPortfolio(updated);
+      setOpenTrades(prev => [trade, ...prev]);
+      setLog(prev => [`${side} ${qty}x ${symbol} @ $${trade.entry_price.toFixed(2)}`, ...prev.slice(0, 9)]);
+    } catch (err) {
+      setOrderError(err instanceof InsufficientFundsError ? err.message : 'Could not place order.');
+    }
+  };
+
+  const closePosition = async (t: DbTrade) => {
+    if (!user) return;
+    try {
+      const exitPrice = priceForSymbol(t.symbol);
+      const { pnl } = await closeTrade(user.id, t, exitPrice);
+      setOpenTrades(prev => prev.filter(x => x.id !== t.id));
+      setPortfolio(prev => (prev ? { ...prev, cash_balance: prev.cash_balance + t.quantity * t.entry_price + pnl } : prev));
+      setLog(prev => [`CLOSED ${t.symbol} @ $${exitPrice.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`, ...prev.slice(0, 9)]);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const latest = signals[0];
+  const totalPnl = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
@@ -122,7 +185,10 @@ export default function TradeScreen() {
       </Card>
 
       <Card>
-        <PixelText color={colors.muted} size={6} style={{ marginBottom: 8 }}>SYMBOL</PixelText>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+          <PixelText color={colors.muted} size={6}>SYMBOL</PixelText>
+          <PixelText color={colors.text} size={7}>${livePrice.toLocaleString()}</PixelText>
+        </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {SYMBOLS.map(s => (
             <PixelButton key={s} color={symbol === s ? colors.cyan : colors.muted} onPress={() => setSymbol(s)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -140,30 +206,59 @@ export default function TradeScreen() {
           ))}
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+        {orderError && (
+          <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
+            <PixelText color={colors.red} size={5}>⚠ {orderError}</PixelText>
+          </View>
+        )}
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
+          <PixelText color={colors.muted} size={5}>CASH</PixelText>
+          <PixelText color={colors.text} size={6}>${(portfolio?.cash_balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</PixelText>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
           <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY</PixelButton>
           <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL</PixelButton>
         </View>
       </Card>
 
-      <AIAgentPanel
-        symbol={symbol}
-        technicalContext={
-          latest
-            ? `${latest.label} (${latest.direction}) via ${latest.strategyId} — ${latest.detail}.`
-            : 'No active strategy signal.'
+      <Card borderColor={colors.blue}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+          <PixelText color={colors.blue} size={7} glow>◈ POSITIONS</PixelText>
+          <PixelText color={totalPnl >= 0 ? colors.green : colors.red} size={6}>
+            {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+          </PixelText>
+        </View>
+        {openTrades.length === 0
+          ? <PixelText color={colors.border} size={6}>No open positions</PixelText>
+          : openTrades.map(t => {
+            const current = priceForSymbol(t.symbol);
+            const pnl = computePnl(t, current);
+            const up = pnl >= 0;
+            return (
+              <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <View style={{ flex: 1 }}>
+                  <PixelText color={colors.blue} size={6}>{t.symbol}</PixelText>
+                  <PixelText color={t.direction === 'long' ? colors.green : colors.red} size={5} style={{ marginTop: 2 }}>
+                    {t.direction === 'long' ? 'BUY' : 'SELL'} {t.quantity}x @ ${t.entry_price.toFixed(2)}
+                  </PixelText>
+                </View>
+                <PixelText color={up ? colors.green : colors.red} size={6}>{up ? '+' : ''}${pnl.toFixed(2)}</PixelText>
+                <PixelButton color={colors.red} onPress={() => closePosition(t)} style={{ paddingHorizontal: 8, paddingVertical: 6 }}>CLOSE</PixelButton>
+              </View>
+            );
+          })
         }
-      />
+      </Card>
 
       <Card>
         <PixelText color={colors.muted} size={6} style={{ marginBottom: 8 }}>◎ ORDER LOG</PixelText>
         {log.length === 0
           ? <PixelText color={colors.border} size={6}>No trades yet</PixelText>
           : log.map((l, i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <PixelText color={colors.muted} size={5}>{l.time}</PixelText>
-              <PixelText color={l.side === 'BUY' ? colors.green : colors.red} size={6}>{l.side}</PixelText>
-              <PixelText color={colors.text} size={6}>{l.qty}x {l.symbol}</PixelText>
+            <View key={i} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <PixelText color={i === 0 ? colors.green : colors.muted} size={6}>{l}</PixelText>
             </View>
           ))
         }

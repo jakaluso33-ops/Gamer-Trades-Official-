@@ -1,15 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CandlestickChart from '@/components/trading/CandlestickChart';
 import OrderPanel from '@/components/trading/OrderPanel';
 import AIAgentPanel from '@/components/trading/AIAgentPanel';
 import GameOverScreen from '@/components/modals/GameOverScreen';
 import Link from 'next/link';
-import { logEvent } from '@/lib/activity';
 import { useAuth } from '@/lib/AuthContext';
 import { DetectorId, StrategySignal } from '@/lib/strategyEngine';
 import { getStrategy } from '@/lib/strategyContent';
+import {
+  getPortfolio,
+  listOpenTrades,
+  openTrade,
+  closeTrade,
+  computePnl,
+  Portfolio,
+  DbTrade,
+  InsufficientFundsError,
+} from '@/lib/trading';
 
 const SYMBOLS = [
   { symbol: 'AAPL', name: 'Apple Inc.', price: 182.34, class: 'STOCK' },
@@ -33,28 +42,37 @@ const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
   { id: 'rsi_reversal', label: 'RSI' },
 ];
 
-interface Position {
-  id: number;
-  symbol: string;
-  side: 'BUY' | 'SELL';
-  qty: number;
-  entry: number;
-  current: number;
-}
-
 export default function TradePage() {
   const { user } = useAuth();
   const [selected, setSelected] = useState(SYMBOLS[0]);
   const [livePrice, setLivePrice] = useState(selected.price);
-  const [positions, setPositions] = useState<Position[]>([]);
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+  const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [activeIndicators, setActiveIndicators] = useState<string[]>(['RSI']);
   const [timeframe, setTimeframe] = useState('1m');
   const [gameOver, setGameOver] = useState<{ type: 'GAME_OVER' | 'NICE_WORK'; pnl: number } | null>(null);
   const [orderLog, setOrderLog] = useState<string[]>([]);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [placingOrder, setPlacingOrder] = useState(false);
   const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(SCANNER_STRATEGIES.map(s => s.id));
   const [latestSignal, setLatestSignal] = useState<StrategySignal | null>(null);
 
-  // Simulate live price ticking
+  const priceForSymbol = useCallback(
+    (symbol: string) => {
+      if (symbol === selected.symbol) return livePrice;
+      return SYMBOLS.find(s => s.symbol === symbol)?.price ?? livePrice;
+    },
+    [selected.symbol, livePrice]
+  );
+
+  // Load portfolio + open positions
+  useEffect(() => {
+    if (!user) return;
+    getPortfolio(user.id).then(setPortfolio).catch(console.error);
+    listOpenTrades(user.id).then(setOpenTrades).catch(console.error);
+  }, [user]);
+
+  // Simulate live price ticking for the selected symbol
   useEffect(() => {
     setLivePrice(selected.price);
   }, [selected]);
@@ -69,54 +87,64 @@ export default function TradePage() {
     return () => clearInterval(id);
   }, [selected]);
 
-  // Update position P&L
+  const closePositionAt = useCallback(
+    async (trade: DbTrade, exitPrice: number, showResult: boolean) => {
+      if (!user) return;
+      try {
+        const { pnl } = await closeTrade(user.id, trade, exitPrice);
+        setOpenTrades(prev => prev.filter(t => t.id !== trade.id));
+        setPortfolio(prev => (prev ? { ...prev, cash_balance: prev.cash_balance + trade.quantity * trade.entry_price + pnl } : prev));
+        setOrderLog(prev => [`CLOSED ${trade.symbol} @ $${exitPrice.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`, ...prev.slice(0, 9)]);
+        if (showResult) setGameOver({ type: pnl >= 0 ? 'NICE_WORK' : 'GAME_OVER', pnl });
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    [user]
+  );
+
+  // Auto-close open positions in the selected symbol when price crosses stop-loss/take-profit
   useEffect(() => {
-    setPositions(prev =>
-      prev.map(p => ({ ...p, current: livePrice }))
-    );
-  }, [livePrice]);
+    const hit = openTrades.find(t => {
+      if (t.symbol !== selected.symbol) return false;
+      if (t.stop_loss != null) {
+        if (t.direction === 'long' && livePrice <= t.stop_loss) return true;
+        if (t.direction === 'short' && livePrice >= t.stop_loss) return true;
+      }
+      if (t.take_profit != null) {
+        if (t.direction === 'long' && livePrice >= t.take_profit) return true;
+        if (t.direction === 'short' && livePrice <= t.take_profit) return true;
+      }
+      return false;
+    });
+    if (hit) closePositionAt(hit, livePrice, true);
+  }, [livePrice, openTrades, selected.symbol, closePositionAt]);
 
-  const handleOrder = (order: { type: string; side: 'BUY' | 'SELL'; symbol: string; qty: number; price?: number; stopLoss?: number }) => {
-    const pos: Position = {
-      id: Date.now(),
-      symbol: order.symbol,
-      side: order.side,
-      qty: order.qty,
-      entry: order.price ?? livePrice,
-      current: livePrice,
-    };
-    setPositions(prev => [...prev, pos]);
-
-    const msg = `${order.side} ${order.qty}x ${order.symbol} @ $${(order.price ?? livePrice).toFixed(2)}`;
-    setOrderLog(prev => [msg, ...prev.slice(0, 9)]);
-
-    if (user) logEvent(user.id, 'trade_closed', { symbol: order.symbol, side: order.side });
-
-    // If stop loss set, simulate it hitting after random delay
-    if (order.stopLoss) {
-      const delay = 5000 + Math.random() * 10000;
-      setTimeout(() => {
-        const entryPnl = order.side === 'BUY'
-          ? (order.stopLoss! - pos.entry) * pos.qty
-          : (pos.entry - order.stopLoss!) * pos.qty;
-        setGameOver({
-          type: entryPnl >= 0 ? 'NICE_WORK' : 'GAME_OVER',
-          pnl: entryPnl,
-        });
-        setPositions(prev => prev.filter(p => p.id !== pos.id));
-      }, delay);
+  const handleOrder = async (order: { type: string; side: 'BUY' | 'SELL'; symbol: string; qty: number; price?: number; stopLoss?: number; takeProfit?: number }) => {
+    if (!user || !portfolio) return;
+    setOrderError(null);
+    setPlacingOrder(true);
+    try {
+      const { trade, portfolio: updated } = await openTrade(user.id, portfolio, {
+        symbol: order.symbol,
+        direction: order.side === 'BUY' ? 'long' : 'short',
+        orderType: order.type.toLowerCase() as 'market' | 'limit' | 'stop',
+        quantity: order.qty,
+        entryPrice: order.price ?? livePrice,
+        stopLoss: order.stopLoss ?? null,
+        takeProfit: order.takeProfit ?? null,
+      });
+      setPortfolio(updated);
+      setOpenTrades(prev => [trade, ...prev]);
+      setOrderLog(prev => [`${order.side} ${order.qty}x ${order.symbol} @ $${trade.entry_price.toFixed(2)}`, ...prev.slice(0, 9)]);
+    } catch (err) {
+      setOrderError(err instanceof InsufficientFundsError ? err.message : 'Could not place order. Please try again.');
+    } finally {
+      setPlacingOrder(false);
     }
   };
 
-  const closePosition = (id: number) => {
-    setPositions(prev => prev.filter(p => p.id !== id));
-    setOrderLog(prev => [`CLOSED position #${id}`, ...prev.slice(0, 9)]);
-  };
-
-  const totalPnL = positions.reduce((sum, p) => {
-    const diff = p.side === 'BUY' ? (p.current - p.entry) : (p.entry - p.current);
-    return sum + diff * p.qty;
-  }, 0);
+  const totalPnL = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
   const classColor = { STOCK: '#00aaff', CRYPTO: '#ffd700', FOREX: '#00ff88' } as Record<string, string>;
 
@@ -128,7 +156,7 @@ export default function TradePage() {
           pnl={gameOver.pnl}
           symbol={selected.symbol}
           onClose={() => setGameOver(null)}
-          onReplay={() => { setGameOver(null); setPositions([]); }}
+          onReplay={() => setGameOver(null)}
         />
       )}
 
@@ -161,7 +189,11 @@ export default function TradePage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ fontSize: '7px', color: '#64748b' }}>SESSION P&L:</span>
+          <span style={{ fontSize: '7px', color: '#64748b' }}>CASH:</span>
+          <span style={{ fontSize: '9px', color: '#e2e8f0' }}>
+            ${(portfolio?.cash_balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </span>
+          <span style={{ fontSize: '7px', color: '#64748b', marginLeft: '8px' }}>OPEN P&L:</span>
           <span
             style={{
               fontSize: '10px',
@@ -337,7 +369,7 @@ export default function TradePage() {
               </span>
             </div>
 
-            {positions.length === 0 ? (
+            {openTrades.length === 0 ? (
               <div style={{ padding: '20px', textAlign: 'center', fontSize: '7px', color: '#1e3a5f' }}>
                 NO OPEN POSITIONS
                 <br /><br />
@@ -348,21 +380,21 @@ export default function TradePage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '70px 45px 50px 80px 80px 70px 60px', gap: '4px', padding: '5px 10px', borderBottom: '1px solid #1e3a5f', fontSize: '5px', color: '#64748b' }}>
                   <span>SYMBOL</span><span>SIDE</span><span>QTY</span><span>ENTRY</span><span>CURRENT</span><span>P&L</span><span>ACTION</span>
                 </div>
-                {positions.map(p => {
-                  const diff = p.side === 'BUY' ? (p.current - p.entry) : (p.entry - p.current);
-                  const pnl = diff * p.qty;
+                {openTrades.map(t => {
+                  const current = priceForSymbol(t.symbol);
+                  const pnl = computePnl(t, current);
                   const up = pnl >= 0;
                   return (
-                    <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '70px 45px 50px 80px 80px 70px 60px', gap: '4px', padding: '7px 10px', borderBottom: '1px solid #0f1629', alignItems: 'center', fontSize: '7px' }}>
-                      <span style={{ color: '#00aaff' }}>{p.symbol}</span>
-                      <span style={{ color: p.side === 'BUY' ? '#00ff88' : '#ff3355', fontSize: '6px' }}>{p.side}</span>
-                      <span style={{ color: '#e2e8f0' }}>{p.qty}</span>
-                      <span style={{ color: '#64748b' }}>${p.entry.toFixed(2)}</span>
-                      <span style={{ color: '#e2e8f0' }}>${p.current.toFixed(2)}</span>
+                    <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '70px 45px 50px 80px 80px 70px 60px', gap: '4px', padding: '7px 10px', borderBottom: '1px solid #0f1629', alignItems: 'center', fontSize: '7px' }}>
+                      <span style={{ color: '#00aaff' }}>{t.symbol}</span>
+                      <span style={{ color: t.direction === 'long' ? '#00ff88' : '#ff3355', fontSize: '6px' }}>{t.direction === 'long' ? 'BUY' : 'SELL'}</span>
+                      <span style={{ color: '#e2e8f0' }}>{t.quantity}</span>
+                      <span style={{ color: '#64748b' }}>${t.entry_price.toFixed(2)}</span>
+                      <span style={{ color: '#e2e8f0' }}>${current.toFixed(2)}</span>
                       <span style={{ color: up ? '#00ff88' : '#ff3355', textShadow: up ? '0 0 6px #00ff88' : '0 0 6px #ff3355' }}>
                         {up ? '+' : ''}${pnl.toFixed(2)}
                       </span>
-                      <button onClick={() => closePosition(p.id)} className="pixel-btn pixel-btn-red" style={{ fontSize: '5px', padding: '4px 6px' }}>CLOSE</button>
+                      <button onClick={() => closePositionAt(t, current, false)} className="pixel-btn pixel-btn-red" style={{ fontSize: '5px', padding: '4px 6px' }}>CLOSE</button>
                     </div>
                   );
                 })}
@@ -390,7 +422,13 @@ export default function TradePage() {
             <div style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '12px' }}>
               ◈ ORDER PANEL
             </div>
+            {orderError && (
+              <div style={{ fontSize: '6px', color: '#ff3355', padding: '8px', marginBottom: '10px', background: '#ff335511', border: '1px solid #ff335544' }}>
+                ⚠ {orderError}
+              </div>
+            )}
             <OrderPanel symbol={selected.symbol} currentPrice={livePrice} onOrder={handleOrder} />
+            {placingOrder && <div style={{ fontSize: '5px', color: '#64748b', marginTop: '6px' }}>Placing order...</div>}
           </div>
 
           {/* Symbol info */}

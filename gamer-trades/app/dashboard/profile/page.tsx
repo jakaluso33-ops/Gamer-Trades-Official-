@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import XPBar from '@/components/gamification/XPBar';
 import AchievementBadge, { ACHIEVEMENTS } from '@/components/gamification/AchievementBadge';
@@ -8,6 +8,8 @@ import MiniChart from '@/components/trading/MiniChart';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { deleteAccount } from '@/lib/account';
+import { listOpenTrades, listClosedTrades, computePnl, DbTrade } from '@/lib/trading';
+import { getBasePrice } from '@/lib/marketPrices';
 
 const PLANS = [
   {
@@ -28,13 +30,42 @@ const PLANS = [
 ];
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<'stats' | 'achievements' | 'settings' | 'upgrade'>('stats');
   const [sound, setSound] = useState(true);
   const [scanlines, setScanlines] = useState(true);
   const [theme, setTheme] = useState('SYNTHWAVE');
   const [deleting, setDeleting] = useState(false);
+  const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
+  const [closedTrades, setClosedTrades] = useState<DbTrade[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([listOpenTrades(user.id), listClosedTrades(user.id)])
+      .then(([open, closed]) => {
+        setOpenTrades(open);
+        setClosedTrades(closed);
+      })
+      .catch(console.error);
+  }, [user]);
+
+  const winners = closedTrades.filter(t => (t.pnl ?? 0) > 0);
+  const losers = closedTrades.filter(t => (t.pnl ?? 0) < 0);
+  const winRate = closedTrades.length > 0 ? Math.round((winners.length / closedTrades.length) * 100) : 0;
+  const realizedPnl = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0);
+  const unrealizedPnl = openTrades.reduce((s, t) => s + computePnl(t, getBasePrice(t.symbol) || t.entry_price), 0);
+  const totalPnl = realizedPnl + unrealizedPnl;
+  const avgWin = winners.length > 0 ? winners.reduce((s, t) => s + (t.pnl ?? 0), 0) / winners.length : 0;
+  const avgLoss = losers.length > 0 ? losers.reduce((s, t) => s + (t.pnl ?? 0), 0) / losers.length : 0;
+  const grossWin = winners.reduce((s, t) => s + (t.pnl ?? 0), 0);
+  const grossLoss = Math.abs(losers.reduce((s, t) => s + (t.pnl ?? 0), 0));
+  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
+  const bestTrade = closedTrades.reduce((best, t) => (best === null || (t.pnl ?? 0) > (best.pnl ?? 0) ? t : best), null as DbTrade | null);
+  const worstTrade = closedTrades.reduce((worst, t) => (worst === null || (t.pnl ?? 0) < (worst.pnl ?? 0) ? t : worst), null as DbTrade | null);
+  const totalTrades = openTrades.length + closedTrades.length;
+  const xpForLevel = (level: number) => level * 250;
+  const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '—';
 
   const handleSignOut = async () => {
     await signOut();
@@ -71,20 +102,20 @@ export default function ProfilePage() {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
             <div>
-              <div style={{ fontSize: '12px', color: '#00ffff', textShadow: '0 0 10px #00ffff', marginBottom: '3px' }}>PLAYER_01</div>
-              <div style={{ fontSize: '6px', color: '#64748b' }}>Joined June 2026 · 54 trades · #5 Global</div>
+              <div style={{ fontSize: '12px', color: '#00ffff', textShadow: '0 0 10px #00ffff', marginBottom: '3px' }}>{profile?.username ?? '...'}</div>
+              <div style={{ fontSize: '6px', color: '#64748b' }}>Joined {joinDate} · {totalTrades} trades</div>
             </div>
             <div style={{ padding: '4px 10px', background: '#64748b22', border: '2px solid #64748b', fontSize: '6px', color: '#64748b' }}>
-              FREE TIER
+              {(profile?.plan ?? 'free').toUpperCase()} TIER
             </div>
           </div>
-          <XPBar current={3240} max={5000} level={12} />
+          <XPBar current={profile?.xp ?? 0} max={xpForLevel(profile?.level ?? 1)} level={profile?.level ?? 1} />
           <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
             {[
-              { k: 'WIN RATE', v: '68%', c: '#00ff88' },
-              { k: 'BEST DAY', v: '+$1,240', c: '#ffd700' },
-              { k: 'AI WINS', v: '12', c: '#8b5cf6' },
-              { k: '🔥 STREAK', v: '5W', c: '#ff8800' },
+              { k: 'WIN RATE', v: `${winRate}%`, c: '#ffd700' },
+              { k: 'TOTAL P&L', v: `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}`, c: totalPnl >= 0 ? '#00ff88' : '#ff3355' },
+              { k: 'OPEN POSITIONS', v: `${openTrades.length}`, c: '#00aaff' },
+              { k: 'CLOSED TRADES', v: `${closedTrades.length}`, c: '#8b5cf6' },
             ].map(s => (
               <div key={s.k} style={{ textAlign: 'center', padding: '5px 10px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
                 <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '3px' }}>{s.k}</div>
@@ -122,19 +153,18 @@ export default function ProfilePage() {
           <div className="retro-card" style={{ padding: '14px' }}>
             <div style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '10px' }}>TRADING PERFORMANCE</div>
             {[
-              { k: 'Total Trades', v: '54' },
-              { k: 'Profitable Trades', v: '37', c: '#00ff88' },
-              { k: 'Losing Trades', v: '17', c: '#ff3355' },
-              { k: 'Win Rate', v: '68.4%', c: '#ffd700' },
-              { k: 'Total P&L', v: '+$4,830.50', c: '#00ff88' },
-              { k: 'Realized P&L', v: '+$3,999.50', c: '#00ff88' },
-              { k: 'Unrealized P&L', v: '+$831.00', c: '#00ff88' },
-              { k: 'Best Trade', v: '+$605.00 BTC', c: '#ffd700' },
-              { k: 'Worst Trade', v: '-$124.00 NVDA', c: '#ff3355' },
-              { k: 'Avg Win', v: '+$213.20', c: '#00ff88' },
-              { k: 'Avg Loss', v: '-$76.50', c: '#ff3355' },
-              { k: 'Profit Factor', v: '2.78x', c: '#8b5cf6' },
-              { k: 'Sharpe Ratio', v: '1.42', c: '#8b5cf6' },
+              { k: 'Total Trades', v: `${totalTrades}` },
+              { k: 'Profitable Trades', v: `${winners.length}`, c: '#00ff88' },
+              { k: 'Losing Trades', v: `${losers.length}`, c: '#ff3355' },
+              { k: 'Win Rate', v: `${winRate}%`, c: '#ffd700' },
+              { k: 'Total P&L', v: `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}`, c: totalPnl >= 0 ? '#00ff88' : '#ff3355' },
+              { k: 'Realized P&L', v: `${realizedPnl >= 0 ? '+' : ''}$${realizedPnl.toFixed(2)}`, c: realizedPnl >= 0 ? '#00ff88' : '#ff3355' },
+              { k: 'Unrealized P&L', v: `${unrealizedPnl >= 0 ? '+' : ''}$${unrealizedPnl.toFixed(2)}`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355' },
+              { k: 'Best Trade', v: bestTrade ? `${(bestTrade.pnl ?? 0) >= 0 ? '+' : ''}$${(bestTrade.pnl ?? 0).toFixed(2)} ${bestTrade.symbol}` : '—', c: '#ffd700' },
+              { k: 'Worst Trade', v: worstTrade ? `${(worstTrade.pnl ?? 0) >= 0 ? '+' : ''}$${(worstTrade.pnl ?? 0).toFixed(2)} ${worstTrade.symbol}` : '—', c: '#ff3355' },
+              { k: 'Avg Win', v: winners.length > 0 ? `+$${avgWin.toFixed(2)}` : '—', c: '#00ff88' },
+              { k: 'Avg Loss', v: losers.length > 0 ? `$${avgLoss.toFixed(2)}` : '—', c: '#ff3355' },
+              { k: 'Profit Factor', v: profitFactor === Infinity ? '∞' : `${profitFactor.toFixed(2)}x`, c: '#8b5cf6' },
             ].map(({ k, v, c }) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
                 <span style={{ color: '#64748b' }}>{k}</span>
@@ -146,27 +176,17 @@ export default function ProfilePage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="retro-card" style={{ padding: '14px' }}>
               <div style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>AI BATTLE RECORD</div>
-              {[
-                { k: 'Total Battles', v: '16' },
-                { k: 'Wins', v: '12', c: '#00ff88' },
-                { k: 'Losses', v: '4', c: '#ff3355' },
-                { k: 'vs Rookie', v: '6W / 0L', c: '#00ff88' },
-                { k: 'vs Veteran', v: '5W / 2L', c: '#ffd700' },
-                { k: 'vs Legend', v: '1W / 2L', c: '#ff3355' },
-                { k: 'vs AlgoAce', v: '5W / 1L', c: '#00aaff' },
-                { k: 'vs TrendTina', v: '4W / 2L', c: '#8b5cf6' },
-                { k: 'vs GridGareth', v: '3W / 1L', c: '#ffd700' },
-              ].map(({ k, v, c }) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
-                  <span style={{ color: '#64748b' }}>{k}</span>
-                  <span style={{ color: c ?? '#e2e8f0' }}>{v}</span>
-                </div>
-              ))}
+              <div style={{ fontSize: '6px', color: '#64748b', lineHeight: 1.9 }}>
+                Battle history isn&apos;t tracked yet — coming in a future update.
+              </div>
             </div>
 
             <div className="retro-card" style={{ padding: '14px' }}>
               <div style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '8px' }}>EQUITY CURVE</div>
-              <MiniChart positive={true} color="#00ff88" height={80} />
+              <MiniChart positive={totalPnl >= 0} color="#00ff88" height={80} />
+              <div style={{ fontSize: '5px', color: '#64748b', marginTop: '8px' }}>
+                Illustrative — historical equity tracking coming soon.
+              </div>
             </div>
           </div>
         </div>
