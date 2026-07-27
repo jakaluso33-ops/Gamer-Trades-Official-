@@ -5,6 +5,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from '../lib/AuthContext';
 import { colors } from '../lib/theme';
 import DisclaimerGate from '../components/DisclaimerGate';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 function RootNavigation() {
   const { session, loading } = useAuth();
@@ -56,8 +57,10 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RootNavigation />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <RootNavigation />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
