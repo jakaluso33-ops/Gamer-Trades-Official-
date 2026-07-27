@@ -6,6 +6,7 @@ import MiniChart from '@/components/trading/MiniChart';
 import PvpBattle from '@/components/trading/PvpBattle';
 import { logEvent } from '@/lib/activity';
 import { useAuth } from '@/lib/AuthContext';
+import { recordAiBattle, AiOpponentId, AiDifficulty } from '@/lib/aiBattles';
 
 const AI_OPPONENTS = [
   {
@@ -54,6 +55,10 @@ const BATTLE_MODES = [
 ];
 
 type Phase = 'select' | 'battle' | 'result';
+
+function secondsForMode(modeId: string): number {
+  return modeId === 'scalp' ? 300 : modeId === 'short' ? 900 : modeId === 'swing' ? 1800 : 3600;
+}
 
 interface BattleAction {
   time: string;
@@ -121,6 +126,7 @@ function AiBattle() {
   const [playerTrades, setPlayerTrades] = useState(0);
   const [aiTrades, setAITrades] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordedRef = useRef(false);
 
   const startBattle = () => {
     setPhase('battle');
@@ -129,8 +135,8 @@ function AiBattle() {
     setPlayerTrades(0);
     setAITrades(0);
     setActions([]);
-    const secs = selectedMode.id === 'scalp' ? 300 : selectedMode.id === 'short' ? 900 : selectedMode.id === 'swing' ? 1800 : 3600;
-    setTimeLeft(secs);
+    recordedRef.current = false;
+    setTimeLeft(secondsForMode(selectedMode.id));
   };
 
   // Battle simulation
@@ -173,11 +179,22 @@ function AiBattle() {
     };
   }, [phase, difficulty, selectedAI]);
 
-  // Log battle completion once when the result phase is reached
+  // Record battle completion once when the result phase is reached
   useEffect(() => {
-    if (phase !== 'result' || !user) return;
+    if (phase !== 'result' || !user || recordedRef.current) return;
+    recordedRef.current = true;
     logEvent(user.id, 'ai_battle_played', { aiId: selectedAI.id });
     if (playerPnL > aiPnL) logEvent(user.id, 'ai_battle_won', { aiId: selectedAI.id });
+    recordAiBattle(user.id, {
+      opponentId: selectedAI.id as AiOpponentId,
+      difficulty,
+      mode: selectedMode.id as 'scalp' | 'swing' | 'long' | 'short',
+      durationSeconds: secondsForMode(selectedMode.id),
+      playerPnl: playerPnL,
+      aiPnl: aiPnL,
+      playerTrades,
+      aiTrades,
+    }).catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 

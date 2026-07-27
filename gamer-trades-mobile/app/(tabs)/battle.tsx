@@ -6,12 +6,15 @@ import { colors } from '../../lib/theme';
 import PvpBattle from '../../components/PvpBattle';
 import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
+import { recordAiBattle, AiOpponentId, AiDifficulty } from '../../lib/aiBattles';
 
-const AI_OPPONENTS = [
+const AI_OPPONENTS: { id: AiOpponentId; name: string; icon: string; difficulty: AiDifficulty; color: string }[] = [
   { id: 'algoace', name: 'ALGO ACE', icon: '🤖', difficulty: 'VETERAN', color: colors.blue },
   { id: 'trendtina', name: 'TREND TINA', icon: '⚡', difficulty: 'LEGEND', color: colors.purple },
   { id: 'gridgareth', name: 'GRID GARETH', icon: '🧙', difficulty: 'ROOKIE', color: colors.gold },
 ];
+
+const BATTLE_DURATION_SECONDS = 300;
 
 function AiBattle() {
   const { user } = useAuth();
@@ -19,14 +22,20 @@ function AiBattle() {
   const [phase, setPhase] = useState<'select' | 'battle' | 'result'>('select');
   const [playerPnL, setPlayerPnL] = useState(0);
   const [aiPnL, setAiPnL] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(300);
+  const [playerTrades, setPlayerTrades] = useState(0);
+  const [aiTrades, setAiTrades] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(BATTLE_DURATION_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const aiRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordedRef = useRef(false);
 
   const startBattle = () => {
     setPlayerPnL(0);
     setAiPnL(0);
-    setTimeLeft(300);
+    setPlayerTrades(0);
+    setAiTrades(0);
+    recordedRef.current = false;
+    setTimeLeft(BATTLE_DURATION_SECONDS);
     setPhase('battle');
   };
 
@@ -35,6 +44,7 @@ function AiBattle() {
     aiRef.current = setInterval(() => {
       const delta = (Math.random() - 0.42) * 120;
       setAiPnL(p => parseFloat((p + delta).toFixed(2)));
+      setAiTrades(t => t + 1);
     }, 4000);
     timerRef.current = setInterval(() => {
       setTimeLeft(t => {
@@ -56,14 +66,26 @@ function AiBattle() {
   const trade = (side: 'buy' | 'sell') => {
     const delta = (Math.random() - 0.45) * 100;
     setPlayerPnL(p => parseFloat((p + delta).toFixed(2)));
+    setPlayerTrades(t => t + 1);
     if (user) logEvent(user.id, 'trade_closed', { context: 'ai_battle' });
   };
 
-  // Log battle completion once when the result phase is reached
+  // Record battle completion once when the result phase is reached
   useEffect(() => {
-    if (phase !== 'result' || !user) return;
+    if (phase !== 'result' || !user || recordedRef.current) return;
+    recordedRef.current = true;
     logEvent(user.id, 'ai_battle_played', { aiId: selectedAI.id });
     if (playerPnL > aiPnL) logEvent(user.id, 'ai_battle_won', { aiId: selectedAI.id });
+    recordAiBattle(user.id, {
+      opponentId: selectedAI.id,
+      difficulty: selectedAI.difficulty,
+      mode: 'scalp',
+      durationSeconds: BATTLE_DURATION_SECONDS,
+      playerPnl: playerPnL,
+      aiPnl: aiPnL,
+      playerTrades,
+      aiTrades,
+    }).catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 

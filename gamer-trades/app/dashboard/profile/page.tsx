@@ -10,6 +10,9 @@ import { useAuth } from '@/lib/AuthContext';
 import { deleteAccount } from '@/lib/account';
 import { listOpenTrades, listClosedTrades, computePnl, DbTrade } from '@/lib/trading';
 import { getBasePrice } from '@/lib/marketPrices';
+import { getAiBattleStats, AiBattleStats } from '@/lib/aiBattles';
+
+const AI_OPPONENT_NAMES: Record<string, string> = { algoace: 'AlgoAce', trendtina: 'TrendTina', gridgareth: 'GridGareth' };
 
 const PLANS = [
   {
@@ -39,6 +42,7 @@ export default function ProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<DbTrade[]>([]);
+  const [battleStats, setBattleStats] = useState<AiBattleStats | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -48,6 +52,7 @@ export default function ProfilePage() {
         setClosedTrades(closed);
       })
       .catch(console.error);
+    getAiBattleStats(user.id).then(setBattleStats).catch(console.error);
   }, [user]);
 
   const winners = closedTrades.filter(t => (t.pnl ?? 0) > 0);
@@ -176,9 +181,36 @@ export default function ProfilePage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="retro-card" style={{ padding: '14px' }}>
               <div style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>AI BATTLE RECORD</div>
-              <div style={{ fontSize: '6px', color: '#64748b', lineHeight: 1.9 }}>
-                Battle history isn&apos;t tracked yet — coming in a future update.
-              </div>
+              {!battleStats || battleStats.total === 0 ? (
+                <div style={{ fontSize: '6px', color: '#64748b', lineHeight: 1.9 }}>
+                  No AI battles fought yet — head to VS AI to start a record.
+                </div>
+              ) : (
+                <>
+                  {[
+                    { k: 'Total Battles', v: `${battleStats.total}` },
+                    { k: 'Wins', v: `${battleStats.wins}`, c: '#00ff88' },
+                    { k: 'Losses', v: `${battleStats.losses}`, c: '#ff3355' },
+                    ...(['ROOKIE', 'VETERAN', 'LEGEND'] as const)
+                      .filter(d => battleStats.byDifficulty[d])
+                      .map(d => ({
+                        k: `vs ${d}`,
+                        v: `${battleStats.byDifficulty[d].wins}W / ${battleStats.byDifficulty[d].losses}L`,
+                        c: d === 'LEGEND' ? '#ff3355' : d === 'VETERAN' ? '#ffd700' : '#00ff88',
+                      })),
+                    ...Object.entries(battleStats.byOpponent).map(([oppId, rec]) => ({
+                      k: `vs ${AI_OPPONENT_NAMES[oppId] ?? oppId}`,
+                      v: `${rec.wins}W / ${rec.losses}L`,
+                      c: '#00aaff',
+                    })),
+                  ].map(({ k, v, c }) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
+                      <span style={{ color: '#64748b' }}>{k}</span>
+                      <span style={{ color: c ?? '#e2e8f0' }}>{v}</span>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
 
             <div className="retro-card" style={{ padding: '14px' }}>
