@@ -43,7 +43,7 @@ export default function LandingPage() {
 
       <p
         style={{
-          fontSize: '8px',
+          fontSize: '14px',
           color: '#64748b',
           marginBottom: '40px',
           lineHeight: 2,
@@ -73,7 +73,7 @@ export default function LandingPage() {
 
       <p
         style={{
-          fontSize: '6px',
+          fontSize: '12px',
           color: '#1e3a5f',
           marginTop: '24px',
           fontFamily: "'Press Start 2P', monospace",

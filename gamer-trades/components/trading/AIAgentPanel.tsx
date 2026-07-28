@@ -34,12 +34,12 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
   return (
     <div className="retro-card" style={{ overflow: 'hidden', borderColor: color, boxShadow: `4px 4px 0 #000, 0 0 14px ${color}33` }}>
       <div style={{ padding: '10px 12px', borderBottom: '2px solid #1e3a5f', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '7px', color, textShadow: `0 0 8px ${color}` }}>🤖 AI MARKET ANALYST</span>
+        <span style={{ fontSize: '13px', color, textShadow: `0 0 8px ${color}` }}>🤖 AI MARKET ANALYST</span>
         <button
           onClick={run}
           disabled={loading}
           className="pixel-btn pixel-btn-blue"
-          style={{ fontSize: '6px', padding: '5px 10px', opacity: loading ? 0.6 : 1 }}
+          style={{ fontSize: '12px', padding: '5px 10px', opacity: loading ? 0.6 : 1 }}
         >
           {loading ? 'ANALYZING...' : result ? '↻ RE-RUN' : '▶ RUN ANALYSIS'}
         </button>
@@ -47,18 +47,18 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
 
       <div style={{ padding: '12px' }}>
         {!result && !loading && !error && (
-          <div style={{ fontSize: '6px', color: '#64748b', lineHeight: 1.8 }}>
+          <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.8 }}>
             Get a real-time research synthesis for {symbol} — live news pulled from NewsAPI, analyzed by Claude,
             with a verdict on whether to press this trade, sit it out, or wait for confirmation.
           </div>
         )}
 
         {loading && (
-          <div style={{ fontSize: '6px', color: '#8b5cf6' }}>Pulling live news and running research synthesis...</div>
+          <div style={{ fontSize: '12px', color: '#8b5cf6' }}>Pulling live news and running research synthesis...</div>
         )}
 
         {error && (
-          <div style={{ fontSize: '6px', color: '#ff3355', lineHeight: 1.8 }}>
+          <div style={{ fontSize: '12px', color: '#ff3355', lineHeight: 1.8 }}>
             ⚠ {error}
           </div>
         )}
@@ -71,7 +71,7 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
                 <div style={{ fontSize: '9px', color, textShadow: `0 0 8px ${color}` }}>
                   {verdict && VERDICT_LABEL[verdict]}
                 </div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
                   CONFIDENCE: {result.recommendation.confidence}%
                   {result.cached && ' · CACHED (< 5 MIN OLD)'}
                 </div>
@@ -79,7 +79,7 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
               <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                 <span
                   style={{
-                    fontSize: '6px',
+                    fontSize: '12px',
                     padding: '3px 6px',
                     color: SENTIMENT_COLOR[result.analysis.sentiment],
                     border: `1px solid ${SENTIMENT_COLOR[result.analysis.sentiment]}55`,
@@ -91,14 +91,14 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
             </div>
 
             {/* Summary */}
-            <div style={{ fontSize: '6px', color: '#e2e8f0', lineHeight: 1.9 }}>{result.analysis.summary}</div>
+            <div style={{ fontSize: '12px', color: '#e2e8f0', lineHeight: 1.9 }}>{result.analysis.summary}</div>
 
             {/* Key factors */}
             {result.analysis.key_factors?.length > 0 && (
               <div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '6px' }}>KEY FACTORS</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>KEY FACTORS</div>
                 {result.analysis.key_factors.map((f, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '6px', fontSize: '6px', color: '#e2e8f0', marginBottom: '4px' }}>
+                  <div key={i} style={{ display: 'flex', gap: '6px', fontSize: '12px', color: '#e2e8f0', marginBottom: '4px' }}>
                     <span style={{ color }}>▸</span>
                     <span>{f}</span>
                   </div>
@@ -114,19 +114,19 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
                 { k: 'TARGET', v: result.recommendation.take_profit, c: '#00ff88' },
               ].map(({ k, v, c }) => (
                 <div key={k} style={{ padding: '8px', background: '#0a0e1a', border: '1px solid #1e3a5f', textAlign: 'center' }}>
-                  <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '4px' }}>{k}</div>
-                  <div style={{ fontSize: '7px', color: v != null ? c : '#1e3a5f' }}>{v != null ? `$${v.toLocaleString()}` : '—'}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>{k}</div>
+                  <div style={{ fontSize: '13px', color: v != null ? c : '#1e3a5f' }}>{v != null ? `$${v.toLocaleString()}` : '—'}</div>
                 </div>
               ))}
             </div>
 
             {/* Reasoning */}
             <div style={{ padding: '8px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
-              <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '4px' }}>WHY</div>
-              <div style={{ fontSize: '6px', color: '#64748b', lineHeight: 1.8 }}>{result.recommendation.reasoning}</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>WHY</div>
+              <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.8 }}>{result.recommendation.reasoning}</div>
             </div>
 
-            <div style={{ fontSize: '4px', color: '#1e3a5f', textAlign: 'center' }}>
+            <div style={{ fontSize: '10px', color: '#1e3a5f', textAlign: 'center' }}>
               Educational paper-trading analysis, not financial advice.
             </div>
           </div>

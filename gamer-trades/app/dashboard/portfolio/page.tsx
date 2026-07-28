@@ -78,7 +78,7 @@ export default function PortfolioPage() {
   if (loading) {
     return (
       <div className="grid-bg" style={{ minHeight: '100%', padding: '20px' }}>
-        <div style={{ fontSize: '7px', color: '#64748b' }}>Loading portfolio...</div>
+        <div style={{ fontSize: '13px', color: '#64748b' }}>Loading portfolio...</div>
       </div>
     );
   }
@@ -87,14 +87,14 @@ export default function PortfolioPage() {
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '4px' }}>◉ PORTFOLIO</div>
-          <h1 style={{ fontSize: '13px', color: '#00ffff', textShadow: '0 0 10px #00ffff', margin: 0 }}>
+          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>◉ PORTFOLIO</div>
+          <h1 className="font-pixel" style={{ fontSize: '13px', color: '#00ffff', textShadow: '0 0 10px #00ffff', margin: 0 }}>
             YOUR HOLDINGS
           </h1>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '2px' }}>NET WORTH</div>
-          <div style={{ fontSize: '14px', color: '#ffd700', textShadow: '0 0 12px #ffd700' }}>
+          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>NET WORTH</div>
+          <div className="font-pixel" style={{ fontSize: '14px', color: '#ffd700', textShadow: '0 0 12px #ffd700' }}>
             ${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function PortfolioPage() {
           { k: 'WIN RATE', v: `${winRate}%`, c: '#ffd700', icon: '★' },
         ].map(s => (
           <div key={s.k} className="retro-card" style={{ padding: '10px 14px', flex: '1 1 120px' }}>
-            <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '6px' }}>{s.icon} {s.k}</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>{s.icon} {s.k}</div>
             <div style={{ fontSize: '10px', color: s.c, textShadow: `0 0 8px ${s.c}` }}>{s.v}</div>
           </div>
         ))}
@@ -122,7 +122,7 @@ export default function PortfolioPage() {
         {(['overview', 'holdings', 'history'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className="pixel-btn"
             style={{
-              fontSize: '7px', padding: '8px 14px',
+              fontSize: '13px', padding: '8px 14px',
               background: tab === t ? '#001133' : '#0a0e1a',
               color: tab === t ? '#00aaff' : '#64748b',
               borderColor: tab === t ? '#00aaff' : '#1e3a5f',
@@ -138,22 +138,22 @@ export default function PortfolioPage() {
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '10px' }}>EQUITY CHART</div>
+            <div style={{ fontSize: '13px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '10px' }}>EQUITY CHART</div>
             <MiniChart positive={unrealizedPnl >= 0} color="#00aaff" height={120} />
-            <div style={{ fontSize: '5px', color: '#64748b', marginTop: '8px' }}>
+            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>
               Illustrative — historical equity tracking coming soon.
             </div>
           </div>
 
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '10px' }}>ALLOCATION</div>
+            <div style={{ fontSize: '13px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '10px' }}>ALLOCATION</div>
             {holdings.length === 0 ? (
-              <div style={{ fontSize: '6px', color: '#1e3a5f' }}>No open positions</div>
+              <div style={{ fontSize: '12px', color: '#1e3a5f' }}>No open positions</div>
             ) : holdings.map(h => {
               const pct = totalValue > 0 ? ((h.current * h.qty) / totalValue) * 100 : 0;
               return (
                 <div key={h.symbol} style={{ marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '6px', marginBottom: '3px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
                     <span style={{ color: ASSET_CLASS_COLOR[h.class] }}>{h.symbol}</span>
                     <span style={{ color: '#64748b' }}>{pct.toFixed(1)}%</span>
                   </div>
@@ -166,14 +166,14 @@ export default function PortfolioPage() {
           </div>
 
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>PERFORMANCE</div>
+            <div style={{ fontSize: '13px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>PERFORMANCE</div>
             {[
               { k: 'Realized (All Time)', v: `${totalRealized >= 0 ? '+' : ''}$${totalRealized.toFixed(2)}`, c: totalRealized >= 0 ? '#00ff88' : '#ff3355' },
               { k: 'Unrealized (Open)', v: `${unrealizedPnl >= 0 ? '+' : ''}$${unrealizedPnl.toFixed(2)}`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355' },
               { k: 'Best Trade', v: bestTrade ? `${(bestTrade.pnl ?? 0) >= 0 ? '+' : ''}$${(bestTrade.pnl ?? 0).toFixed(2)} ${bestTrade.symbol}` : '—', c: '#ffd700' },
               { k: 'Worst Trade', v: worstTrade ? `${(worstTrade.pnl ?? 0) >= 0 ? '+' : ''}$${(worstTrade.pnl ?? 0).toFixed(2)} ${worstTrade.symbol}` : '—', c: '#ff3355' },
             ].map(({ k, v, c }) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '12px' }}>
                 <span style={{ color: '#64748b' }}>{k}</span>
                 <span style={{ color: c }}>{v}</span>
               </div>
@@ -181,7 +181,7 @@ export default function PortfolioPage() {
           </div>
 
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#00ff88', textShadow: '0 0 8px #00ff88', marginBottom: '10px' }}>TRADE STATS</div>
+            <div style={{ fontSize: '13px', color: '#00ff88', textShadow: '0 0 8px #00ff88', marginBottom: '10px' }}>TRADE STATS</div>
             {[
               { k: 'Total Closed Trades', v: `${winners + losers}` },
               { k: 'Winners', v: `${winners}`, c: '#00ff88' },
@@ -191,7 +191,7 @@ export default function PortfolioPage() {
               { k: 'Avg Loss', v: losers > 0 ? `$${avgLoss.toFixed(2)}` : '—', c: '#ff3355' },
               { k: 'Profit Factor', v: profitFactor === Infinity ? '∞' : `${profitFactor.toFixed(2)}x`, c: '#8b5cf6' },
             ].map(({ k, v, c }) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '12px' }}>
                 <span style={{ color: '#64748b' }}>{k}</span>
                 <span style={{ color: c ?? '#e2e8f0' }}>{v}</span>
               </div>
@@ -203,19 +203,19 @@ export default function PortfolioPage() {
       {/* HOLDINGS */}
       {tab === 'holdings' && (
         <div className="retro-card" style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '5px', color: '#64748b' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '11px', color: '#64748b' }}>
             <span>SYMBOL</span><span>CLASS</span><span>QTY</span><span>AVG COST</span><span>CURRENT</span><span>VALUE</span><span>P&L</span><span>RETURN</span>
           </div>
           {holdings.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', fontSize: '7px', color: '#1e3a5f' }}>NO HOLDINGS</div>
+            <div style={{ padding: '20px', textAlign: 'center', fontSize: '13px', color: '#1e3a5f' }}>NO HOLDINGS</div>
           ) : holdings.map(h => {
             const pnl = (h.current - h.avgCost) * h.qty;
             const pct = ((h.current - h.avgCost) / h.avgCost) * 100;
             const up = pnl >= 0;
             return (
-              <div key={h.symbol} style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '9px 12px', borderBottom: '1px solid #0f1629', fontSize: '7px', alignItems: 'center' }}>
+              <div key={h.symbol} style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '9px 12px', borderBottom: '1px solid #0f1629', fontSize: '13px', alignItems: 'center' }}>
                 <span style={{ color: ASSET_CLASS_COLOR[h.class], textShadow: `0 0 6px ${ASSET_CLASS_COLOR[h.class]}` }}>{h.symbol}</span>
-                <span style={{ fontSize: '5px', color: ASSET_CLASS_COLOR[h.class], border: `1px solid ${ASSET_CLASS_COLOR[h.class]}44`, padding: '2px 3px', display: 'inline-block' }}>{h.class}</span>
+                <span style={{ fontSize: '11px', color: ASSET_CLASS_COLOR[h.class], border: `1px solid ${ASSET_CLASS_COLOR[h.class]}44`, padding: '2px 3px', display: 'inline-block' }}>{h.class}</span>
                 <span style={{ color: '#e2e8f0' }}>{h.qty}</span>
                 <span style={{ color: '#64748b' }}>${h.avgCost.toLocaleString()}</span>
                 <span style={{ color: '#e2e8f0' }}>${h.current.toLocaleString()}</span>
@@ -235,13 +235,13 @@ export default function PortfolioPage() {
       {/* HISTORY */}
       {tab === 'history' && (
         <div className="retro-card" style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '5px', color: '#64748b' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '11px', color: '#64748b' }}>
             <span>DATE</span><span>SYMBOL</span><span>SIDE</span><span>QTY</span><span>ENTRY</span><span>EXIT</span><span>P&L</span><span>STATUS</span>
           </div>
           {history.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', fontSize: '7px', color: '#1e3a5f' }}>NO TRADE HISTORY YET</div>
+            <div style={{ padding: '20px', textAlign: 'center', fontSize: '13px', color: '#1e3a5f' }}>NO TRADE HISTORY YET</div>
           ) : history.map(t => (
-            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '8px 12px', borderBottom: '1px solid #0f1629', fontSize: '6px', alignItems: 'center' }}>
+            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '8px 12px', borderBottom: '1px solid #0f1629', fontSize: '12px', alignItems: 'center' }}>
               <span style={{ color: '#64748b' }}>{new Date(t.opened_at).toLocaleString(undefined, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
               <span style={{ color: '#00aaff' }}>{t.symbol}</span>
               <span style={{ color: t.direction === 'long' ? '#00ff88' : '#ff3355' }}>{t.direction === 'long' ? 'BUY' : 'SELL'}</span>
@@ -251,7 +251,7 @@ export default function PortfolioPage() {
               <span style={{ color: (t.pnl ?? 0) >= 0 ? '#00ff88' : '#ff3355', textShadow: `0 0 6px ${(t.pnl ?? 0) >= 0 ? '#00ff88' : '#ff3355'}` }}>
                 {t.pnl != null ? `${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}` : '—'}
               </span>
-              <span style={{ fontSize: '5px', color: t.status === 'open' ? '#ffd700' : '#64748b', border: `1px solid ${t.status === 'open' ? '#ffd700' : '#1e3a5f'}`, padding: '2px 4px', display: 'inline-block' }}>
+              <span style={{ fontSize: '11px', color: t.status === 'open' ? '#ffd700' : '#64748b', border: `1px solid ${t.status === 'open' ? '#ffd700' : '#1e3a5f'}`, padding: '2px 4px', display: 'inline-block' }}>
                 {t.status.toUpperCase()}
               </span>
             </div>

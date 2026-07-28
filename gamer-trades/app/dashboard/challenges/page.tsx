@@ -64,25 +64,25 @@ export default function ChallengesPage() {
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '6px' }}>◆ TAILORED TO YOU</div>
-          <h1 style={{ fontSize: '14px', color: '#00ff88', textShadow: '0 0 12px #00ff88', margin: 0 }}>GOALS &amp; TASKS</h1>
+          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>◆ TAILORED TO YOU</div>
+          <h1 className="font-pixel" style={{ fontSize: '14px', color: '#00ff88', textShadow: '0 0 12px #00ff88', margin: 0 }}>GOALS &amp; TASKS</h1>
         </div>
-        {syncing && <div style={{ fontSize: '6px', color: '#64748b' }}>syncing...</div>}
+        {syncing && <div style={{ fontSize: '12px', color: '#64748b' }}>syncing...</div>}
       </div>
 
       {/* Goals */}
       <div className="retro-card" style={{ padding: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>★ YOUR GOALS</span>
+          <span style={{ fontSize: '13px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>★ YOUR GOALS</span>
           {goals.length < 3 && availableTemplates.length > 0 && (
-            <button onClick={() => setShowPicker(v => !v)} className="pixel-btn pixel-btn-blue" style={{ fontSize: '6px', padding: '6px 10px' }}>
+            <button onClick={() => setShowPicker(v => !v)} className="pixel-btn pixel-btn-blue" style={{ fontSize: '12px', padding: '6px 10px' }}>
               {showPicker ? '✕ CLOSE' : '+ ADD GOAL'}
             </button>
           )}
         </div>
 
         {goals.length === 0 && !showPicker && (
-          <div style={{ fontSize: '6px', color: '#64748b', textAlign: 'center', padding: '16px' }}>
+          <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', padding: '16px' }}>
             Pick a goal below to get daily, weekly, and monthly tasks tailored to it.
           </div>
         )}
@@ -97,8 +97,8 @@ export default function ChallengesPage() {
                   <span style={{ fontSize: '18px' }}>{t.icon}</span>
                   <button onClick={() => removeGoal(g.id)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '9px' }}>✕</button>
                 </div>
-                <div style={{ fontSize: '7px', color: t.color, textShadow: `0 0 6px ${t.color}`, marginTop: '6px' }}>{t.label}</div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '6px', lineHeight: 1.6 }}>{t.description}</div>
+                <div style={{ fontSize: '13px', color: t.color, textShadow: `0 0 6px ${t.color}`, marginTop: '6px' }}>{t.label}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', lineHeight: 1.6 }}>{t.description}</div>
               </div>
             );
           })}
@@ -113,8 +113,8 @@ export default function ChallengesPage() {
                 style={{ padding: '12px', background: '#0f1629', border: `2px solid ${t.color}66`, cursor: 'pointer' }}
               >
                 <span style={{ fontSize: '18px' }}>{t.icon}</span>
-                <div style={{ fontSize: '7px', color: t.color, marginTop: '6px' }}>{t.label}</div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '6px', lineHeight: 1.6 }}>{t.description}</div>
+                <div style={{ fontSize: '13px', color: t.color, marginTop: '6px' }}>{t.label}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', lineHeight: 1.6 }}>{t.description}</div>
               </div>
             ))}
           </div>
@@ -129,7 +129,7 @@ export default function ChallengesPage() {
             onClick={() => setPeriod(p)}
             className="pixel-btn"
             style={{
-              fontSize: '7px', padding: '9px 16px',
+              fontSize: '13px', padding: '9px 16px',
               background: period === p ? '#00ff8822' : '#0a0e1a',
               color: period === p ? '#00ff88' : '#64748b',
               borderColor: period === p ? '#00ff88' : '#1e3a5f',
@@ -141,7 +141,7 @@ export default function ChallengesPage() {
       </div>
 
       {visibleTasks.length === 0 ? (
-        <div className="retro-card" style={{ padding: '32px', textAlign: 'center', fontSize: '7px', color: '#64748b' }}>
+        <div className="retro-card" style={{ padding: '32px', textAlign: 'center', fontSize: '13px', color: '#64748b' }}>
           {goals.length === 0 ? 'Add a goal above to generate your tasks.' : 'No tasks for this period yet.'}
         </div>
       ) : (
@@ -164,16 +164,16 @@ export default function ChallengesPage() {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '7px', color: done ? accent : '#e2e8f0', textShadow: done ? `0 0 6px ${accent}` : 'none' }}>
+                  <span style={{ fontSize: '13px', color: done ? accent : '#e2e8f0', textShadow: done ? `0 0 6px ${accent}` : 'none' }}>
                     {done ? '✓ ' : ''}{task.title}
                   </span>
-                  <span style={{ fontSize: '5px', color: '#ffd700', textShadow: '0 0 6px #ffd700' }}>+{task.xp_reward} XP</span>
+                  <span style={{ fontSize: '11px', color: '#ffd700', textShadow: '0 0 6px #ffd700' }}>+{task.xp_reward} XP</span>
                 </div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '8px' }}>{task.description}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px' }}>{task.description}</div>
                 <div style={{ height: '6px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
                   <div style={{ width: `${pct}%`, height: '100%', background: done ? accent : '#00aaff', boxShadow: `0 0 6px ${done ? accent : '#00aaff'}` }} />
                 </div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '4px', textAlign: 'right' }}>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', textAlign: 'right' }}>
                   {Math.min(task.progress, task.target)}/{task.target}{expired ? ' · EXPIRED' : ''}
                 </div>
               </div>
@@ -186,5 +186,5 @@ export default function ChallengesPage() {
 }
 
 function PixelLoading() {
-  return <div style={{ fontSize: '8px', color: '#00ffff', textShadow: '0 0 8px #00ffff' }}>LOADING...</div>;
+  return <div style={{ fontSize: '14px', color: '#00ffff', textShadow: '0 0 8px #00ffff' }}>LOADING...</div>;
 }

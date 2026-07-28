@@ -254,7 +254,7 @@ export default function CandlestickChart({ symbol, basePrice, height = 320, enab
   return (
     <div style={{ position: 'relative' }}>
       {/* OHLCV info bar */}
-      <div style={{ display: 'flex', gap: '16px', padding: '6px 10px', fontSize: '7px', borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '16px', padding: '6px 10px', fontSize: '13px', borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
         {[
           { k: 'O', v: (hovered ?? last).open.toFixed(2) },
           { k: 'H', v: (hovered ?? last).high.toFixed(2), c: '#00ff88' },

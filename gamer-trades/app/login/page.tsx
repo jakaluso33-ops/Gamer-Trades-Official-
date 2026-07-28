@@ -129,7 +129,7 @@ export default function LoginPage() {
       <div className="retro-card" style={{ padding: '32px', width: '100%', maxWidth: '380px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎮</div>
-          <div style={{ fontSize: '11px', color: '#00ffff', textShadow: '0 0 10px #00ffff' }}>GAMER TRADES</div>
+          <div className="font-pixel" style={{ fontSize: '11px', color: '#00ffff', textShadow: '0 0 10px #00ffff' }}>GAMER TRADES</div>
         </div>
 
         {mode !== 'verify' && (
@@ -138,7 +138,7 @@ export default function LoginPage() {
               onClick={() => { setMode('signin'); setError(''); setInfo(''); }}
               className="pixel-btn"
               style={{
-                flex: 1, fontSize: '7px', padding: '9px',
+                flex: 1, fontSize: '13px', padding: '9px',
                 background: mode === 'signin' ? '#00ffff22' : '#0a0e1a',
                 color: mode === 'signin' ? '#00ffff' : '#64748b',
                 borderColor: mode === 'signin' ? '#00ffff' : '#1e3a5f',
@@ -150,7 +150,7 @@ export default function LoginPage() {
               onClick={() => { setMode('signup'); setError(''); setInfo(''); }}
               className="pixel-btn"
               style={{
-                flex: 1, fontSize: '7px', padding: '9px',
+                flex: 1, fontSize: '13px', padding: '9px',
                 background: mode === 'signup' ? '#00ff8822' : '#0a0e1a',
                 color: mode === 'signup' ? '#00ff88' : '#64748b',
                 borderColor: mode === 'signup' ? '#00ff88' : '#1e3a5f',
@@ -163,14 +163,14 @@ export default function LoginPage() {
 
         {mode === 'verify' ? (
           <form onSubmit={verifyCode} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 6px #ffd700', marginBottom: '4px' }}>
+            <div style={{ fontSize: '13px', color: '#ffd700', textShadow: '0 0 6px #ffd700', marginBottom: '4px' }}>
               ✉ CONFIRM YOUR EMAIL
             </div>
             {info && (
-              <div style={{ fontSize: '6px', color: '#64748b', lineHeight: 1.8 }}>{info}</div>
+              <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.8 }}>{info}</div>
             )}
             <div>
-              <label style={{ fontSize: '6px', color: '#64748b', display: 'block', marginBottom: '4px' }}>EMAIL</label>
+              <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>EMAIL</label>
               <input
                 type="email"
                 required
@@ -181,7 +181,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: '6px', color: '#64748b', display: 'block', marginBottom: '4px' }}>6-DIGIT CODE</label>
+              <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>6-DIGIT CODE</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -196,7 +196,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div style={{ fontSize: '6px', color: '#ff3355', padding: '8px', background: '#ff335511', border: '1px solid #ff335544' }}>
+              <div style={{ fontSize: '12px', color: '#ff3355', padding: '8px', background: '#ff335511', border: '1px solid #ff335544' }}>
                 {error}
               </div>
             )}
@@ -216,7 +216,7 @@ export default function LoginPage() {
               disabled={busy || cooldown > 0}
               className="pixel-btn"
               style={{
-                fontSize: '6px', padding: '8px',
+                fontSize: '12px', padding: '8px',
                 background: '#0a0e1a', color: cooldown > 0 ? '#1e3a5f' : '#64748b', borderColor: '#1e3a5f',
               }}
             >
@@ -226,7 +226,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setMode('signin'); setError(''); setInfo(''); setCode(''); }}
-              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '6px', cursor: 'pointer', textAlign: 'center' }}
+              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}
             >
               ◀ BACK TO SIGN IN
             </button>
@@ -235,7 +235,7 @@ export default function LoginPage() {
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {mode === 'signup' && (
               <div>
-                <label style={{ fontSize: '6px', color: '#64748b', display: 'block', marginBottom: '4px' }}>USERNAME</label>
+                <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>USERNAME</label>
                 <input
                   value={username}
                   onChange={e => setUsername(e.target.value)}
@@ -246,7 +246,7 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <label style={{ fontSize: '6px', color: '#64748b', display: 'block', marginBottom: '4px' }}>EMAIL</label>
+              <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>EMAIL</label>
               <input
                 type="email"
                 required
@@ -257,7 +257,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: '6px', color: '#64748b', display: 'block', marginBottom: '4px' }}>PASSWORD</label>
+              <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>PASSWORD</label>
               <input
                 type="password"
                 required
@@ -270,7 +270,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div style={{ fontSize: '6px', color: '#ff3355', padding: '8px', background: '#ff335511', border: '1px solid #ff335544' }}>
+              <div style={{ fontSize: '12px', color: '#ff3355', padding: '8px', background: '#ff335511', border: '1px solid #ff335544' }}>
                 {error}
               </div>
             )}
@@ -288,7 +288,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => { setMode('verify'); setError(''); setInfo('Enter the code from your confirmation email, or resend a new one.'); }}
-                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '5px', cursor: 'pointer', textAlign: 'center' }}
+                style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '11px', cursor: 'pointer', textAlign: 'center' }}
               >
                 Already signed up but need to confirm your email?
               </button>
@@ -296,17 +296,17 @@ export default function LoginPage() {
           </form>
         )}
 
-        <p style={{ fontSize: '5px', color: '#1e3a5f', lineHeight: 1.8, marginTop: '18px', textAlign: 'center' }}>
+        <p style={{ fontSize: '11px', color: '#1e3a5f', lineHeight: 1.8, marginTop: '18px', textAlign: 'center' }}>
           {DISCLAIMER_TEXT}
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '14px' }}>
-          <Link href="/privacy" style={{ fontSize: '5px', color: '#64748b', textDecoration: 'none' }}>PRIVACY POLICY</Link>
-          <Link href="/terms" style={{ fontSize: '5px', color: '#64748b', textDecoration: 'none' }}>TERMS OF SERVICE</Link>
+          <Link href="/privacy" style={{ fontSize: '11px', color: '#64748b', textDecoration: 'none' }}>PRIVACY POLICY</Link>
+          <Link href="/terms" style={{ fontSize: '11px', color: '#64748b', textDecoration: 'none' }}>TERMS OF SERVICE</Link>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
-          <Link href="/" style={{ fontSize: '6px', color: '#64748b', textDecoration: 'none' }}>◀ BACK TO HOME</Link>
+          <Link href="/" style={{ fontSize: '12px', color: '#64748b', textDecoration: 'none' }}>◀ BACK TO HOME</Link>
         </div>
       </div>
     </main>
@@ -318,7 +318,7 @@ const inputStyle: React.CSSProperties = {
   background: '#0a0e1a',
   border: '2px solid #1e3a5f',
   color: '#e2e8f0',
-  fontSize: '8px',
+  fontSize: '14px',
   padding: '10px',
   fontFamily: 'inherit',
   outline: 'none',

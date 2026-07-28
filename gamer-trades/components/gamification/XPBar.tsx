@@ -27,10 +27,10 @@ export default function XPBar({ current = 3240, max = 5000, level = 12 }: Props)
   return (
     <div style={{ padding: '12px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>
+        <span style={{ fontSize: '13px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>
           ★ LEVEL {level}
         </span>
-        <span style={{ fontSize: '6px', color: '#64748b' }}>
+        <span style={{ fontSize: '12px', color: '#64748b' }}>
           {displayXP.toLocaleString()} / {max.toLocaleString()} XP
         </span>
       </div>

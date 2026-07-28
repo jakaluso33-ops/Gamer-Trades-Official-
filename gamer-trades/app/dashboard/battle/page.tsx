@@ -87,7 +87,7 @@ function BattleModeSwitcher() {
           onClick={() => setBattleType('ai')}
           className="pixel-btn"
           style={{
-            fontSize: '7px', padding: '9px 16px',
+            fontSize: '13px', padding: '9px 16px',
             background: battleType === 'ai' ? '#8b5cf622' : '#0a0e1a',
             color: battleType === 'ai' ? '#8b5cf6' : '#64748b',
             borderColor: battleType === 'ai' ? '#8b5cf6' : '#1e3a5f',
@@ -99,7 +99,7 @@ function BattleModeSwitcher() {
           onClick={() => setBattleType('friend')}
           className="pixel-btn"
           style={{
-            fontSize: '7px', padding: '9px 16px',
+            fontSize: '13px', padding: '9px 16px',
             background: battleType === 'friend' ? '#00ffff22' : '#0a0e1a',
             color: battleType === 'friend' ? '#00ffff' : '#64748b',
             borderColor: battleType === 'friend' ? '#00ffff' : '#1e3a5f',
@@ -221,14 +221,14 @@ function AiBattle() {
   if (phase === 'select') return (
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '6px' }}>★ HUMAN VS AI MODE</div>
-        <h1 style={{ fontSize: '14px', color: '#8b5cf6', textShadow: '0 0 12px #8b5cf6', margin: 0 }}>SELECT YOUR OPPONENT</h1>
+        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>★ HUMAN VS AI MODE</div>
+        <h1 className="font-pixel" style={{ fontSize: '14px', color: '#8b5cf6', textShadow: '0 0 12px #8b5cf6', margin: 0 }}>SELECT YOUR OPPONENT</h1>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         {/* Left: AI selection */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ fontSize: '7px', color: '#64748b', marginBottom: '4px' }}>CHOOSE AI OPPONENT</div>
+          <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>CHOOSE AI OPPONENT</div>
           {AI_OPPONENTS.map(ai => (
             <div
               key={ai.id}
@@ -249,13 +249,13 @@ function AiBattle() {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <span style={{ fontSize: '9px', color: ai.color, textShadow: `0 0 8px ${ai.color}` }}>{ai.name}</span>
-                  <span style={{ fontSize: '6px', color: diffColors[ai.difficulty as keyof typeof diffColors], border: `1px solid ${diffColors[ai.difficulty as keyof typeof diffColors]}`, padding: '2px 5px' }}>
+                  <span style={{ fontSize: '12px', color: diffColors[ai.difficulty as keyof typeof diffColors], border: `1px solid ${diffColors[ai.difficulty as keyof typeof diffColors]}`, padding: '2px 5px' }}>
                     {ai.difficulty}
                   </span>
                 </div>
-                <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '6px' }}>{ai.strategy}</div>
-                <div style={{ fontSize: '5px', color: '#64748b', lineHeight: 2 }}>{ai.style}</div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '6px' }}>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>{ai.strategy}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 2 }}>{ai.style}</div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '12px' }}>
                   <span style={{ color: '#64748b' }}>WIN RATE: <span style={{ color: '#00ff88' }}>{ai.winRate}</span></span>
                   <span style={{ color: '#64748b' }}>AVG RTN: <span style={{ color: '#ffd700' }}>{ai.avgReturn}</span></span>
                 </div>
@@ -265,7 +265,7 @@ function AiBattle() {
 
           {/* Difficulty override */}
           <div className="retro-card" style={{ padding: '12px' }}>
-            <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '8px' }}>DIFFICULTY OVERRIDE</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>DIFFICULTY OVERRIDE</div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {(['ROOKIE', 'VETERAN', 'LEGEND'] as const).map(d => (
                 <button
@@ -273,7 +273,7 @@ function AiBattle() {
                   onClick={() => setDifficulty(d)}
                   className="pixel-btn"
                   style={{
-                    flex: 1, fontSize: '6px', padding: '7px 4px',
+                    flex: 1, fontSize: '12px', padding: '7px 4px',
                     background: difficulty === d ? `${diffColors[d]}22` : '#0a0e1a',
                     color: difficulty === d ? diffColors[d] : '#64748b',
                     borderColor: difficulty === d ? diffColors[d] : '#1e3a5f',
@@ -289,7 +289,7 @@ function AiBattle() {
 
         {/* Right: battle mode + preview */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ fontSize: '7px', color: '#64748b', marginBottom: '4px' }}>BATTLE MODE</div>
+          <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>BATTLE MODE</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {BATTLE_MODES.map(mode => (
               <div
@@ -304,33 +304,33 @@ function AiBattle() {
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: '7px', color: selectedMode.id === mode.id ? '#00ffff' : '#e2e8f0', marginBottom: '4px', textShadow: selectedMode.id === mode.id ? '0 0 8px #00ffff' : 'none' }}>
+                <div style={{ fontSize: '13px', color: selectedMode.id === mode.id ? '#00ffff' : '#e2e8f0', marginBottom: '4px', textShadow: selectedMode.id === mode.id ? '0 0 8px #00ffff' : 'none' }}>
                   {mode.label}
                 </div>
-                <div style={{ fontSize: '8px', color: '#ffd700', textShadow: '0 0 6px #ffd700', marginBottom: '3px' }}>{mode.duration}</div>
-                <div style={{ fontSize: '5px', color: '#64748b' }}>{mode.desc}</div>
+                <div style={{ fontSize: '14px', color: '#ffd700', textShadow: '0 0 6px #ffd700', marginBottom: '3px' }}>{mode.duration}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>{mode.desc}</div>
               </div>
             ))}
           </div>
 
           {/* Match preview */}
           <div className="retro-card" style={{ padding: '16px', flex: 1 }}>
-            <div style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '13px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '12px', textAlign: 'center' }}>
               ⚔ MATCH PREVIEW
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '28px', marginBottom: '4px' }}>🎮</div>
-                <div style={{ fontSize: '7px', color: '#00ffff', textShadow: '0 0 8px #00ffff' }}>YOU</div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '2px' }}>PLAYER_01</div>
+                <div style={{ fontSize: '13px', color: '#00ffff', textShadow: '0 0 8px #00ffff' }}>YOU</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>PLAYER_01</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '12px', color: '#ff3355', textShadow: '0 0 10px #ff3355' }}>VS</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '28px', marginBottom: '4px' }}>{selectedAI.icon}</div>
-                <div style={{ fontSize: '7px', color: selectedAI.color, textShadow: `0 0 8px ${selectedAI.color}` }}>{selectedAI.name}</div>
-                <div style={{ fontSize: '5px', color: '#64748b', marginTop: '2px' }}>{selectedAI.strategy}</div>
+                <div style={{ fontSize: '13px', color: selectedAI.color, textShadow: `0 0 8px ${selectedAI.color}` }}>{selectedAI.name}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{selectedAI.strategy}</div>
               </div>
             </div>
             {[
@@ -340,7 +340,7 @@ function AiBattle() {
               { k: 'STARTING CAPITAL', v: '$10,000 each' },
               { k: 'WIN CONDITION', v: 'Highest % P&L' },
             ].map(({ k, v, c }) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '12px' }}>
                 <span style={{ color: '#64748b' }}>{k}</span>
                 <span style={{ color: c ?? '#e2e8f0' }}>{v}</span>
               </div>
@@ -369,7 +369,7 @@ function AiBattle() {
         <div style={{ fontSize: '16px', color: playerWon ? '#00ff88' : '#ff3355', textShadow: `0 0 16px ${playerWon ? '#00ff88' : '#ff3355'}`, marginBottom: '8px' }}>
           {playerWon ? 'YOU WIN!' : 'AI WINS!'}
         </div>
-        <div style={{ fontSize: '7px', color: '#64748b', marginBottom: '24px' }}>
+        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px' }}>
           {playerWon ? `▶ YOU DEFEATED ${selectedAI.name}` : `▶ ${selectedAI.name} OUTTRADED YOU`}
         </div>
 
@@ -380,29 +380,29 @@ function AiBattle() {
           ].map(s => (
             <div key={s.label} style={{ padding: '12px', background: '#0a0e1a', border: `2px solid ${s.color}44` }}>
               <div style={{ fontSize: '18px', marginBottom: '4px' }}>{s.icon}</div>
-              <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '4px' }}>{s.label}</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>{s.label}</div>
               <div style={{ fontSize: '12px', color: s.color, textShadow: `0 0 8px ${s.color}` }}>{s.value}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '16px', fontSize: '6px', color: '#64748b' }}>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '16px', fontSize: '12px', color: '#64748b' }}>
           <span>YOUR TRADES: <b style={{ color: '#e2e8f0' }}>{playerTrades}</b></span>
           <span>|</span>
           <span>AI TRADES: <b style={{ color: '#e2e8f0' }}>{aiTrades}</b></span>
         </div>
 
         {playerWon && (
-          <div style={{ padding: '8px', background: '#8b5cf622', border: '2px solid #8b5cf6', marginBottom: '16px', fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 6px #8b5cf6' }}>
+          <div style={{ padding: '8px', background: '#8b5cf622', border: '2px solid #8b5cf6', marginBottom: '16px', fontSize: '13px', color: '#8b5cf6', textShadow: '0 0 6px #8b5cf6' }}>
             +{difficulty === 'LEGEND' ? 400 : difficulty === 'VETERAN' ? 150 : 50} XP EARNED!
           </div>
         )}
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setPhase('select')} className="pixel-btn pixel-btn-blue" style={{ flex: 1, fontSize: '7px', padding: '10px' }}>
+          <button onClick={() => setPhase('select')} className="pixel-btn pixel-btn-blue" style={{ flex: 1, fontSize: '13px', padding: '10px' }}>
             ◀ NEW BATTLE
           </button>
-          <button onClick={startBattle} className="pixel-btn pixel-btn-green" style={{ flex: 1, fontSize: '7px', padding: '10px' }}>
+          <button onClick={startBattle} className="pixel-btn pixel-btn-green" style={{ flex: 1, fontSize: '13px', padding: '10px' }}>
             ▶ REMATCH
           </button>
         </div>
@@ -419,11 +419,11 @@ function AiBattle() {
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       {/* Battle header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div style={{ fontSize: '8px', color: '#ff3355', textShadow: '0 0 10px #ff3355' }}>
+        <div style={{ fontSize: '14px', color: '#ff3355', textShadow: '0 0 10px #ff3355' }}>
           ⚔ BATTLE IN PROGRESS
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '2px' }}>TIME REMAINING</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>TIME REMAINING</div>
           <div style={{
             fontSize: '14px',
             color: timeLeft < 30 ? '#ff3355' : '#ffd700',
@@ -433,7 +433,7 @@ function AiBattle() {
             {formatTime(timeLeft)}
           </div>
         </div>
-        <div style={{ fontSize: '6px', color: selectedAI.color }}>{selectedMode.label}</div>
+        <div style={{ fontSize: '12px', color: selectedAI.color }}>{selectedMode.label}</div>
       </div>
 
       {/* VS scoreboard */}
@@ -442,13 +442,13 @@ function AiBattle() {
           {/* Player */}
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎮</div>
-            <div style={{ fontSize: '8px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '4px' }}>YOU</div>
+            <div style={{ fontSize: '14px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '4px' }}>YOU</div>
             <div style={{ fontSize: '18px', color: playerPnL >= 0 ? '#00ff88' : '#ff3355', textShadow: `0 0 12px ${playerPnL >= 0 ? '#00ff88' : '#ff3355'}`, marginBottom: '4px' }}>
               {playerPnL >= 0 ? '+' : ''}${playerPnL.toFixed(2)}
             </div>
-            <div style={{ fontSize: '6px', color: '#64748b' }}>{playerPct}% return</div>
-            <div style={{ fontSize: '6px', color: '#64748b', marginTop: '2px' }}>{playerTrades} trades</div>
-            {playerAhead && <div style={{ fontSize: '6px', color: '#00ff88', marginTop: '4px', textShadow: '0 0 6px #00ff88' }}>▲ LEADING</div>}
+            <div style={{ fontSize: '12px', color: '#64748b' }}>{playerPct}% return</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{playerTrades} trades</div>
+            {playerAhead && <div style={{ fontSize: '12px', color: '#00ff88', marginTop: '4px', textShadow: '0 0 6px #00ff88' }}>▲ LEADING</div>}
           </div>
 
           <div style={{ textAlign: 'center', fontSize: '10px', color: '#ff3355', textShadow: '0 0 12px #ff3355' }}>VS</div>
@@ -456,19 +456,19 @@ function AiBattle() {
           {/* AI */}
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '28px', marginBottom: '6px' }}>{selectedAI.icon}</div>
-            <div style={{ fontSize: '8px', color: selectedAI.color, textShadow: `0 0 8px ${selectedAI.color}`, marginBottom: '4px' }}>{selectedAI.name}</div>
+            <div style={{ fontSize: '14px', color: selectedAI.color, textShadow: `0 0 8px ${selectedAI.color}`, marginBottom: '4px' }}>{selectedAI.name}</div>
             <div style={{ fontSize: '18px', color: aiPnL >= 0 ? '#00ff88' : '#ff3355', textShadow: `0 0 12px ${aiPnL >= 0 ? '#00ff88' : '#ff3355'}`, marginBottom: '4px' }}>
               {aiPnL >= 0 ? '+' : ''}${aiPnL.toFixed(2)}
             </div>
-            <div style={{ fontSize: '6px', color: '#64748b' }}>{aiPct}% return</div>
-            <div style={{ fontSize: '6px', color: '#64748b', marginTop: '2px' }}>{aiTrades} trades</div>
-            {!playerAhead && <div style={{ fontSize: '6px', color: selectedAI.color, marginTop: '4px', textShadow: `0 0 6px ${selectedAI.color}` }}>▲ LEADING</div>}
+            <div style={{ fontSize: '12px', color: '#64748b' }}>{aiPct}% return</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{aiTrades} trades</div>
+            {!playerAhead && <div style={{ fontSize: '12px', color: selectedAI.color, marginTop: '4px', textShadow: `0 0 6px ${selectedAI.color}` }}>▲ LEADING</div>}
           </div>
         </div>
 
         {/* P&L bar comparison */}
         <div style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '5px', color: '#64748b', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
             <span>YOU</span><span>P&L COMPARISON</span><span>{selectedAI.name}</span>
           </div>
           <div style={{ height: '8px', background: '#0a0e1a', border: '1px solid #1e3a5f', display: 'flex', overflow: 'hidden' }}>
@@ -482,7 +482,7 @@ function AiBattle() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div className="retro-card" style={{ padding: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '7px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
               <span style={{ color: '#00aaff', textShadow: '0 0 6px #00aaff' }}>AAPL — LIVE</span>
               <span style={{ color: '#00ff88' }}>$182.34 ▲</span>
             </div>
@@ -491,11 +491,11 @@ function AiBattle() {
 
           {/* Action feed */}
           <div className="retro-card" style={{ padding: '12px' }}>
-            <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '8px' }}>◎ BATTLE FEED</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>◎ BATTLE FEED</div>
             {actions.length === 0
-              ? <div style={{ fontSize: '6px', color: '#1e3a5f' }}>Waiting for trades...</div>
+              ? <div style={{ fontSize: '12px', color: '#1e3a5f' }}>Waiting for trades...</div>
               : actions.map((a, i) => (
-                <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: '1px solid #0f1629', fontSize: '6px', opacity: 1 - i * 0.06 }}>
+                <div key={i} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: '1px solid #0f1629', fontSize: '12px', opacity: 1 - i * 0.06 }}>
                   <span style={{ color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>{a.time}</span>
                   <span style={{ color: a.color, textShadow: `0 0 4px ${a.color}` }}>{a.actor}</span>
                   <span style={{ color: '#e2e8f0' }}>{a.action}</span>
@@ -508,7 +508,7 @@ function AiBattle() {
         {/* Player controls */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '12px' }}>
+            <div style={{ fontSize: '13px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '12px' }}>
               YOUR MOVES
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -519,7 +519,7 @@ function AiBattle() {
                 ▼ SELL SHORT
               </button>
             </div>
-            <div style={{ marginTop: '12px', padding: '8px', background: '#0a0e1a', border: '1px solid #1e3a5f', fontSize: '6px' }}>
+            <div style={{ marginTop: '12px', padding: '8px', background: '#0a0e1a', border: '1px solid #1e3a5f', fontSize: '12px' }}>
               <div style={{ color: '#64748b', marginBottom: '4px' }}>QUICK SCALP</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                 {['BTC', 'ETH', 'TSLA', 'NVDA'].map(sym => (
@@ -527,7 +527,7 @@ function AiBattle() {
                     key={sym}
                     onClick={() => handlePlayerTrade(Math.random() > 0.5 ? 'BUY' : 'SELL')}
                     className="pixel-btn pixel-btn-blue"
-                    style={{ fontSize: '5px', padding: '5px' }}
+                    style={{ fontSize: '11px', padding: '5px' }}
                   >
                     {sym}
                   </button>
@@ -541,11 +541,11 @@ function AiBattle() {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '20px' }}>{selectedAI.icon}</span>
               <div>
-                <div style={{ fontSize: '7px', color: selectedAI.color, textShadow: `0 0 6px ${selectedAI.color}` }}>{selectedAI.name}</div>
-                <div style={{ fontSize: '5px', color: '#64748b' }}>{selectedAI.strategy}</div>
+                <div style={{ fontSize: '13px', color: selectedAI.color, textShadow: `0 0 6px ${selectedAI.color}` }}>{selectedAI.name}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>{selectedAI.strategy}</div>
               </div>
             </div>
-            <div style={{ fontSize: '5px', color: '#64748b', lineHeight: 2 }}>
+            <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 2 }}>
               {aiTrades > 0
                 ? `Last action: ${actions.find(a => a.actor === selectedAI.name)?.action ?? 'Analyzing...'}`
                 : 'Scanning market...'}
@@ -561,13 +561,13 @@ function AiBattle() {
                 }}
               />
             </div>
-            <div style={{ fontSize: '5px', color: '#64748b', marginTop: '2px' }}>SIGNAL STRENGTH</div>
+            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>SIGNAL STRENGTH</div>
           </div>
 
           <button
             onClick={() => { setPhase('result'); if (timerRef.current) clearInterval(timerRef.current); }}
             className="pixel-btn pixel-btn-red"
-            style={{ width: '100%', fontSize: '7px', padding: '10px' }}
+            style={{ width: '100%', fontSize: '13px', padding: '10px' }}
           >
             ✕ FORFEIT BATTLE
           </button>

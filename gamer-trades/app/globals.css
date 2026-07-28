@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -33,10 +33,16 @@ html {
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  line-height: 1.6;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   overflow-x: hidden;
+}
+
+/* Retro pixel font — reserve for titles, logos, and big display numbers only.
+   Body copy, labels, and data tables use the default readable font above. */
+.font-pixel {
+  font-family: 'Press Start 2P', monospace;
 }
 
 /* Scanline overlay */

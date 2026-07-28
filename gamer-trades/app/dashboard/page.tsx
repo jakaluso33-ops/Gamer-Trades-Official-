@@ -51,14 +51,14 @@ function StatCard({
       style={{ padding: '14px 16px', flex: 1, minWidth: '150px' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <span style={{ fontSize: '6px', color: '#64748b', letterSpacing: '1px' }}>{label}</span>
+        <span style={{ fontSize: '12px', color: '#64748b', letterSpacing: '1px' }}>{label}</span>
         <span style={{ fontSize: '16px' }}>{icon}</span>
       </div>
       <div style={{ fontSize: '13px', color, textShadow: `0 0 10px ${color}`, lineHeight: 1.2 }}>
         {value}
       </div>
       {sub && (
-        <div style={{ fontSize: '5px', color: '#64748b', marginTop: '6px' }}>{sub}</div>
+        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>{sub}</div>
       )}
     </div>
   );
@@ -74,7 +74,7 @@ function PositionRow({ pos }: { pos: typeof POSITIONS[0] }) {
         alignItems: 'center',
         padding: '8px 12px',
         borderBottom: '1px solid #1e3a5f',
-        fontSize: '7px',
+        fontSize: '13px',
       }}
     >
       <span style={{ color: '#00aaff', textShadow: '0 0 6px #00aaff' }}>{pos.symbol}</span>
@@ -134,18 +134,18 @@ export default function DashboardPage() {
       {/* ── Welcome header ── */}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontSize: '8px', color: '#64748b', marginBottom: '6px' }}>
+          <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '6px' }}>
             ▶ WELCOME BACK, PLAYER_01
           </div>
-          <h1 style={{ fontSize: '14px', color: '#00ffff', textShadow: '0 0 12px #00ffff', margin: 0 }}>
+          <h1 className="font-pixel" style={{ fontSize: '14px', color: '#00ffff', textShadow: '0 0 12px #00ffff', margin: 0 }}>
             TRADING ARENA
           </h1>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="pixel-btn pixel-btn-green" style={{ fontSize: '8px' }}>
+          <button className="pixel-btn pixel-btn-green" style={{ fontSize: '14px' }}>
             ▶ NEW TRADE
           </button>
-          <button className="pixel-btn pixel-btn-blue" style={{ fontSize: '8px' }}>
+          <button className="pixel-btn pixel-btn-blue" style={{ fontSize: '14px' }}>
             ★ VS AI
           </button>
         </div>
@@ -209,10 +209,10 @@ export default function DashboardPage() {
                 alignItems: 'center',
               }}
             >
-              <span style={{ fontSize: '8px', color: '#00aaff', textShadow: '0 0 8px #00aaff' }}>
+              <span style={{ fontSize: '14px', color: '#00aaff', textShadow: '0 0 8px #00aaff' }}>
                 ◈ OPEN POSITIONS
               </span>
-              <span style={{ fontSize: '6px', color: '#64748b' }}>4 ACTIVE</span>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>4 ACTIVE</span>
             </div>
             {/* Header row */}
             <div
@@ -222,7 +222,7 @@ export default function DashboardPage() {
                 gap: '8px',
                 padding: '6px 12px',
                 borderBottom: '1px solid #1e3a5f',
-                fontSize: '6px',
+                fontSize: '12px',
                 color: '#64748b',
               }}
             >
@@ -235,10 +235,10 @@ export default function DashboardPage() {
             </div>
             {POSITIONS.map((p) => <PositionRow key={p.symbol} pos={p} />)}
             <div style={{ padding: '10px 12px', display: 'flex', gap: '8px' }}>
-              <button className="pixel-btn pixel-btn-red" style={{ fontSize: '7px', padding: '6px 12px' }}>
+              <button className="pixel-btn pixel-btn-red" style={{ fontSize: '13px', padding: '6px 12px' }}>
                 ✕ CLOSE ALL
               </button>
-              <button className="pixel-btn pixel-btn-blue" style={{ fontSize: '7px', padding: '6px 12px' }}>
+              <button className="pixel-btn pixel-btn-blue" style={{ fontSize: '13px', padding: '6px 12px' }}>
                 + ADD POSITION
               </button>
             </div>
@@ -249,7 +249,7 @@ export default function DashboardPage() {
 
             {/* Live P&L Float */}
             <div className="retro-card" style={{ padding: '12px', overflow: 'hidden' }}>
-              <div style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '8px' }}>
+              <div style={{ fontSize: '13px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '8px' }}>
                 💸 LIVE P&L FEED
               </div>
               <PnLMoneyFloat />
@@ -272,15 +272,15 @@ export default function DashboardPage() {
             {/* AAPL mini chart */}
             <div className="retro-card" style={{ padding: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff' }}>
+                <span style={{ fontSize: '13px', color: '#00aaff', textShadow: '0 0 8px #00aaff' }}>
                   AAPL
                 </span>
-                <span style={{ fontSize: '7px', color: '#00ff88', textShadow: '0 0 6px #00ff88' }}>
+                <span style={{ fontSize: '13px', color: '#00ff88', textShadow: '0 0 6px #00ff88' }}>
                   $182.34 ▲
                 </span>
               </div>
               <MiniChart positive={true} height={72} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '6px', color: '#64748b' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px', color: '#64748b' }}>
                 <span>RSI: 54.2</span>
                 <span>MACD: +0.34</span>
                 <span>VOL: 2.4M</span>
@@ -290,7 +290,7 @@ export default function DashboardPage() {
 
           {/* Asset class quick access */}
           <div className="retro-card" style={{ padding: '12px' }}>
-            <div style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '10px' }}>
+            <div style={{ fontSize: '13px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '10px' }}>
               ◆ MARKETS
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                         right: '-1px',
                         background: '#8b5cf6',
                         color: '#fff',
-                        fontSize: '4px',
+                        fontSize: '10px',
                         padding: '2px 4px',
                         letterSpacing: '0.5px',
                       }}
@@ -325,10 +325,10 @@ export default function DashboardPage() {
                     </div>
                   )}
                   <div style={{ fontSize: '20px', marginBottom: '4px' }}>{a.icon}</div>
-                  <div style={{ fontSize: '6px', color: a.color, textShadow: `0 0 6px ${a.color}`, marginBottom: '2px' }}>
+                  <div style={{ fontSize: '12px', color: a.color, textShadow: `0 0 6px ${a.color}`, marginBottom: '2px' }}>
                     {a.name}
                   </div>
-                  <div style={{ fontSize: '5px', color: '#64748b' }}>{a.count}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>{a.count}</div>
                 </div>
               ))}
             </div>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
 
           {/* Player stats */}
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>
+            <div style={{ fontSize: '13px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>
               ★ PLAYER STATS
             </div>
             <XPBar current={3240} max={5000} level={12} />
@@ -352,8 +352,8 @@ export default function DashboardPage() {
                 { k: 'STREAK', v: '🔥 5W' },
               ].map((s) => (
                 <div key={s.k} style={{ padding: '6px 8px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
-                  <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '3px' }}>{s.k}</div>
-                  <div style={{ fontSize: '8px', color: '#e2e8f0' }}>{s.v}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>{s.k}</div>
+                  <div style={{ fontSize: '14px', color: '#e2e8f0' }}>{s.v}</div>
                 </div>
               ))}
             </div>
@@ -365,7 +365,7 @@ export default function DashboardPage() {
               style={{
                 padding: '10px 12px',
                 borderBottom: '2px solid #1e3a5f',
-                fontSize: '7px',
+                fontSize: '13px',
                 color: '#ffd700',
                 textShadow: '0 0 8px #ffd700',
               }}
@@ -387,7 +387,7 @@ export default function DashboardPage() {
               >
                 <span
                   style={{
-                    fontSize: '7px',
+                    fontSize: '13px',
                     width: '16px',
                     color: entry.rank <= 3 ? '#ffd700' : '#64748b',
                     textShadow: entry.rank <= 3 ? '0 0 6px #ffd700' : 'none',
@@ -399,7 +399,7 @@ export default function DashboardPage() {
                 <span
                   style={{
                     flex: 1,
-                    fontSize: '6px',
+                    fontSize: '12px',
                     color: (entry as any).isYou ? '#00ff88' : '#e2e8f0',
                     textShadow: (entry as any).isYou ? '0 0 6px #00ff88' : 'none',
                   }}
@@ -408,7 +408,7 @@ export default function DashboardPage() {
                 </span>
                 <span
                   style={{
-                    fontSize: '7px',
+                    fontSize: '13px',
                     color: '#00ff88',
                     textShadow: '0 0 6px #00ff88',
                   }}
@@ -430,10 +430,10 @@ export default function DashboardPage() {
                 alignItems: 'center',
               }}
             >
-              <span style={{ fontSize: '7px', color: '#00ff88', textShadow: '0 0 8px #00ff88' }}>
+              <span style={{ fontSize: '13px', color: '#00ff88', textShadow: '0 0 8px #00ff88' }}>
                 ◆ DAILY CHALLENGES
               </span>
-              <span style={{ fontSize: '6px', color: '#64748b' }}>RESETS IN 14:32:07</span>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>RESETS IN 14:32:07</span>
             </div>
             <div style={{ padding: '10px' }}>
               {CHALLENGES.map((c) => (
@@ -449,18 +449,18 @@ export default function DashboardPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <span
                       style={{
-                        fontSize: '6px',
+                        fontSize: '12px',
                         color: c.done ? '#00ff88' : '#e2e8f0',
                         textShadow: c.done ? '0 0 6px #00ff88' : 'none',
                       }}
                     >
                       {c.done ? '✓ ' : ''}{c.title}
                     </span>
-                    <span style={{ fontSize: '5px', color: '#ffd700', textShadow: '0 0 6px #ffd700' }}>
+                    <span style={{ fontSize: '11px', color: '#ffd700', textShadow: '0 0 6px #ffd700' }}>
                       +{c.xp} XP
                     </span>
                   </div>
-                  <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '5px' }}>{c.desc}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '5px' }}>{c.desc}</div>
                   <div style={{ height: '5px', background: '#0f1629', border: '1px solid #1e3a5f' }}>
                     <div
                       style={{
@@ -472,7 +472,7 @@ export default function DashboardPage() {
                       }}
                     />
                   </div>
-                  <div style={{ fontSize: '5px', color: '#64748b', marginTop: '2px', textAlign: 'right' }}>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', textAlign: 'right' }}>
                     {c.progress}/{c.max}
                   </div>
                 </div>
@@ -486,7 +486,7 @@ export default function DashboardPage() {
               style={{
                 padding: '10px 12px',
                 borderBottom: '2px solid #1e3a5f',
-                fontSize: '7px',
+                fontSize: '13px',
                 color: '#ffd700',
                 textShadow: '0 0 8px #ffd700',
               }}
@@ -528,7 +528,7 @@ export default function DashboardPage() {
           >
             ★ HUMAN VS AI MODE
           </div>
-          <div style={{ fontSize: '6px', color: '#64748b', lineHeight: '1.8' }}>
+          <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.8' }}>
             Challenge AlgoAce, TrendTina, or GridGareth in live paper trading battles.
             <br />
             Scalp, swing, long or short — your strategy vs theirs, in real-time.
@@ -540,7 +540,7 @@ export default function DashboardPage() {
               key={ai}
               className="pixel-btn"
               style={{
-                fontSize: '6px',
+                fontSize: '12px',
                 padding: '8px 12px',
                 background: '#1a0035',
                 color: '#8b5cf6',
@@ -558,10 +558,10 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div className="retro-card" style={{ padding: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 8px #ffd700' }}>
+            <span style={{ fontSize: '13px', color: '#ffd700', textShadow: '0 0 8px #ffd700' }}>
               BTC/USD
             </span>
-            <span style={{ fontSize: '7px', color: '#00ff88', textShadow: '0 0 6px #00ff88' }}>
+            <span style={{ fontSize: '13px', color: '#00ff88', textShadow: '0 0 6px #00ff88' }}>
               $67,420 ▲ +1.86%
             </span>
           </div>
@@ -569,10 +569,10 @@ export default function DashboardPage() {
         </div>
         <div className="retro-card" style={{ padding: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>
+            <span style={{ fontSize: '13px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6' }}>
               ETH/USD
             </span>
-            <span style={{ fontSize: '7px', color: '#ff3355', textShadow: '0 0 6px #ff3355' }}>
+            <span style={{ fontSize: '13px', color: '#ff3355', textShadow: '0 0 6px #ff3355' }}>
               $3,521 ▼ -1.26%
             </span>
           </div>

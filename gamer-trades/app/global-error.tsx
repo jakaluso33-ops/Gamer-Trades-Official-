@@ -32,11 +32,11 @@ export default function GlobalError({
           <h2 style={{ fontSize: '13px', color: '#ff3355', textShadow: '0 0 12px #ff3355', marginBottom: '12px' }}>
             GAME OVER — APP CRASHED
           </h2>
-          <p style={{ fontSize: '7px', color: '#64748b', marginBottom: '24px', maxWidth: '360px', lineHeight: 1.9 }}>
+          <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px', maxWidth: '360px', lineHeight: 1.9 }}>
             Something went wrong loading GamerTrades. Your account and trading data are safe on the server —
             reloading should fix this.
           </p>
-          <button onClick={() => reset()} className="pixel-btn pixel-btn-blue" style={{ fontSize: '8px', padding: '12px 20px' }}>
+          <button onClick={() => reset()} className="pixel-btn pixel-btn-blue" style={{ fontSize: '14px', padding: '12px 20px' }}>
             ↺ RELOAD
           </button>
         </div>

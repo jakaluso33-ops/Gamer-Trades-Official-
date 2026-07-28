@@ -272,21 +272,21 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
             <div style={{ fontSize: '16px', color: isDraw ? '#ffd700' : iWon ? '#00ff88' : '#ff3355', textShadow: `0 0 16px ${isDraw ? '#ffd700' : iWon ? '#00ff88' : '#ff3355'}`, marginBottom: '8px' }}>
               {isDraw ? "IT'S A DRAW!" : iWon ? 'YOU WIN!' : 'YOU LOSE!'}
             </div>
-            <div style={{ fontSize: '7px', color: '#64748b', marginBottom: '24px' }}>
+            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px' }}>
               vs {opponent?.username ?? 'opponent'}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
               <div style={{ padding: '12px', background: '#0a0e1a', border: `2px solid ${myPnl >= 0 ? '#00ff8844' : '#ff335544'}` }}>
-                <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '4px' }}>YOUR P&L</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>YOUR P&L</div>
                 <div style={{ fontSize: '12px', color: myPnl >= 0 ? '#00ff88' : '#ff3355' }}>{myPnl >= 0 ? '+' : ''}${myPnl.toFixed(2)}</div>
               </div>
               <div style={{ padding: '12px', background: '#0a0e1a', border: `2px solid ${oppPnl >= 0 ? '#00ff8844' : '#ff335544'}` }}>
-                <div style={{ fontSize: '5px', color: '#64748b', marginBottom: '4px' }}>{opponent?.username ?? 'OPPONENT'} P&L</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>{opponent?.username ?? 'OPPONENT'} P&L</div>
                 <div style={{ fontSize: '12px', color: oppPnl >= 0 ? '#00ff88' : '#ff3355' }}>{oppPnl >= 0 ? '+' : ''}${oppPnl.toFixed(2)}</div>
               </div>
             </div>
-            {iWon && <div style={{ padding: '8px', background: '#8b5cf622', border: '2px solid #8b5cf6', marginBottom: '16px', fontSize: '7px', color: '#8b5cf6' }}>+150 XP EARNED!</div>}
-            <button onClick={exitToLobby} className="pixel-btn pixel-btn-blue" style={{ width: '100%', fontSize: '7px', padding: '10px' }}>◀ BACK TO FRIENDS LOBBY</button>
+            {iWon && <div style={{ padding: '8px', background: '#8b5cf622', border: '2px solid #8b5cf6', marginBottom: '16px', fontSize: '13px', color: '#8b5cf6' }}>+150 XP EARNED!</div>}
+            <button onClick={exitToLobby} className="pixel-btn pixel-btn-blue" style={{ width: '100%', fontSize: '13px', padding: '10px' }}>◀ BACK TO FRIENDS LOBBY</button>
           </div>
         </div>
       );
@@ -295,21 +295,21 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
     return (
       <div className="grid-bg" style={{ minHeight: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ fontSize: '8px', color: '#ff3355', textShadow: '0 0 10px #ff3355' }}>⚔ LIVE PVP BATTLE</div>
+          <div style={{ fontSize: '14px', color: '#ff3355', textShadow: '0 0 10px #ff3355' }}>⚔ LIVE PVP BATTLE</div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '2px' }}>TIME REMAINING</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>TIME REMAINING</div>
             <div style={{ fontSize: '14px', color: timeLeft < 30 ? '#ff3355' : '#ffd700', textShadow: `0 0 12px ${timeLeft < 30 ? '#ff3355' : '#ffd700'}`, fontVariantNumeric: 'tabular-nums' }}>
               {formatTime(timeLeft)}
             </div>
           </div>
-          <div style={{ fontSize: '6px', color: '#00ffff' }}>{MODES.find(m => m.id === activeMatch.mode)?.label}</div>
+          <div style={{ fontSize: '12px', color: '#00ffff' }}>{MODES.find(m => m.id === activeMatch.mode)?.label}</div>
         </div>
 
         <div className="retro-card" style={{ padding: '20px', marginBottom: '16px', borderColor: '#8b5cf6', boxShadow: '4px 4px 0 #000, 0 0 16px #8b5cf633' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎮</div>
-              <div style={{ fontSize: '8px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '4px' }}>{profile?.username ?? 'YOU'}</div>
+              <div style={{ fontSize: '14px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '4px' }}>{profile?.username ?? 'YOU'}</div>
               <div style={{ fontSize: '18px', color: myPnl >= 0 ? '#00ff88' : '#ff3355', textShadow: `0 0 12px ${myPnl >= 0 ? '#00ff88' : '#ff3355'}` }}>
                 {myPnl >= 0 ? '+' : ''}${myPnl.toFixed(2)}
               </div>
@@ -317,7 +317,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
             <div style={{ textAlign: 'center', fontSize: '10px', color: '#ff3355', textShadow: '0 0 12px #ff3355' }}>VS</div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '28px', marginBottom: '6px' }}>🕹</div>
-              <div style={{ fontSize: '8px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '4px' }}>{opponent?.username ?? '...'}</div>
+              <div style={{ fontSize: '14px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '4px' }}>{opponent?.username ?? '...'}</div>
               <div style={{ fontSize: '18px', color: oppPnl >= 0 ? '#00ff88' : '#ff3355', textShadow: `0 0 12px ${oppPnl >= 0 ? '#00ff88' : '#ff3355'}` }}>
                 {oppPnl >= 0 ? '+' : ''}${oppPnl.toFixed(2)}
               </div>
@@ -328,18 +328,18 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '12px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="retro-card" style={{ padding: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '7px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
                 <span style={{ color: '#00aaff', textShadow: '0 0 6px #00aaff' }}>AAPL — LIVE</span>
                 <span style={{ color: '#00ff88' }}>$182.34 ▲</span>
               </div>
               <MiniChart positive={true} height={100} />
             </div>
             <div className="retro-card" style={{ padding: '12px' }}>
-              <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '8px' }}>◎ BATTLE FEED</div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>◎ BATTLE FEED</div>
               {trades.length === 0
-                ? <div style={{ fontSize: '6px', color: '#1e3a5f' }}>Waiting for trades...</div>
+                ? <div style={{ fontSize: '12px', color: '#1e3a5f' }}>Waiting for trades...</div>
                 : trades.map((t, i) => (
-                  <div key={t.id} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: '1px solid #0f1629', fontSize: '6px', opacity: 1 - i * 0.04 }}>
+                  <div key={t.id} style={{ display: 'flex', gap: '8px', padding: '4px 0', borderBottom: '1px solid #0f1629', fontSize: '12px', opacity: 1 - i * 0.04 }}>
                     <span style={{ color: '#64748b' }}>{new Date(t.created_at).toLocaleTimeString('en-US', { hour12: false })}</span>
                     <span style={{ color: t.user_id === user?.id ? '#00ffff' : '#ffd700' }}>{t.user_id === user?.id ? (profile?.username ?? 'YOU') : (opponent?.username ?? 'OPP')}</span>
                     <span style={{ color: '#e2e8f0' }}>{t.side === 'buy' ? 'BOUGHT' : 'SOLD SHORT'} {t.symbol}</span>
@@ -351,7 +351,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="retro-card" style={{ padding: '14px' }}>
-              <div style={{ fontSize: '7px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '12px' }}>YOUR MOVES</div>
+              <div style={{ fontSize: '13px', color: '#00ffff', textShadow: '0 0 8px #00ffff', marginBottom: '12px' }}>YOUR MOVES</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button onClick={() => makeTrade('buy')} className="pixel-btn pixel-btn-green" style={{ width: '100%', fontSize: '9px', padding: '14px' }}>▲ BUY</button>
                 <button onClick={() => makeTrade('sell')} className="pixel-btn pixel-btn-red" style={{ width: '100%', fontSize: '9px', padding: '14px' }}>▼ SELL SHORT</button>
@@ -368,14 +368,14 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       {incomingInvites.length > 0 && (
         <div className="retro-card" style={{ padding: '16px', marginBottom: '16px', borderColor: '#ff3355', boxShadow: '4px 4px 0 #000, 0 0 12px #ff335544' }}>
-          <div style={{ fontSize: '7px', color: '#ff3355', textShadow: '0 0 8px #ff3355', marginBottom: '10px' }}>⚔ INCOMING CHALLENGES</div>
+          <div style={{ fontSize: '13px', color: '#ff3355', textShadow: '0 0 8px #ff3355', marginBottom: '10px' }}>⚔ INCOMING CHALLENGES</div>
           {incomingInvites.map(inv => (
             <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #0f1629' }}>
-              <span style={{ fontSize: '7px', color: '#e2e8f0', flex: 1 }}>
+              <span style={{ fontSize: '13px', color: '#e2e8f0', flex: 1 }}>
                 <b style={{ color: '#00ffff' }}>{inv.opponent.username}</b> challenged you — {MODES.find(m => m.id === inv.mode)?.label}
               </span>
-              <button onClick={() => acceptInvite(inv)} className="pixel-btn pixel-btn-green" style={{ fontSize: '6px', padding: '7px 10px' }}>✓ ACCEPT</button>
-              <button onClick={() => declineInvite(inv)} className="pixel-btn pixel-btn-red" style={{ fontSize: '6px', padding: '7px 10px' }}>✕ DECLINE</button>
+              <button onClick={() => acceptInvite(inv)} className="pixel-btn pixel-btn-green" style={{ fontSize: '12px', padding: '7px 10px' }}>✓ ACCEPT</button>
+              <button onClick={() => declineInvite(inv)} className="pixel-btn pixel-btn-red" style={{ fontSize: '12px', padding: '7px 10px' }}>✕ DECLINE</button>
             </div>
           ))}
         </div>
@@ -383,13 +383,13 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
 
       {outgoingPending.length > 0 && (
         <div className="retro-card" style={{ padding: '16px', marginBottom: '16px', borderColor: '#ffd700', boxShadow: '4px 4px 0 #000, 0 0 12px #ffd70044' }}>
-          <div style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '10px' }}>⏳ WAITING FOR RESPONSE</div>
+          <div style={{ fontSize: '13px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '10px' }}>⏳ WAITING FOR RESPONSE</div>
           {outgoingPending.map(inv => (
             <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #0f1629' }}>
-              <span style={{ fontSize: '7px', color: '#e2e8f0', flex: 1 }}>
+              <span style={{ fontSize: '13px', color: '#e2e8f0', flex: 1 }}>
                 Challenged <b style={{ color: '#00ffff' }}>{inv.opponent.username}</b> — {MODES.find(m => m.id === inv.mode)?.label}
               </span>
-              <button onClick={() => cancelMyPendingMatch(inv.id)} className="pixel-btn pixel-btn-red" style={{ fontSize: '6px', padding: '7px 10px' }}>✕ CANCEL</button>
+              <button onClick={() => cancelMyPendingMatch(inv.id)} className="pixel-btn pixel-btn-red" style={{ fontSize: '12px', padding: '7px 10px' }}>✕ CANCEL</button>
             </div>
           ))}
         </div>
@@ -397,13 +397,13 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
 
       {friends.length === 0 ? (
         <div className="retro-card" style={{ padding: '32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '7px', color: '#64748b', marginBottom: '10px' }}>You have no friends added yet.</div>
-          <a href="/dashboard/friends" style={{ fontSize: '7px', color: '#00ffff', textShadow: '0 0 6px #00ffff' }}>▶ GO ADD FRIENDS</a>
+          <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '10px' }}>You have no friends added yet.</div>
+          <a href="/dashboard/friends" style={{ fontSize: '13px', color: '#00ffff', textShadow: '0 0 6px #00ffff' }}>▶ GO ADD FRIENDS</a>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '7px', color: '#64748b', marginBottom: '4px' }}>CHOOSE A FRIEND</div>
+            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>CHOOSE A FRIEND</div>
             {friends.map(f => (
               <div
                 key={f.id}
@@ -417,15 +417,15 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
               >
                 <div style={{ width: '32px', height: '32px', background: '#001133', border: '2px solid #00aaff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>🎮</div>
                 <div>
-                  <div style={{ fontSize: '8px', color: '#00ffff' }}>{f.username}</div>
-                  <div style={{ fontSize: '5px', color: '#64748b' }}>LVL {f.level} · {f.total_wins}W-{f.total_losses}L</div>
+                  <div style={{ fontSize: '14px', color: '#00ffff' }}>{f.username}</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>LVL {f.level} · {f.total_wins}W-{f.total_losses}L</div>
                 </div>
               </div>
             ))}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '7px', color: '#64748b', marginBottom: '4px' }}>BATTLE MODE</div>
+            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>BATTLE MODE</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {MODES.map(mode => (
                 <div
@@ -437,8 +437,8 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
                     border: `2px solid ${selectedMode.id === mode.id ? '#00ffff' : '#1e3a5f'}`,
                   }}
                 >
-                  <div style={{ fontSize: '7px', color: selectedMode.id === mode.id ? '#00ffff' : '#e2e8f0', marginBottom: '4px' }}>{mode.label}</div>
-                  <div style={{ fontSize: '8px', color: '#ffd700' }}>{mode.duration}</div>
+                  <div style={{ fontSize: '13px', color: selectedMode.id === mode.id ? '#00ffff' : '#e2e8f0', marginBottom: '4px' }}>{mode.label}</div>
+                  <div style={{ fontSize: '14px', color: '#ffd700' }}>{mode.duration}</div>
                 </div>
               ))}
             </div>
@@ -446,13 +446,13 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
             <div className="retro-card" style={{ padding: '16px', flex: 1 }}>
               {selectedFriend ? (
                 <>
-                  <div style={{ fontSize: '7px', color: '#ffd700', marginBottom: '12px', textAlign: 'center' }}>⚔ CHALLENGE {selectedFriend.username}</div>
+                  <div style={{ fontSize: '13px', color: '#ffd700', marginBottom: '12px', textAlign: 'center' }}>⚔ CHALLENGE {selectedFriend.username}</div>
                   <button onClick={sendChallenge} disabled={creating} className="pixel-btn pixel-btn-green" style={{ width: '100%', fontSize: '9px', padding: '12px', opacity: creating ? 0.6 : 1 }}>
                     {creating ? 'SENDING...' : '▶ SEND CHALLENGE'}
                   </button>
                 </>
               ) : (
-                <div style={{ fontSize: '6px', color: '#64748b', textAlign: 'center' }}>Select a friend to challenge.</div>
+                <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center' }}>Select a friend to challenge.</div>
               )}
             </div>
           </div>
