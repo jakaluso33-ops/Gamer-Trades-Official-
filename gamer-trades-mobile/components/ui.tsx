@@ -27,6 +27,36 @@ export function PixelText({
   );
 }
 
+export function BodyText({
+  children,
+  color = colors.text,
+  size = 14,
+  weight = 'regular',
+  glow = false,
+  style,
+  ...rest
+}: {
+  children: React.ReactNode;
+  color?: string;
+  size?: number;
+  weight?: 'regular' | 'medium' | 'semibold';
+  glow?: boolean;
+} & React.ComponentProps<typeof Text>) {
+  const fontFamily = weight === 'semibold' ? font.bodySemiBold : weight === 'medium' ? font.bodyMedium : font.body;
+  return (
+    <Text
+      style={[
+        { fontFamily, color, fontSize: size, lineHeight: size * 1.4 },
+        glow && { textShadowColor: color, textShadowRadius: 8, textShadowOffset: { width: 0, height: 0 } },
+        style,
+      ]}
+      {...rest}
+    >
+      {children}
+    </Text>
+  );
+}
+
 export function Card({ children, style, borderColor = colors.border }: ViewProps & { borderColor?: string }) {
   return <View style={[styles.card, { borderColor }, style]}>{children}</View>;
 }

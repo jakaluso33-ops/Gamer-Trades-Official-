@@ -15,4 +15,7 @@ export const colors = {
 
 export const font = {
   pixel: 'PressStart2P_400Regular',
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
+  bodySemiBold: 'Inter_600SemiBold',
 };
