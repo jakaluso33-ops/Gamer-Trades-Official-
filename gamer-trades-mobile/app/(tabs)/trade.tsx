@@ -16,15 +16,9 @@ import {
   DbTrade,
   InsufficientFundsError,
 } from '../../lib/trading';
+import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, AssetClass, SymbolInfo } from '../../lib/symbols';
 
-const SYMBOL_PRICE: Record<string, number> = {
-  AAPL: 182.34,
-  TSLA: 245.67,
-  BTC: 67420,
-  ETH: 3521,
-  NVDA: 875.20,
-};
-const SYMBOLS = Object.keys(SYMBOL_PRICE);
+const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
 
 const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
   { id: 'breakout', label: 'BREAKOUT' },
@@ -61,9 +55,10 @@ function generateCandles(count: number, basePrice: number): Candle[] {
 export default function TradeScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const [symbol, setSymbol] = useState('AAPL');
+  const [classTab, setClassTab] = useState<AssetClass>('STOCK');
+  const [selected, setSelected] = useState<SymbolInfo>(ALL_SYMBOLS[0]);
   const [qty, setQty] = useState(10);
-  const [livePrice, setLivePrice] = useState(SYMBOL_PRICE.AAPL);
+  const [livePrice, setLivePrice] = useState(ALL_SYMBOLS[0].basePrice);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [log, setLog] = useState<string[]>([]);
@@ -79,10 +74,12 @@ export default function TradeScreen() {
   }, [user]);
 
   useEffect(() => {
-    setLivePrice(SYMBOL_PRICE[symbol]);
-  }, [symbol]);
+    setLivePrice(selected.basePrice);
+  }, [selected]);
 
   useEffect(() => {
+    // Options are a leveraged proxy of their underlying's move — simulate them noisier.
+    const volatility = selected.class === 'OPTIONS' ? 0.006 * (selected.leverage ?? 1) : 0.002;
     const id = setInterval(() => {
       const prev = candlesRef.current;
       const last = prev[prev.length - 1];
@@ -102,21 +99,24 @@ export default function TradeScreen() {
       candlesRef.current = [...prev.slice(-59), newCandle];
       setSignals(scanStrategies(candlesRef.current, activeStrategies));
       setLivePrice(p => {
-        const delta = (Math.random() - 0.48) * p * 0.002;
-        return parseFloat((p + delta).toFixed(2));
+        const delta = (Math.random() - 0.48) * p * volatility;
+        return parseFloat(Math.max(0.01, p + delta).toFixed(selected.decimals));
       });
     }, 3000);
     return () => clearInterval(id);
-  }, [activeStrategies]);
+  }, [activeStrategies, selected]);
 
-  const priceForSymbol = useCallback((sym: string) => (sym === symbol ? livePrice : SYMBOL_PRICE[sym] ?? livePrice), [symbol, livePrice]);
+  const priceForSymbol = useCallback(
+    (sym: string) => (sym === selected.symbol ? livePrice : ALL_SYMBOLS.find(s => s.symbol === sym)?.basePrice ?? livePrice),
+    [selected.symbol, livePrice]
+  );
 
   const place = async (side: 'BUY' | 'SELL') => {
     if (!user || !portfolio) return;
     setOrderError(null);
     try {
       const { trade, portfolio: updated } = await openTrade(user.id, portfolio, {
-        symbol,
+        symbol: selected.symbol,
         direction: side === 'BUY' ? 'long' : 'short',
         orderType: 'market',
         quantity: qty,
@@ -124,7 +124,7 @@ export default function TradeScreen() {
       });
       setPortfolio(updated);
       setOpenTrades(prev => [trade, ...prev]);
-      setLog(prev => [`${side} ${qty}x ${symbol} @ $${trade.entry_price.toFixed(2)}`, ...prev.slice(0, 9)]);
+      setLog(prev => [`${side} ${qty}x ${selected.symbol} @ $${trade.entry_price.toFixed(2)}`, ...prev.slice(0, 9)]);
     } catch (err) {
       setOrderError(err instanceof InsufficientFundsError ? err.message : 'Could not place order.');
     }
@@ -187,12 +187,26 @@ export default function TradeScreen() {
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
           <PixelText color={colors.muted} size={6}>SYMBOL</PixelText>
-          <PixelText color={colors.text} size={7}>${livePrice.toLocaleString()}</PixelText>
+          <PixelText color={colors.text} size={7}>
+            ${livePrice.toLocaleString(undefined, { minimumFractionDigits: selected.decimals, maximumFractionDigits: selected.decimals })}
+          </PixelText>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+          {ASSET_CLASSES.map(cls => (
+            <PixelButton
+              key={cls}
+              color={classTab === cls ? ASSET_CLASS_COLOR[cls] : colors.muted}
+              onPress={() => setClassTab(cls)}
+              style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+            >
+              {ASSET_CLASS_LABEL[cls]}
+            </PixelButton>
+          ))}
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {SYMBOLS.map(s => (
-            <PixelButton key={s} color={symbol === s ? colors.cyan : colors.muted} onPress={() => setSymbol(s)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-              {s}
+          {SYMBOLS_BY_CLASS[classTab].map(s => (
+            <PixelButton key={s.symbol} color={selected.symbol === s.symbol ? colors.cyan : colors.muted} onPress={() => setSelected(s)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+              {s.symbol}
             </PixelButton>
           ))}
         </View>

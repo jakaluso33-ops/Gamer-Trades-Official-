@@ -4,7 +4,7 @@ import { Card, PixelText } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { getPortfolio, listOpenTrades, computePnl, Portfolio, DbTrade } from '../../lib/trading';
-import { getBasePrice } from '../../lib/marketPrices';
+import { getBasePrice } from '../../lib/symbols';
 
 interface Holding {
   symbol: string;

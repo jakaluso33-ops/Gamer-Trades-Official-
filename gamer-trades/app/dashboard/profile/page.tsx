@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { deleteAccount } from '@/lib/account';
 import { listOpenTrades, listClosedTrades, computePnl, DbTrade } from '@/lib/trading';
-import { getBasePrice } from '@/lib/marketPrices';
+import { getBasePrice } from '@/lib/symbols';
 import { getAiBattleStats, AiBattleStats } from '@/lib/aiBattles';
 
 const AI_OPPONENT_NAMES: Record<string, string> = { algoace: 'AlgoAce', trendtina: 'TrendTina', gridgareth: 'GridGareth' };

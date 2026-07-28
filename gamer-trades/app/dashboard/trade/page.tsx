@@ -19,17 +19,9 @@ import {
   DbTrade,
   InsufficientFundsError,
 } from '@/lib/trading';
+import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, AssetClass, SymbolInfo } from '@/lib/symbols';
 
-const SYMBOLS = [
-  { symbol: 'AAPL', name: 'Apple Inc.', price: 182.34, class: 'STOCK' },
-  { symbol: 'TSLA', name: 'Tesla Inc.', price: 245.67, class: 'STOCK' },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 875.20, class: 'STOCK' },
-  { symbol: 'BTC/USD', name: 'Bitcoin', price: 67420, class: 'CRYPTO' },
-  { symbol: 'ETH/USD', name: 'Ethereum', price: 3521, class: 'CRYPTO' },
-  { symbol: 'SOL/USD', name: 'Solana', price: 142.55, class: 'CRYPTO' },
-  { symbol: 'EUR/USD', name: 'Euro/Dollar', price: 1.0842, class: 'FOREX' },
-  { symbol: 'SPY', name: 'S&P 500 ETF', price: 520.88, class: 'STOCK' },
-];
+const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
 
 const INDICATORS = ['RSI', 'MACD', 'BB', 'EMA'];
 
@@ -44,8 +36,9 @@ const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
 
 export default function TradePage() {
   const { user } = useAuth();
-  const [selected, setSelected] = useState(SYMBOLS[0]);
-  const [livePrice, setLivePrice] = useState(selected.price);
+  const [classTab, setClassTab] = useState<AssetClass>('STOCK');
+  const [selected, setSelected] = useState<SymbolInfo>(ALL_SYMBOLS[0]);
+  const [livePrice, setLivePrice] = useState(selected.basePrice);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [activeIndicators, setActiveIndicators] = useState<string[]>(['RSI']);
@@ -60,7 +53,7 @@ export default function TradePage() {
   const priceForSymbol = useCallback(
     (symbol: string) => {
       if (symbol === selected.symbol) return livePrice;
-      return SYMBOLS.find(s => s.symbol === symbol)?.price ?? livePrice;
+      return ALL_SYMBOLS.find(s => s.symbol === symbol)?.basePrice ?? livePrice;
     },
     [selected.symbol, livePrice]
   );
@@ -74,14 +67,17 @@ export default function TradePage() {
 
   // Simulate live price ticking for the selected symbol
   useEffect(() => {
-    setLivePrice(selected.price);
+    setLivePrice(selected.basePrice);
   }, [selected]);
 
   useEffect(() => {
+    // Options are a leveraged proxy of their underlying's move — simulate them noisier.
+    const volatility = selected.class === 'OPTIONS' ? 0.006 * (selected.leverage ?? 1) : 0.001;
     const id = setInterval(() => {
       setLivePrice(p => {
-        const delta = (Math.random() - 0.48) * p * 0.001;
-        return parseFloat((p + delta).toFixed(selected.price < 10 ? 4 : 2));
+        const delta = (Math.random() - 0.48) * p * volatility;
+        const next = Math.max(0.01, p + delta);
+        return parseFloat(next.toFixed(selected.decimals));
       });
     }, 800);
     return () => clearInterval(id);
@@ -146,8 +142,6 @@ export default function TradePage() {
 
   const totalPnL = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
-  const classColor = { STOCK: '#00aaff', CRYPTO: '#ffd700', FOREX: '#00ff88' } as Record<string, string>;
-
   return (
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       {gameOver && (
@@ -171,20 +165,20 @@ export default function TradePage() {
             <span
               style={{
                 fontSize: '12px',
-                color: livePrice >= selected.price ? '#00ff88' : '#ff3355',
-                textShadow: `0 0 10px ${livePrice >= selected.price ? '#00ff88' : '#ff3355'}`,
+                color: livePrice >= selected.basePrice ? '#00ff88' : '#ff3355',
+                textShadow: `0 0 10px ${livePrice >= selected.basePrice ? '#00ff88' : '#ff3355'}`,
               }}
             >
-              ${livePrice.toLocaleString()}
+              ${livePrice.toLocaleString(undefined, { minimumFractionDigits: selected.decimals, maximumFractionDigits: selected.decimals })}
             </span>
             <span
               style={{
                 fontSize: '7px',
-                color: livePrice >= selected.price ? '#00ff88' : '#ff3355',
+                color: livePrice >= selected.basePrice ? '#00ff88' : '#ff3355',
               }}
             >
-              {livePrice >= selected.price ? '▲' : '▼'}{' '}
-              {Math.abs(((livePrice - selected.price) / selected.price) * 100).toFixed(2)}%
+              {livePrice >= selected.basePrice ? '▲' : '▼'}{' '}
+              {Math.abs(((livePrice - selected.basePrice) / selected.basePrice) * 100).toFixed(2)}%
             </span>
           </div>
         </div>
@@ -209,20 +203,42 @@ export default function TradePage() {
         </div>
       </div>
 
-      {/* Symbol selector */}
+      {/* Asset class tabs */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '8px', flexWrap: 'wrap' }}>
+        {ASSET_CLASSES.map(cls => (
+          <button
+            key={cls}
+            onClick={() => setClassTab(cls)}
+            className="pixel-btn"
+            style={{
+              fontSize: '6px',
+              padding: '6px 10px',
+              background: classTab === cls ? `${ASSET_CLASS_COLOR[cls]}22` : '#0a0e1a',
+              color: classTab === cls ? ASSET_CLASS_COLOR[cls] : '#64748b',
+              borderColor: classTab === cls ? ASSET_CLASS_COLOR[cls] : '#1e3a5f',
+              boxShadow: classTab === cls ? `0 0 8px ${ASSET_CLASS_COLOR[cls]}44` : 'none',
+            }}
+          >
+            {ASSET_CLASS_LABEL[cls]}
+          </button>
+        ))}
+      </div>
+
+      {/* Symbol selector (within the active asset class) */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        {SYMBOLS.map(s => (
+        {SYMBOLS_BY_CLASS[classTab].map(s => (
           <button
             key={s.symbol}
             onClick={() => setSelected(s)}
             className="pixel-btn"
+            title={s.name}
             style={{
               fontSize: '6px',
               padding: '5px 8px',
-              background: selected.symbol === s.symbol ? `${classColor[s.class]}22` : '#0a0e1a',
-              color: selected.symbol === s.symbol ? classColor[s.class] : '#64748b',
-              borderColor: selected.symbol === s.symbol ? classColor[s.class] : '#1e3a5f',
-              boxShadow: selected.symbol === s.symbol ? `0 0 8px ${classColor[s.class]}44` : 'none',
+              background: selected.symbol === s.symbol ? `${ASSET_CLASS_COLOR[s.class]}22` : '#0a0e1a',
+              color: selected.symbol === s.symbol ? ASSET_CLASS_COLOR[s.class] : '#64748b',
+              borderColor: selected.symbol === s.symbol ? ASSET_CLASS_COLOR[s.class] : '#1e3a5f',
+              boxShadow: selected.symbol === s.symbol ? `0 0 8px ${ASSET_CLASS_COLOR[s.class]}44` : 'none',
             }}
           >
             {s.symbol}
@@ -309,7 +325,7 @@ export default function TradePage() {
 
             <CandlestickChart
               symbol={selected.symbol}
-              basePrice={selected.price}
+              basePrice={selected.basePrice}
               height={300}
               enabledStrategies={activeStrategies}
               onSignal={setLatestSignal}
@@ -435,12 +451,12 @@ export default function TradePage() {
           <div className="retro-card" style={{ padding: '12px' }}>
             <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '8px' }}>◎ MARKET INFO</div>
             {[
-              { k: 'ASSET CLASS', v: selected.class, c: classColor[selected.class] },
-              { k: 'OPEN', v: '$' + selected.price.toFixed(2) },
-              { k: '24H HIGH', v: '$' + (selected.price * 1.018).toFixed(2), c: '#00ff88' },
-              { k: '24H LOW', v: '$' + (selected.price * 0.983).toFixed(2), c: '#ff3355' },
-              { k: 'VOLUME', v: '2.4M' },
-              { k: 'MARKET CAP', v: '$2.8T' },
+              { k: 'NAME', v: selected.name },
+              { k: 'ASSET CLASS', v: ASSET_CLASS_LABEL[selected.class], c: ASSET_CLASS_COLOR[selected.class] },
+              ...(selected.underlying ? [{ k: 'UNDERLYING', v: selected.underlying, c: '#8b5cf6' }] : []),
+              { k: 'OPEN', v: '$' + selected.basePrice.toFixed(selected.decimals) },
+              { k: '24H HIGH', v: '$' + (selected.basePrice * 1.018).toFixed(selected.decimals), c: '#00ff88' },
+              { k: '24H LOW', v: '$' + (selected.basePrice * 0.983).toFixed(selected.decimals), c: '#ff3355' },
             ].map(({ k, v, c }) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
                 <span style={{ color: '#64748b' }}>{k}</span>

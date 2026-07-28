@@ -4,16 +4,14 @@ import { useState, useEffect } from 'react';
 import MiniChart from '@/components/trading/MiniChart';
 import { useAuth } from '@/lib/AuthContext';
 import { getPortfolio, listOpenTrades, listClosedTrades, computePnl, Portfolio, DbTrade } from '@/lib/trading';
-import { getBasePrice, SYMBOL_CLASS } from '@/lib/marketPrices';
-
-const CLASS_COLORS: Record<string, string> = { STOCK: '#00aaff', CRYPTO: '#ffd700', FOREX: '#00ff88', ETF: '#8b5cf6' };
+import { getBasePrice, getSymbolInfo, ASSET_CLASS_COLOR, AssetClass } from '@/lib/symbols';
 
 interface Holding {
   symbol: string;
   qty: number;
   avgCost: number;
   current: number;
-  class: string;
+  class: AssetClass;
 }
 
 function aggregateHoldings(openTrades: DbTrade[]): Holding[] {
@@ -29,7 +27,7 @@ function aggregateHoldings(openTrades: DbTrade[]): Holding[] {
     qty,
     avgCost: cost / qty,
     current: getBasePrice(symbol) || cost / qty,
-    class: SYMBOL_CLASS[symbol] ?? 'STOCK',
+    class: getSymbolInfo(symbol)?.class ?? 'STOCK',
   }));
 }
 
@@ -156,11 +154,11 @@ export default function PortfolioPage() {
               return (
                 <div key={h.symbol} style={{ marginBottom: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '6px', marginBottom: '3px' }}>
-                    <span style={{ color: CLASS_COLORS[h.class] }}>{h.symbol}</span>
+                    <span style={{ color: ASSET_CLASS_COLOR[h.class] }}>{h.symbol}</span>
                     <span style={{ color: '#64748b' }}>{pct.toFixed(1)}%</span>
                   </div>
                   <div style={{ height: '5px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: CLASS_COLORS[h.class], boxShadow: `0 0 4px ${CLASS_COLORS[h.class]}` }} />
+                    <div style={{ width: `${pct}%`, height: '100%', background: ASSET_CLASS_COLOR[h.class], boxShadow: `0 0 4px ${ASSET_CLASS_COLOR[h.class]}` }} />
                   </div>
                 </div>
               );
@@ -216,8 +214,8 @@ export default function PortfolioPage() {
             const up = pnl >= 0;
             return (
               <div key={h.symbol} style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '9px 12px', borderBottom: '1px solid #0f1629', fontSize: '7px', alignItems: 'center' }}>
-                <span style={{ color: CLASS_COLORS[h.class], textShadow: `0 0 6px ${CLASS_COLORS[h.class]}` }}>{h.symbol}</span>
-                <span style={{ fontSize: '5px', color: CLASS_COLORS[h.class], border: `1px solid ${CLASS_COLORS[h.class]}44`, padding: '2px 3px', display: 'inline-block' }}>{h.class}</span>
+                <span style={{ color: ASSET_CLASS_COLOR[h.class], textShadow: `0 0 6px ${ASSET_CLASS_COLOR[h.class]}` }}>{h.symbol}</span>
+                <span style={{ fontSize: '5px', color: ASSET_CLASS_COLOR[h.class], border: `1px solid ${ASSET_CLASS_COLOR[h.class]}44`, padding: '2px 3px', display: 'inline-block' }}>{h.class}</span>
                 <span style={{ color: '#e2e8f0' }}>{h.qty}</span>
                 <span style={{ color: '#64748b' }}>${h.avgCost.toLocaleString()}</span>
                 <span style={{ color: '#e2e8f0' }}>${h.current.toLocaleString()}</span>
