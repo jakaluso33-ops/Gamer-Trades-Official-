@@ -41,8 +41,8 @@ jobs:
         env:
           NODE_ENV: production
           # Public client-side values (protected by Supabase RLS), safe to bake into the build.
-          NEXT_PUBLIC_SUPABASE_URL: https://prgohtemkyxogijpwovh.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByZ29odGVta3l4b2dpanB3b3ZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNzYzNDgsImV4cCI6MjA5Nzc1MjM0OH0.nuCR5svszoT96_GkGpdv5D_-50PeD-_7_4ReCVQD3Ns
+          NEXT_PUBLIC_SUPABASE_URL: https://gtpgaarroytjaseuqvbf.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0cGdhYXJyb3l0amFzZXVxdmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMDQyODYsImV4cCI6MjEwMDc4MDI4Nn0.ampPVpgo1hYwOYCmQLPKdbAnRa8EB5WRoo4vBU5Tpjc
         run: npm run build
 
       - uses: actions/configure-pages@v5
