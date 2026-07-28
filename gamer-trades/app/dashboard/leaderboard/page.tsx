@@ -21,22 +21,22 @@ export default function LeaderboardPage() {
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>♛ RANKINGS</div>
-          <h1 className="font-pixel" style={{ fontSize: '13px', color: '#ffd700', textShadow: '0 0 12px #ffd700', margin: 0 }}>LEADERBOARD</h1>
+          <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px' }}>♛ RANKINGS</div>
+          <h1 className="font-pixel" style={{ fontSize: '11px', color: '#ffd700', textShadow: '0 0 12px #ffd700', margin: 0 }}>LEADERBOARD</h1>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>YOUR RANK</div>
-          <div style={{ fontSize: '12px', color: '#00ffff', textShadow: '0 0 10px #00ffff' }}>
+          <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>YOUR RANK</div>
+          <div style={{ fontSize: '10px', color: '#00ffff', textShadow: '0 0 10px #00ffff' }}>
             {yourRank > 0 ? `#${yourRank} GLOBAL` : '—'}
           </div>
         </div>
       </div>
 
       {entries === null ? (
-        <div style={{ fontSize: '13px', color: '#64748b' }}>Loading leaderboard...</div>
+        <div style={{ fontSize: '11px', color: '#64748b' }}>Loading leaderboard...</div>
       ) : entries.length === 0 ? (
         <div className="retro-card" style={{ padding: '30px', textAlign: 'center' }}>
-          <div style={{ fontSize: '14px', color: '#64748b' }}>No ranked players yet — be the first!</div>
+          <div style={{ fontSize: '12px', color: '#64748b' }}>No ranked players yet — be the first!</div>
         </div>
       ) : (
         <>
@@ -65,7 +65,7 @@ export default function LeaderboardPage() {
                         minWidth: '90px',
                       }}
                     >
-                      <div style={{ fontSize: '12px', color, textShadow: isFirst ? `0 0 8px ${color}` : 'none' }}>{entry.username}</div>
+                      <div style={{ fontSize: '10px', color, textShadow: isFirst ? `0 0 8px ${color}` : 'none' }}>{entry.username}</div>
                       <div style={{ fontSize: isFirst ? '10px' : '8px', color: '#00ff88', marginTop: '3px' }}>{entry.xp.toLocaleString()} XP</div>
                     </div>
                     <div style={{ fontSize: isFirst ? '14px' : '10px', marginTop: '4px' }}>{medal}</div>
@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
 
           {/* Leaderboard table */}
           <div className="retro-card" style={{ overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '36px 140px 70px 60px 100px 90px', gap: '6px', padding: '7px 14px', borderBottom: '2px solid #1e3a5f', fontSize: '11px', color: '#64748b' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '36px 140px 70px 60px 100px 90px', gap: '6px', padding: '7px 14px', borderBottom: '2px solid #1e3a5f', fontSize: '9px', color: '#64748b' }}>
               <span>RANK</span><span>PLAYER</span><span>LEVEL</span><span>XP</span><span>LIFETIME P&L</span><span>WIN RATE</span>
             </div>
             {entries.map((entry, i) => {
@@ -100,18 +100,18 @@ export default function LeaderboardPage() {
                     alignItems: 'center',
                   }}
                 >
-                  <span style={{ fontSize: '14px', color: rankColor, textShadow: isTop3 ? `0 0 8px ${rankColor}` : 'none' }}>
+                  <span style={{ fontSize: '12px', color: rankColor, textShadow: isTop3 ? `0 0 8px ${rankColor}` : 'none' }}>
                     #{rank}
                   </span>
-                  <span style={{ fontSize: '13px', color: isYou ? '#00ff88' : '#e2e8f0', textShadow: isYou ? '0 0 6px #00ff88' : 'none' }}>
+                  <span style={{ fontSize: '11px', color: isYou ? '#00ff88' : '#e2e8f0', textShadow: isYou ? '0 0 6px #00ff88' : 'none' }}>
                     {entry.username}{isYou ? ' (YOU)' : ''}
                   </span>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>LVL {entry.level}</span>
-                  <span style={{ fontSize: '12px', color: '#ffd700' }}>{entry.xp.toLocaleString()}</span>
-                  <span style={{ fontSize: '13px', color: entry.lifetime_pnl >= 0 ? '#00ff88' : '#ff3355' }}>
+                  <span style={{ fontSize: '10px', color: '#64748b' }}>LVL {entry.level}</span>
+                  <span style={{ fontSize: '10px', color: '#ffd700' }}>{entry.xp.toLocaleString()}</span>
+                  <span style={{ fontSize: '11px', color: entry.lifetime_pnl >= 0 ? '#00ff88' : '#ff3355' }}>
                     {entry.lifetime_pnl >= 0 ? '+' : ''}${entry.lifetime_pnl.toFixed(2)}
                   </span>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  <span style={{ fontSize: '10px', color: '#64748b' }}>
                     {entry.total_wins + entry.total_losses > 0 ? `${Math.round(entry.win_rate)}%` : '—'}
                   </span>
                 </div>

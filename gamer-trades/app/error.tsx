@@ -26,13 +26,13 @@ export default function Error({
       }}
     >
       <div style={{ fontSize: '40px', marginBottom: '16px' }}>⚠</div>
-      <h2 style={{ fontSize: '12px', color: '#ff3355', textShadow: '0 0 10px #ff3355', marginBottom: '12px' }}>
+      <h2 style={{ fontSize: '10px', color: '#ff3355', textShadow: '0 0 10px #ff3355', marginBottom: '12px' }}>
         SOMETHING GLITCHED
       </h2>
-      <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px', maxWidth: '360px', lineHeight: 1.9 }}>
+      <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '24px', maxWidth: '360px', lineHeight: 1.9 }}>
         That screen hit an unexpected error. Your account and trading data are safe — try again below.
       </p>
-      <button onClick={() => reset()} className="pixel-btn pixel-btn-blue" style={{ fontSize: '14px', padding: '12px 20px' }}>
+      <button onClick={() => reset()} className="pixel-btn pixel-btn-blue" style={{ fontSize: '12px', padding: '12px 20px' }}>
         ↺ TRY AGAIN
       </button>
     </div>

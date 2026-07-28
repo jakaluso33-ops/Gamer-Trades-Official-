@@ -99,23 +99,23 @@ export default function HUDBar() {
           />
           <span
             style={{
-              fontSize: '13px',
+              fontSize: '11px',
               color: marketOpen ? '#00ff88' : '#ff3355',
               textShadow: marketOpen ? '0 0 6px #00ff88' : '0 0 6px #ff3355',
             }}
           >
             {marketOpen ? 'MARKET OPEN' : 'MARKET CLOSED'}
           </span>
-          <span style={{ fontSize: '12px', color: '#1e3a5f' }}>|</span>
-          <span style={{ fontSize: '13px', color: '#64748b' }}>NYSE • NASDAQ • CRYPTO 24/7</span>
+          <span style={{ fontSize: '10px', color: '#1e3a5f' }}>|</span>
+          <span style={{ fontSize: '11px', color: '#64748b' }}>NYSE • NASDAQ • CRYPTO 24/7</span>
         </div>
 
         {/* Right: P&L + time */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '13px', color: '#64748b' }}>SESSION P&L:</span>
+          <span style={{ fontSize: '11px', color: '#64748b' }}>SESSION P&L:</span>
           <span
             style={{
-              fontSize: '14px',
+              fontSize: '12px',
               color: '#00ff88',
               textShadow: '0 0 8px #00ff88',
             }}
@@ -124,7 +124,7 @@ export default function HUDBar() {
           </span>
           <span
             style={{
-              fontSize: '13px',
+              fontSize: '11px',
               color: '#00aaff',
               textShadow: '0 0 6px #00aaff',
               fontVariantNumeric: 'tabular-nums',
@@ -142,7 +142,7 @@ export default function HUDBar() {
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
-          fontSize: '13px',
+          fontSize: '11px',
         }}
       >
         <div className="marquee-inner">

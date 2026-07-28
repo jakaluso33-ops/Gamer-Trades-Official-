@@ -50,7 +50,7 @@ export default function PixelSidebar() {
         <div
           className="font-pixel"
           style={{
-            fontSize: '11px',
+            fontSize: '9px',
             color: '#00ffff',
             textShadow: '0 0 10px #00ffff, 0 0 20px #00ffff44',
             letterSpacing: '1px',
@@ -62,7 +62,7 @@ export default function PixelSidebar() {
         <div
           className="font-pixel"
           style={{
-            fontSize: '11px',
+            fontSize: '9px',
             color: '#00ff88',
             textShadow: '0 0 10px #00ff88, 0 0 20px #00ff8844',
             letterSpacing: '1px',
@@ -73,7 +73,7 @@ export default function PixelSidebar() {
         <div
           style={{
             marginTop: '6px',
-            fontSize: '11px',
+            fontSize: '9px',
             color: '#ffd700',
             textShadow: '0 0 6px #ffd700',
           }}
@@ -102,23 +102,23 @@ export default function PixelSidebar() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '14px',
+              fontSize: '12px',
               flexShrink: 0,
             }}
           >
             🎮
           </div>
           <div>
-            <div style={{ fontSize: '13px', color: '#00aaff', textShadow: '0 0 8px #00aaff' }}>
+            <div style={{ fontSize: '11px', color: '#00aaff', textShadow: '0 0 8px #00aaff' }}>
               {profile?.username ?? '...'}
             </div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+            <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
               LVL {profile?.level ?? 1} TRADER
             </div>
           </div>
         </div>
         {/* XP Bar */}
-        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+        <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '3px' }}>
           XP: {(profile?.xp ?? 0).toLocaleString()} / {xpNeeded.toLocaleString()}
         </div>
         <div
@@ -153,7 +153,7 @@ export default function PixelSidebar() {
                 alignItems: 'center',
                 gap: '10px',
                 padding: '11px 16px',
-                fontSize: '14px',
+                fontSize: '12px',
                 textDecoration: 'none',
                 color: isActive ? '#00ffff' : '#64748b',
                 background: isActive ? 'rgba(0, 255, 255, 0.05)' : 'transparent',
@@ -164,13 +164,13 @@ export default function PixelSidebar() {
                 letterSpacing: '0.5px',
               }}
             >
-              <span style={{ fontSize: '12px', lineHeight: 1 }}>{item.icon}</span>
+              <span style={{ fontSize: '10px', lineHeight: 1 }}>{item.icon}</span>
               {item.label}
               {isActive && (
                 <span
                   style={{
                     marginLeft: 'auto',
-                    fontSize: '14px',
+                    fontSize: '12px',
                     color: '#00ffff',
                   }}
                 >
@@ -189,18 +189,18 @@ export default function PixelSidebar() {
           borderTop: '2px solid #1e3a5f',
         }}
       >
-        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>BALANCE</div>
+        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px' }}>BALANCE</div>
         <div
           className="font-pixel"
           style={{
-            fontSize: '14px',
+            fontSize: '12px',
             color: '#00ff88',
             textShadow: '0 0 10px #00ff88',
           }}
         >
           $24,830.50
         </div>
-        <div style={{ fontSize: '11px', color: '#00ff88', marginTop: '2px', opacity: 0.7 }}>
+        <div style={{ fontSize: '9px', color: '#00ff88', marginTop: '2px', opacity: 0.7 }}>
           ▲ +$830.50 TODAY
         </div>
       </div>
@@ -216,14 +216,14 @@ export default function PixelSidebar() {
       >
         <button
           className="pixel-btn pixel-btn-blue"
-          style={{ flex: 1, fontSize: '13px', padding: '6px 8px' }}
+          style={{ flex: 1, fontSize: '11px', padding: '6px 8px' }}
         >
           ⚙ SET
         </button>
         <button
           onClick={async () => { await signOut(); router.push('/login'); }}
           className="pixel-btn pixel-btn-red"
-          style={{ flex: 1, fontSize: '13px', padding: '6px 8px' }}
+          style={{ flex: 1, fontSize: '11px', padding: '6px 8px' }}
         >
           ✕ OUT
         </button>

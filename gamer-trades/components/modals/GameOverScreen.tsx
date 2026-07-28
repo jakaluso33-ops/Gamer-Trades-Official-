@@ -116,7 +116,7 @@ export default function GameOverScreen({ type, pnl, symbol, onClose, onReplay }:
         >
           {isWin ? 'NICE WORK!' : 'GAME OVER'}
         </div>
-        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '28px' }}>
+        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '28px' }}>
           {isWin ? '▶ STOP LOSS HIT IN PROFIT ◀' : '▶ STOP LOSS HIT IN LOSS ◀'}
         </div>
 
@@ -130,8 +130,8 @@ export default function GameOverScreen({ type, pnl, symbol, onClose, onReplay }:
               { k: 'XP EARNED', v: isWin ? '+200 XP' : '+25 XP', c: '#8b5cf6' },
             ].map(({ k, v, c }) => (
               <div key={k} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>{k}</div>
-                <div style={{ fontSize: '14px', color: c ?? '#e2e8f0', textShadow: c ? `0 0 8px ${c}` : 'none' }}>{v}</div>
+                <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '4px' }}>{k}</div>
+                <div style={{ fontSize: '12px', color: c ?? '#e2e8f0', textShadow: c ? `0 0 8px ${c}` : 'none' }}>{v}</div>
               </div>
             ))}
           </div>
@@ -141,14 +141,14 @@ export default function GameOverScreen({ type, pnl, symbol, onClose, onReplay }:
         <div style={{ display: 'flex', gap: '12px' }}>
           <button
             className="pixel-btn pixel-btn-green"
-            style={{ flex: 1, fontSize: '14px', padding: '12px' }}
+            style={{ flex: 1, fontSize: '12px', padding: '12px' }}
             onClick={onReplay}
           >
             ▶ PLAY AGAIN
           </button>
           <button
             className="pixel-btn pixel-btn-blue"
-            style={{ flex: 1, fontSize: '14px', padding: '12px' }}
+            style={{ flex: 1, fontSize: '12px', padding: '12px' }}
             onClick={onClose}
           >
             ⊞ DASHBOARD

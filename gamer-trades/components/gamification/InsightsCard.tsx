@@ -35,16 +35,16 @@ export default function InsightsCard() {
       className="retro-card"
       style={{ padding: '16px', marginBottom: '16px', borderColor: '#8b5cf6', boxShadow: '4px 4px 0 #000, 0 0 14px #8b5cf633' }}
     >
-      <div style={{ fontSize: '13px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '12px' }}>
+      <div style={{ fontSize: '11px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '12px' }}>
         🧠 COACH INSIGHTS
       </div>
 
       {insights === null && (
-        <div style={{ fontSize: '12px', color: '#64748b' }}>Analyzing your recent activity...</div>
+        <div style={{ fontSize: '10px', color: '#64748b' }}>Analyzing your recent activity...</div>
       )}
 
       {insights !== null && insights.length === 0 && (
-        <div style={{ fontSize: '12px', color: '#64748b' }}>Nothing urgent — keep trading and check back soon.</div>
+        <div style={{ fontSize: '10px', color: '#64748b' }}>Nothing urgent — keep trading and check back soon.</div>
       )}
 
       {insights && insights.length > 0 && (
@@ -58,14 +58,14 @@ export default function InsightsCard() {
               >
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '6px' }}>
                   <span style={{ fontSize: '16px' }}>{insight.icon}</span>
-                  <span style={{ fontSize: '13px', color, textShadow: `0 0 6px ${color}` }}>{insight.title}</span>
+                  <span style={{ fontSize: '11px', color, textShadow: `0 0 6px ${color}` }}>{insight.title}</span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.7, marginBottom: '8px' }}>
+                <div style={{ fontSize: '9px', color: '#64748b', lineHeight: 1.7, marginBottom: '8px' }}>
                   {insight.message}
                 </div>
                 <Link
                   href={ACTION_HREF[insight.actionKey]}
-                  style={{ fontSize: '11px', color, textDecoration: 'none', textShadow: `0 0 6px ${color}` }}
+                  style={{ fontSize: '9px', color, textDecoration: 'none', textShadow: `0 0 6px ${color}` }}
                 >
                   ▶ {insight.actionLabel}
                 </Link>

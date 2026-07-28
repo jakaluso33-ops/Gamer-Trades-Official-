@@ -29,6 +29,8 @@ function generateCandles(count: number, basePrice: number): Candle[] {
 interface Props {
   symbol: string;
   basePrice: number;
+  /** Latest real-time price (from live quotes or tick simulation) to anchor new candles to. */
+  livePrice?: number;
   height?: number;
   enabledStrategies?: DetectorId[];
   onSignal?: (signal: StrategySignal | null) => void;
@@ -36,7 +38,7 @@ interface Props {
 
 const ALL_DETECTORS: DetectorId[] = ['breakout', 'orb', 'fibonacci', 'support_resistance', 'ma_crossover', 'rsi_reversal'];
 
-export default function CandlestickChart({ symbol, basePrice, height = 320, enabledStrategies = ALL_DETECTORS, onSignal }: Props) {
+export default function CandlestickChart({ symbol, basePrice, livePrice, height = 320, enabledStrategies = ALL_DETECTORS, onSignal }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [candles, setCandles] = useState<Candle[]>(() => generateCandles(80, basePrice));
   const [hovered, setHovered] = useState<Candle | null>(null);
@@ -44,6 +46,17 @@ export default function CandlestickChart({ symbol, basePrice, height = 320, enab
   const [signals, setSignals] = useState<StrategySignal[]>([]);
   const onSignalRef = useRef(onSignal);
   useEffect(() => { onSignalRef.current = onSignal; }, [onSignal]);
+  const livePriceRef = useRef(livePrice);
+  useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
+
+  // Reset the chart when switching instruments — otherwise the old symbol's
+  // candle history sticks around and the chart appears frozen.
+  useEffect(() => {
+    setCandles(generateCandles(80, basePrice));
+    setHovered(null);
+    setMouseX(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol]);
 
   // Add new candle every 3 seconds
   useEffect(() => {
@@ -51,8 +64,9 @@ export default function CandlestickChart({ symbol, basePrice, height = 320, enab
       setCandles(prev => {
         const last = prev[prev.length - 1];
         const open = last.close;
-        const change = (Math.random() - 0.48) * open * 0.008;
-        const close = Math.max(1, open + change);
+        const anchor = livePriceRef.current;
+        // Track the real live price when we have one, otherwise fall back to a random walk.
+        const close = anchor != null ? Math.max(1, anchor) : Math.max(1, open + (Math.random() - 0.48) * open * 0.008);
         const high = Math.max(open, close) + Math.random() * open * 0.003;
         const low = Math.min(open, close) - Math.random() * open * 0.003;
         const newCandle: Candle = {
@@ -254,7 +268,7 @@ export default function CandlestickChart({ symbol, basePrice, height = 320, enab
   return (
     <div style={{ position: 'relative' }}>
       {/* OHLCV info bar */}
-      <div style={{ display: 'flex', gap: '16px', padding: '6px 10px', fontSize: '13px', borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '16px', padding: '6px 10px', fontSize: '11px', borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
         {[
           { k: 'O', v: (hovered ?? last).open.toFixed(2) },
           { k: 'H', v: (hovered ?? last).high.toFixed(2), c: '#00ff88' },

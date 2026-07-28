@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (loading || !session) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0e1a' }}>
-        <div style={{ fontSize: '14px', color: '#00ffff', textShadow: '0 0 8px #00ffff' }}>LOADING...</div>
+        <div style={{ fontSize: '12px', color: '#00ffff', textShadow: '0 0 8px #00ffff' }}>LOADING...</div>
       </div>
     );
   }

@@ -65,8 +65,10 @@ export default function TradeScreen() {
   const [log, setLog] = useState<string[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(SCANNER_STRATEGIES.map(s => s.id));
-  const candlesRef = useRef<Candle[]>(generateCandles(60, 182.34));
+  const candlesRef = useRef<Candle[]>(generateCandles(60, ALL_SYMBOLS[0].basePrice));
   const [signals, setSignals] = useState<StrategySignal[]>([]);
+  const livePriceRef = useRef(livePrice);
+  useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
 
   useEffect(() => {
     if (!user) return;
@@ -76,6 +78,13 @@ export default function TradeScreen() {
 
   useEffect(() => {
     setLivePrice(selected.basePrice);
+  }, [selected]);
+
+  // Reset the chart when switching instruments — otherwise the old symbol's
+  // candle history sticks around and the chart appears frozen.
+  useEffect(() => {
+    candlesRef.current = generateCandles(60, selected.basePrice);
+    setSignals([]);
   }, [selected]);
 
   // Anchor the live-ticking price to real Polygon.io quotes when available (stocks,
@@ -96,8 +105,9 @@ export default function TradeScreen() {
       const prev = candlesRef.current;
       const last = prev[prev.length - 1];
       const open = last.close;
-      const change = (Math.random() - 0.48) * open * 0.008;
-      const close = Math.max(1, open + change);
+      const anchor = livePriceRef.current;
+      // Track the real live price when we have one, otherwise fall back to a random walk.
+      const close = anchor != null ? Math.max(1, anchor) : Math.max(1, open + (Math.random() - 0.48) * open * 0.008);
       const high = Math.max(open, close) + Math.random() * open * 0.003;
       const low = Math.min(open, close) - Math.random() * open * 0.003;
       const newCandle: Candle = {

@@ -43,10 +43,11 @@ export function BodyText({
   glow?: boolean;
 } & React.ComponentProps<typeof Text>) {
   const fontFamily = weight === 'semibold' ? font.bodySemiBold : weight === 'medium' ? font.bodyMedium : font.body;
+  const effectiveSize = Math.max(9, size - 2);
   return (
     <Text
       style={[
-        { fontFamily, color, fontSize: size, lineHeight: size * 1.4 },
+        { fontFamily, color, fontSize: effectiveSize, lineHeight: effectiveSize * 1.4 },
         glow && { textShadowColor: color, textShadowRadius: 8, textShadowOffset: { width: 0, height: 0 } },
         style,
       ]}

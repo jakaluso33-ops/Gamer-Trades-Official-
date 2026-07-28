@@ -123,12 +123,12 @@ export default function FriendsPage() {
   return (
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '6px' }}>♥ SOCIAL</div>
-        <h1 className="font-pixel" style={{ fontSize: '14px', color: '#00ff88', textShadow: '0 0 12px #00ff88', margin: 0 }}>FRIENDS</h1>
+        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '6px' }}>♥ SOCIAL</div>
+        <h1 className="font-pixel" style={{ fontSize: '12px', color: '#00ff88', textShadow: '0 0 12px #00ff88', margin: 0 }}>FRIENDS</h1>
       </div>
 
       {toast && (
-        <div style={{ position: 'fixed', top: '60px', right: '20px', zIndex: 200, padding: '10px 16px', background: '#0f1629', border: '2px solid #00ff88', boxShadow: '4px 4px 0 #000, 0 0 12px #00ff8844', fontSize: '13px', color: '#00ff88' }}>
+        <div style={{ position: 'fixed', top: '60px', right: '20px', zIndex: 200, padding: '10px 16px', background: '#0f1629', border: '2px solid #00ff88', boxShadow: '4px 4px 0 #000, 0 0 12px #00ff8844', fontSize: '11px', color: '#00ff88' }}>
           {toast}
         </div>
       )}
@@ -140,7 +140,7 @@ export default function FriendsPage() {
             onClick={() => setTab(t)}
             className="pixel-btn"
             style={{
-              fontSize: '13px', padding: '9px 14px',
+              fontSize: '11px', padding: '9px 14px',
               background: tab === t ? '#00ff8822' : '#0a0e1a',
               color: tab === t ? '#00ff88' : '#64748b',
               borderColor: tab === t ? '#00ff88' : '#1e3a5f',
@@ -159,7 +159,7 @@ export default function FriendsPage() {
             placeholder="SEARCH BY USERNAME..."
             style={{
               width: '100%', background: '#0a0e1a', border: '2px solid #1e3a5f', color: '#e2e8f0',
-              fontSize: '14px', padding: '10px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+              fontSize: '12px', padding: '10px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
             }}
           />
         </div>
@@ -171,8 +171,8 @@ export default function FriendsPage() {
             ? <EmptyState text="No friends yet. Head to FIND to add someone." />
             : friends.map(f => (
               <PersonRow key={f.id} profile={f.otherProfile} busy={busyId === f.id}>
-                <button onClick={() => challengeFriend(f.otherProfile.id)} className="pixel-btn pixel-btn-green" style={{ fontSize: '12px', padding: '7px 10px' }}>⚔ CHALLENGE</button>
-                <button onClick={() => removeFriend(f.id)} className="pixel-btn pixel-btn-red" style={{ fontSize: '12px', padding: '7px 10px' }}>✕ REMOVE</button>
+                <button onClick={() => challengeFriend(f.otherProfile.id)} className="pixel-btn pixel-btn-green" style={{ fontSize: '10px', padding: '7px 10px' }}>⚔ CHALLENGE</button>
+                <button onClick={() => removeFriend(f.id)} className="pixel-btn pixel-btn-red" style={{ fontSize: '10px', padding: '7px 10px' }}>✕ REMOVE</button>
               </PersonRow>
             ))
         )}
@@ -182,8 +182,8 @@ export default function FriendsPage() {
             ? <EmptyState text="No incoming requests." />
             : incoming.map(f => (
               <PersonRow key={f.id} profile={f.otherProfile} busy={busyId === f.id}>
-                <button onClick={() => respond(f.id, 'accepted')} className="pixel-btn pixel-btn-green" style={{ fontSize: '12px', padding: '7px 10px' }}>✓ ACCEPT</button>
-                <button onClick={() => respond(f.id, 'declined')} className="pixel-btn pixel-btn-red" style={{ fontSize: '12px', padding: '7px 10px' }}>✕ DECLINE</button>
+                <button onClick={() => respond(f.id, 'accepted')} className="pixel-btn pixel-btn-green" style={{ fontSize: '10px', padding: '7px 10px' }}>✓ ACCEPT</button>
+                <button onClick={() => respond(f.id, 'declined')} className="pixel-btn pixel-btn-red" style={{ fontSize: '10px', padding: '7px 10px' }}>✕ DECLINE</button>
               </PersonRow>
             ))
         )}
@@ -193,8 +193,8 @@ export default function FriendsPage() {
             ? <EmptyState text="No pending outgoing requests." />
             : outgoing.map(f => (
               <PersonRow key={f.id} profile={f.otherProfile} busy={busyId === f.id}>
-                <span style={{ fontSize: '12px', color: '#ffd700' }}>PENDING...</span>
-                <button onClick={() => removeFriend(f.id)} className="pixel-btn pixel-btn-red" style={{ fontSize: '12px', padding: '7px 10px' }}>✕ CANCEL</button>
+                <span style={{ fontSize: '10px', color: '#ffd700' }}>PENDING...</span>
+                <button onClick={() => removeFriend(f.id)} className="pixel-btn pixel-btn-red" style={{ fontSize: '10px', padding: '7px 10px' }}>✕ CANCEL</button>
               </PersonRow>
             ))
         )}
@@ -207,8 +207,8 @@ export default function FriendsPage() {
               : results.map(p => (
                 <PersonRow key={p.id} profile={p} busy={busyId === p.id}>
                   {knownIds.has(p.id)
-                    ? <span style={{ fontSize: '12px', color: '#64748b' }}>ALREADY CONNECTED</span>
-                    : <button onClick={() => sendRequest(p.id)} className="pixel-btn pixel-btn-blue" style={{ fontSize: '12px', padding: '7px 10px' }}>+ ADD FRIEND</button>}
+                    ? <span style={{ fontSize: '10px', color: '#64748b' }}>ALREADY CONNECTED</span>
+                    : <button onClick={() => sendRequest(p.id)} className="pixel-btn pixel-btn-blue" style={{ fontSize: '10px', padding: '7px 10px' }}>+ ADD FRIEND</button>}
                 </PersonRow>
               ))
         )}
@@ -227,8 +227,8 @@ function PersonRow({ profile, busy, children }: { profile: Profile; busy: boolea
         🎮
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '14px', color: '#00ffff', textShadow: '0 0 6px #00ffff' }}>{profile.username}</div>
-        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+        <div style={{ fontSize: '12px', color: '#00ffff', textShadow: '0 0 6px #00ffff' }}>{profile.username}</div>
+        <div style={{ fontSize: '9px', color: '#64748b', marginTop: '2px' }}>
           LVL {profile.level} · {profile.total_wins}W-{profile.total_losses}L
         </div>
       </div>
@@ -239,7 +239,7 @@ function PersonRow({ profile, busy, children }: { profile: Profile; busy: boolea
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="retro-card" style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: '#64748b' }}>
+    <div className="retro-card" style={{ padding: '24px', textAlign: 'center', fontSize: '11px', color: '#64748b' }}>
       {text}
     </div>
   );
