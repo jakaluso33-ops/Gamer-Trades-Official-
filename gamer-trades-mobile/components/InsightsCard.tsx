@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, PixelText } from './ui';
+import { Card, PixelText, BodyText } from './ui';
 import { colors } from '../lib/theme';
 import { computeInsights, Insight, InsightTone } from '../lib/insights';
 import { useAuth } from '../lib/AuthContext';
@@ -34,11 +34,11 @@ export default function InsightsCard() {
 
   return (
     <Card borderColor={colors.purple}>
-      <PixelText color={colors.purple} size={7} glow style={{ marginBottom: 10 }}>🧠 COACH INSIGHTS</PixelText>
+      <BodyText color={colors.purple} size={12} weight="semibold" glow style={{ marginBottom: 10 }}>🧠 COACH INSIGHTS</BodyText>
 
-      {insights === null && <PixelText color={colors.muted} size={6}>Analyzing your recent activity...</PixelText>}
+      {insights === null && <BodyText color={colors.muted} size={13}>Analyzing your recent activity...</BodyText>}
       {insights !== null && insights.length === 0 && (
-        <PixelText color={colors.muted} size={6}>Nothing urgent — keep trading and check back soon.</PixelText>
+        <BodyText color={colors.muted} size={13}>Nothing urgent — keep trading and check back soon.</BodyText>
       )}
 
       <View style={{ gap: 8 }}>
@@ -51,12 +51,12 @@ export default function InsightsCard() {
             >
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
                 <PixelText size={16}>{insight.icon}</PixelText>
-                <PixelText color={color} size={7} glow style={{ flex: 1 }}>{insight.title}</PixelText>
+                <BodyText color={color} size={13} weight="semibold" style={{ flex: 1 }}>{insight.title}</BodyText>
               </View>
-              <PixelText color={colors.muted} size={5} style={{ marginBottom: 8, lineHeight: 9 }}>{insight.message}</PixelText>
-              <PixelText color={color} size={5} glow onPress={() => router.push(ACTION_HREF[insight.actionKey] as never)}>
+              <BodyText color={colors.muted} size={12} style={{ marginBottom: 8 }}>{insight.message}</BodyText>
+              <BodyText color={color} size={12} weight="medium" onPress={() => router.push(ACTION_HREF[insight.actionKey] as never)}>
                 ▶ {insight.actionLabel}
-              </PixelText>
+              </BodyText>
             </View>
           );
         })}

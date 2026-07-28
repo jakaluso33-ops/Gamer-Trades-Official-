@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, PixelText, PixelButton } from '../../components/ui';
+import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { Candle, DetectorId, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
@@ -152,8 +152,8 @@ export default function TradeScreen() {
 
       <Card borderColor={colors.purple}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <PixelText color={colors.purple} size={7} glow>🧠 LIVE SIGNALS</PixelText>
-          <PixelText color={colors.muted} size={5} onPress={() => router.push('/(tabs)/academy' as never)}>LEARN ▶</PixelText>
+          <BodyText color={colors.purple} size={12} weight="semibold" glow>🧠 LIVE SIGNALS</BodyText>
+          <BodyText color={colors.muted} size={11} onPress={() => router.push('/(tabs)/academy' as never)}>LEARN ▶</BodyText>
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
           {SCANNER_STRATEGIES.map(s => {
@@ -175,21 +175,21 @@ export default function TradeScreen() {
           const color = latest.direction === 'bullish' ? colors.green : colors.red;
           return (
             <View style={{ padding: 10, backgroundColor: `${color}0a`, borderWidth: 2, borderColor: `${color}55` }}>
-              <PixelText color={color} size={7} glow>{strat?.icon} {strat?.name ?? latest.strategyId} — {latest.label}</PixelText>
-              <PixelText color={colors.muted} size={5} style={{ marginTop: 6, lineHeight: 9 }}>{latest.detail}</PixelText>
+              <BodyText color={color} size={13} weight="medium" glow>{strat?.icon} {strat?.name ?? latest.strategyId} — {latest.label}</BodyText>
+              <BodyText color={colors.muted} size={12} style={{ marginTop: 6 }}>{latest.detail}</BodyText>
             </View>
           );
         })() : (
-          <PixelText color={colors.muted} size={6}>Scanning the market for setups...</PixelText>
+          <BodyText color={colors.muted} size={13}>Scanning the market for setups...</BodyText>
         )}
       </Card>
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-          <PixelText color={colors.muted} size={6}>SYMBOL</PixelText>
-          <PixelText color={colors.text} size={7}>
+          <BodyText color={colors.muted} size={12}>SYMBOL</BodyText>
+          <BodyText color={colors.text} size={13} weight="medium">
             ${livePrice.toLocaleString(undefined, { minimumFractionDigits: selected.decimals, maximumFractionDigits: selected.decimals })}
-          </PixelText>
+          </BodyText>
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
           {ASSET_CLASSES.map(cls => (
@@ -211,7 +211,7 @@ export default function TradeScreen() {
           ))}
         </View>
 
-        <PixelText color={colors.muted} size={6} style={{ marginTop: 16, marginBottom: 8 }}>QUANTITY: {qty}</PixelText>
+        <BodyText color={colors.muted} size={12} style={{ marginTop: 16, marginBottom: 8 }}>QUANTITY: {qty}</BodyText>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           {[1, 10, 25, 50].map(q => (
             <PixelButton key={q} color={qty === q ? colors.gold : colors.muted} onPress={() => setQty(q)} style={{ flex: 1 }}>
@@ -222,13 +222,13 @@ export default function TradeScreen() {
 
         {orderError && (
           <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
-            <PixelText color={colors.red} size={5}>⚠ {orderError}</PixelText>
+            <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
           </View>
         )}
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
-          <PixelText color={colors.muted} size={5}>CASH</PixelText>
-          <PixelText color={colors.text} size={6}>${(portfolio?.cash_balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</PixelText>
+          <BodyText color={colors.muted} size={11}>CASH</BodyText>
+          <BodyText color={colors.text} size={12}>${(portfolio?.cash_balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</BodyText>
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
@@ -239,13 +239,13 @@ export default function TradeScreen() {
 
       <Card borderColor={colors.blue}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-          <PixelText color={colors.blue} size={7} glow>◈ POSITIONS</PixelText>
-          <PixelText color={totalPnl >= 0 ? colors.green : colors.red} size={6}>
+          <BodyText color={colors.blue} size={12} weight="semibold" glow>◈ POSITIONS</BodyText>
+          <BodyText color={totalPnl >= 0 ? colors.green : colors.red} size={12} weight="medium">
             {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
-          </PixelText>
+          </BodyText>
         </View>
         {openTrades.length === 0
-          ? <PixelText color={colors.border} size={6}>No open positions</PixelText>
+          ? <BodyText color={colors.border} size={13}>No open positions</BodyText>
           : openTrades.map(t => {
             const current = priceForSymbol(t.symbol);
             const pnl = computePnl(t, current);
@@ -253,12 +253,12 @@ export default function TradeScreen() {
             return (
               <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
                 <View style={{ flex: 1 }}>
-                  <PixelText color={colors.blue} size={6}>{t.symbol}</PixelText>
-                  <PixelText color={t.direction === 'long' ? colors.green : colors.red} size={5} style={{ marginTop: 2 }}>
+                  <BodyText color={colors.blue} size={13} weight="medium">{t.symbol}</BodyText>
+                  <BodyText color={t.direction === 'long' ? colors.green : colors.red} size={11} style={{ marginTop: 2 }}>
                     {t.direction === 'long' ? 'BUY' : 'SELL'} {t.quantity}x @ ${t.entry_price.toFixed(2)}
-                  </PixelText>
+                  </BodyText>
                 </View>
-                <PixelText color={up ? colors.green : colors.red} size={6}>{up ? '+' : ''}${pnl.toFixed(2)}</PixelText>
+                <BodyText color={up ? colors.green : colors.red} size={13}>{up ? '+' : ''}${pnl.toFixed(2)}</BodyText>
                 <PixelButton color={colors.red} onPress={() => closePosition(t)} style={{ paddingHorizontal: 8, paddingVertical: 6 }}>CLOSE</PixelButton>
               </View>
             );
@@ -267,12 +267,12 @@ export default function TradeScreen() {
       </Card>
 
       <Card>
-        <PixelText color={colors.muted} size={6} style={{ marginBottom: 8 }}>◎ ORDER LOG</PixelText>
+        <BodyText color={colors.muted} size={12} weight="medium" style={{ marginBottom: 8 }}>◎ ORDER LOG</BodyText>
         {log.length === 0
-          ? <PixelText color={colors.border} size={6}>No trades yet</PixelText>
+          ? <BodyText color={colors.border} size={13}>No trades yet</BodyText>
           : log.map((l, i) => (
             <View key={i} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <PixelText color={i === 0 ? colors.green : colors.muted} size={6}>{l}</PixelText>
+              <BodyText color={i === 0 ? colors.green : colors.muted} size={12}>{l}</BodyText>
             </View>
           ))
         }

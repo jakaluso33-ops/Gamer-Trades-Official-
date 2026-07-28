@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
-import { Card, PixelText } from '../../components/ui';
+import { Card, PixelText, BodyText } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { STRATEGIES, StrategyDifficulty } from '../../lib/strategyContent';
 
@@ -16,11 +16,11 @@ export default function AcademyScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
       <View>
-        <PixelText color={colors.muted} size={6}>🧠 AI STRATEGY ACADEMY</PixelText>
+        <BodyText color={colors.muted} size={12}>🧠 AI STRATEGY ACADEMY</BodyText>
         <PixelText color={colors.cyan} size={13} glow style={{ marginTop: 6 }}>LEARN &amp; DETECT</PixelText>
-        <PixelText color={colors.muted} size={5} style={{ marginTop: 8, lineHeight: 9 }}>
+        <BodyText color={colors.muted} size={12} style={{ marginTop: 8 }}>
           Learn these strategies here, then check the LIVE SIGNALS panel on the Trade screen — the scanner flags these exact setups as they form.
-        </PixelText>
+        </BodyText>
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -34,7 +34,7 @@ export default function AcademyScreen() {
               borderWidth: 2, borderColor: selected.id === s.id ? s.color : colors.border,
             }}
           >
-            <PixelText color={selected.id === s.id ? s.color : colors.muted} size={6}>{s.icon} {s.name}</PixelText>
+            <BodyText color={selected.id === s.id ? s.color : colors.muted} size={12}>{s.icon} {s.name}</BodyText>
           </Pressable>
         ))}
       </View>
@@ -43,28 +43,28 @@ export default function AcademyScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           <PixelText size={26}>{selected.icon}</PixelText>
           <View style={{ flex: 1 }}>
-            <PixelText color={selected.color} size={9} glow>{selected.name}</PixelText>
-            <PixelText color={DIFF_COLOR[selected.difficulty]} size={5} style={{ marginTop: 4 }}>{selected.difficulty}</PixelText>
+            <BodyText color={selected.color} size={15} weight="semibold" glow>{selected.name}</BodyText>
+            <BodyText color={DIFF_COLOR[selected.difficulty]} size={11} style={{ marginTop: 4 }}>{selected.difficulty}</BodyText>
           </View>
         </View>
 
-        <PixelText color={colors.text} size={6} style={{ lineHeight: 11, marginBottom: 14 }}>{selected.summary}</PixelText>
+        <BodyText color={colors.text} size={13} style={{ marginBottom: 14 }}>{selected.summary}</BodyText>
 
-        <PixelText color={colors.muted} size={6} style={{ marginBottom: 8 }}>◆ HOW IT WORKS</PixelText>
+        <BodyText color={colors.muted} size={12} weight="medium" style={{ marginBottom: 8 }}>◆ HOW IT WORKS</BodyText>
         {selected.howItWorks.map((step, i) => (
           <View key={i} style={{ flexDirection: 'row', gap: 6, marginBottom: 6 }}>
-            <PixelText color={selected.color} size={6}>{i + 1}.</PixelText>
-            <PixelText color={colors.text} size={6} style={{ flex: 1, lineHeight: 10 }}>{step}</PixelText>
+            <BodyText color={selected.color} size={13}>{i + 1}.</BodyText>
+            <BodyText color={colors.text} size={13} style={{ flex: 1 }}>{step}</BodyText>
           </View>
         ))}
 
         <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
-          <PixelText color={colors.blue} size={5} style={{ marginBottom: 6 }}>WHEN TO USE</PixelText>
-          <PixelText color={colors.muted} size={6} style={{ lineHeight: 10 }}>{selected.whenToUse}</PixelText>
+          <BodyText color={colors.blue} size={11} weight="medium" style={{ marginBottom: 6 }}>WHEN TO USE</BodyText>
+          <BodyText color={colors.muted} size={13}>{selected.whenToUse}</BodyText>
         </View>
         <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
-          <PixelText color={colors.red} size={5} style={{ marginBottom: 6 }}>RISK NOTE</PixelText>
-          <PixelText color={colors.muted} size={6} style={{ lineHeight: 10 }}>{selected.riskNote}</PixelText>
+          <BodyText color={colors.red} size={11} weight="medium" style={{ marginBottom: 6 }}>RISK NOTE</BodyText>
+          <BodyText color={colors.muted} size={13}>{selected.riskNote}</BodyText>
         </View>
       </Card>
     </ScrollView>

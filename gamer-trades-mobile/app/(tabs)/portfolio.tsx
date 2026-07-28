@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Card, PixelText } from '../../components/ui';
+import { Card, PixelText, BodyText } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { getPortfolio, listOpenTrades, computePnl, Portfolio, DbTrade } from '../../lib/trading';
@@ -55,7 +55,7 @@ export default function PortfolioScreen() {
   if (loading) {
     return (
       <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16 }}>
-        <PixelText color={colors.muted} size={6}>Loading portfolio...</PixelText>
+        <BodyText color={colors.muted} size={13}>Loading portfolio...</BodyText>
       </ScrollView>
     );
   }
@@ -65,36 +65,36 @@ export default function PortfolioScreen() {
       <PixelText color={colors.blue} size={13} glow>◉ PORTFOLIO</PixelText>
 
       <Card borderColor={colors.green}>
-        <PixelText color={colors.muted} size={6}>TOTAL VALUE</PixelText>
+        <BodyText color={colors.muted} size={11}>TOTAL VALUE</BodyText>
         <PixelText color={colors.green} size={16} glow style={{ marginTop: 6 }}>
           ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </PixelText>
-        <PixelText color={unrealizedPnl >= 0 ? colors.green : colors.red} size={7} style={{ marginTop: 6 }}>
+        <BodyText color={unrealizedPnl >= 0 ? colors.green : colors.red} size={13} weight="medium" style={{ marginTop: 6 }}>
           {unrealizedPnl >= 0 ? '▲' : '▼'} {unrealizedPnl >= 0 ? '+' : ''}${unrealizedPnl.toFixed(2)} unrealized
-        </PixelText>
-        <PixelText color={colors.muted} size={5} style={{ marginTop: 6 }}>
+        </BodyText>
+        <BodyText color={colors.muted} size={11} style={{ marginTop: 6 }}>
           CASH: ${cashBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-        </PixelText>
+        </BodyText>
       </Card>
 
       <Card>
-        <PixelText color={colors.blue} size={7} glow style={{ marginBottom: 10 }}>HOLDINGS</PixelText>
+        <BodyText color={colors.blue} size={12} weight="semibold" glow style={{ marginBottom: 10 }}>HOLDINGS</BodyText>
         {holdings.length === 0 ? (
-          <PixelText color={colors.border} size={6}>No open positions</PixelText>
+          <BodyText color={colors.border} size={13}>No open positions</BodyText>
         ) : holdings.map(h => {
           const pnl = (h.current - h.avgCost) * h.qty;
           const pct = h.avgCost > 0 ? ((h.current - h.avgCost) / h.avgCost) * 100 : 0;
           return (
             <View key={h.symbol} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
               <View>
-                <PixelText color={colors.blue} size={7}>{h.symbol}</PixelText>
-                <PixelText color={colors.muted} size={5} style={{ marginTop: 3 }}>{h.qty} units</PixelText>
+                <BodyText color={colors.blue} size={13} weight="medium">{h.symbol}</BodyText>
+                <BodyText color={colors.muted} size={11} style={{ marginTop: 3 }}>{h.qty} units</BodyText>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <PixelText color={colors.text} size={7}>${(h.current * h.qty).toLocaleString()}</PixelText>
-                <PixelText color={pnl >= 0 ? colors.green : colors.red} size={5} style={{ marginTop: 3 }}>
+                <BodyText color={colors.text} size={13}>${(h.current * h.qty).toLocaleString()}</BodyText>
+                <BodyText color={pnl >= 0 ? colors.green : colors.red} size={11} style={{ marginTop: 3 }}>
                   {pnl >= 0 ? '+' : ''}{pct.toFixed(2)}%
-                </PixelText>
+                </BodyText>
               </View>
             </View>
           );

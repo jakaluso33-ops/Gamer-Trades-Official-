@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Card, PixelText, PixelButton, Avatar } from './ui';
+import { Card, PixelText, BodyText, PixelButton, Avatar } from './ui';
 import { colors } from '../lib/theme';
 import { supabase, Profile, PvpMatch, PvpMatchTrade, MatchMode } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
@@ -249,20 +249,20 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
             <PixelText color={isDraw ? colors.gold : iWon ? colors.green : colors.red} size={14} glow style={{ marginTop: 10 }}>
               {isDraw ? "IT'S A DRAW!" : iWon ? 'YOU WIN!' : 'YOU LOSE!'}
             </PixelText>
-            <PixelText color={colors.muted} size={6} style={{ marginTop: 8, marginBottom: 20 }}>vs {opponent?.username ?? 'opponent'}</PixelText>
+            <BodyText color={colors.muted} size={13} style={{ marginTop: 8, marginBottom: 20 }}>vs {opponent?.username ?? 'opponent'}</BodyText>
             <View style={{ flexDirection: 'row', gap: 10, width: '100%', marginBottom: 16 }}>
               <View style={{ flex: 1, padding: 10, backgroundColor: colors.bg, borderWidth: 2, borderColor: myPnl >= 0 ? colors.green : colors.red }}>
-                <PixelText color={colors.muted} size={5}>YOUR P&amp;L</PixelText>
+                <BodyText color={colors.muted} size={11}>YOUR P&amp;L</BodyText>
                 <PixelText color={myPnl >= 0 ? colors.green : colors.red} size={10} style={{ marginTop: 4 }}>{myPnl >= 0 ? '+' : ''}${myPnl.toFixed(2)}</PixelText>
               </View>
               <View style={{ flex: 1, padding: 10, backgroundColor: colors.bg, borderWidth: 2, borderColor: oppPnl >= 0 ? colors.green : colors.red }}>
-                <PixelText color={colors.muted} size={5}>{(opponent?.username ?? 'OPP').toUpperCase()}</PixelText>
+                <BodyText color={colors.muted} size={11}>{(opponent?.username ?? 'OPP').toUpperCase()}</BodyText>
                 <PixelText color={oppPnl >= 0 ? colors.green : colors.red} size={10} style={{ marginTop: 4 }}>{oppPnl >= 0 ? '+' : ''}${oppPnl.toFixed(2)}</PixelText>
               </View>
             </View>
             {iWon && (
               <View style={{ padding: 8, backgroundColor: '#8b5cf622', borderWidth: 2, borderColor: colors.purple, marginBottom: 16, width: '100%' }}>
-                <PixelText color={colors.purple} size={7} style={{ textAlign: 'center' }}>+150 XP EARNED!</PixelText>
+                <BodyText color={colors.purple} size={13} weight="medium" style={{ textAlign: 'center' }}>+150 XP EARNED!</BodyText>
               </View>
             )}
             <PixelButton color={colors.blue} onPress={exitToLobby} style={{ width: '100%' }}>◀ BACK TO LOBBY</PixelButton>
@@ -282,7 +282,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
             <View style={{ alignItems: 'center' }}>
               <Avatar size={40} />
-              <PixelText color={colors.cyan} size={7} style={{ marginTop: 6 }}>{profile?.username ?? 'YOU'}</PixelText>
+              <BodyText color={colors.cyan} size={12} weight="medium" style={{ marginTop: 6 }}>{profile?.username ?? 'YOU'}</BodyText>
               <PixelText color={myPnl >= 0 ? colors.green : colors.red} size={12} glow style={{ marginTop: 4 }}>
                 {myPnl >= 0 ? '+' : ''}${myPnl.toFixed(2)}
               </PixelText>
@@ -290,7 +290,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
             <PixelText color={colors.red} size={12} glow>VS</PixelText>
             <View style={{ alignItems: 'center' }}>
               <Avatar size={40} emoji="🕹" />
-              <PixelText color={colors.gold} size={7} style={{ marginTop: 6 }}>{opponent?.username ?? '...'}</PixelText>
+              <BodyText color={colors.gold} size={12} weight="medium" style={{ marginTop: 6 }}>{opponent?.username ?? '...'}</BodyText>
               <PixelText color={oppPnl >= 0 ? colors.green : colors.red} size={12} glow style={{ marginTop: 4 }}>
                 {oppPnl >= 0 ? '+' : ''}${oppPnl.toFixed(2)}
               </PixelText>
@@ -299,7 +299,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
         </Card>
 
         <Card>
-          <PixelText color={colors.cyan} size={7} glow style={{ marginBottom: 10 }}>YOUR MOVES</PixelText>
+          <BodyText color={colors.cyan} size={12} weight="semibold" glow style={{ marginBottom: 10 }}>YOUR MOVES</BodyText>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <PixelButton color={colors.green} onPress={() => makeTrade('buy')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY</PixelButton>
             <PixelButton color={colors.red} onPress={() => makeTrade('sell')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL</PixelButton>
@@ -307,15 +307,15 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
         </Card>
 
         <Card>
-          <PixelText color={colors.muted} size={6} style={{ marginBottom: 8 }}>◎ BATTLE FEED</PixelText>
+          <BodyText color={colors.muted} size={12} weight="medium" style={{ marginBottom: 8 }}>◎ BATTLE FEED</BodyText>
           {trades.length === 0
-            ? <PixelText color={colors.border} size={6}>Waiting for trades...</PixelText>
+            ? <BodyText color={colors.border} size={13}>Waiting for trades...</BodyText>
             : trades.map(t => (
               <View key={t.id} style={{ flexDirection: 'row', gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <PixelText color={t.user_id === user?.id ? colors.cyan : colors.gold} size={6}>
+                <BodyText color={t.user_id === user?.id ? colors.cyan : colors.gold} size={13} weight="medium">
                   {t.user_id === user?.id ? (profile?.username ?? 'YOU') : (opponent?.username ?? 'OPP')}
-                </PixelText>
-                <PixelText color={colors.text} size={6}>{t.side === 'buy' ? 'BOUGHT' : 'SOLD'} {t.symbol}</PixelText>
+                </BodyText>
+                <BodyText color={colors.text} size={13}>{t.side === 'buy' ? 'BOUGHT' : 'SOLD'} {t.symbol}</BodyText>
               </View>
             ))
           }
@@ -328,12 +328,12 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
     <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
       {incomingInvites.length > 0 && (
         <Card borderColor={colors.red}>
-          <PixelText color={colors.red} size={7} glow style={{ marginBottom: 10 }}>⚔ INCOMING CHALLENGES</PixelText>
+          <BodyText color={colors.red} size={12} weight="semibold" glow style={{ marginBottom: 10 }}>⚔ INCOMING CHALLENGES</BodyText>
           {incomingInvites.map(inv => (
             <View key={inv.id} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <PixelText color={colors.text} size={6} style={{ marginBottom: 8 }}>
+              <BodyText color={colors.text} size={13} style={{ marginBottom: 8 }}>
                 {inv.opponent.username} challenged you — {MODES.find(m => m.id === inv.mode)?.label}
-              </PixelText>
+              </BodyText>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <PixelButton color={colors.green} onPress={() => acceptInvite(inv)} style={{ flex: 1, paddingVertical: 8 }}>✓ ACCEPT</PixelButton>
                 <PixelButton color={colors.red} onPress={() => declineInvite(inv)} style={{ flex: 1, paddingVertical: 8 }}>✕ DECLINE</PixelButton>
@@ -345,10 +345,10 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
 
       {outgoingPending.length > 0 && (
         <Card borderColor={colors.gold}>
-          <PixelText color={colors.gold} size={7} glow style={{ marginBottom: 10 }}>⏳ WAITING</PixelText>
+          <BodyText color={colors.gold} size={12} weight="semibold" glow style={{ marginBottom: 10 }}>⏳ WAITING</BodyText>
           {outgoingPending.map(inv => (
             <View key={inv.id} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <PixelText color={colors.text} size={6} style={{ marginBottom: 8 }}>Challenged {inv.opponent.username}</PixelText>
+              <BodyText color={colors.text} size={13} style={{ marginBottom: 8 }}>Challenged {inv.opponent.username}</BodyText>
               <PixelButton color={colors.red} onPress={() => cancelMyPendingMatch(inv.id)} style={{ paddingVertical: 8 }}>✕ CANCEL</PixelButton>
             </View>
           ))}
@@ -357,12 +357,12 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
 
       {friends.length === 0 ? (
         <Card style={{ alignItems: 'center', padding: 24 }}>
-          <PixelText color={colors.muted} size={6}>No friends yet — add some on the FRIENDS tab.</PixelText>
+          <BodyText color={colors.muted} size={13}>No friends yet — add some on the FRIENDS tab.</BodyText>
         </Card>
       ) : (
         <>
           <Card>
-            <PixelText color={colors.muted} size={6} style={{ marginBottom: 10 }}>CHOOSE A FRIEND</PixelText>
+            <BodyText color={colors.muted} size={12} weight="medium" style={{ marginBottom: 10 }}>CHOOSE A FRIEND</BodyText>
             <View style={{ gap: 8 }}>
               {friends.map(f => (
                 <PixelButton
@@ -378,7 +378,7 @@ export default function PvpBattle({ presetChallengeId }: { presetChallengeId?: s
           </Card>
 
           <Card>
-            <PixelText color={colors.muted} size={6} style={{ marginBottom: 10 }}>BATTLE MODE</PixelText>
+            <BodyText color={colors.muted} size={12} weight="medium" style={{ marginBottom: 10 }}>BATTLE MODE</BodyText>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {MODES.map(m => (
                 <PixelButton key={m.id} color={selectedMode.id === m.id ? colors.cyan : colors.muted} onPress={() => setSelectedMode(m)} style={{ paddingHorizontal: 10, paddingVertical: 8 }}>

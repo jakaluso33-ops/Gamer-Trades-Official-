@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ScrollView, View, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, PixelText, PixelButton, Avatar } from '../../components/ui';
+import { Card, PixelText, BodyText, PixelButton, Avatar } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { supabase, Profile, Friendship } from '../../lib/supabase';
 import { useAuth } from '../../lib/AuthContext';
@@ -156,7 +156,7 @@ export default function FriendsScreen() {
           outgoing.length === 0 ? <Empty text="No pending outgoing requests." /> :
             outgoing.map(f => (
               <PersonRow key={f.id} profile={f.otherProfile} busy={busyId === f.id}>
-                <PixelText color={colors.gold} size={6}>PENDING</PixelText>
+                <BodyText color={colors.gold} size={12}>PENDING</BodyText>
                 <PixelButton color={colors.red} onPress={() => removeFriend(f.id)} style={{ paddingHorizontal: 10, paddingVertical: 7 }}>✕</PixelButton>
               </PersonRow>
             ))
@@ -166,7 +166,7 @@ export default function FriendsScreen() {
             results.map(p => (
               <PersonRow key={p.id} profile={p} busy={busyId === p.id}>
                 {knownIds.has(p.id)
-                  ? <PixelText color={colors.muted} size={6}>CONNECTED</PixelText>
+                  ? <BodyText color={colors.muted} size={12}>CONNECTED</BodyText>
                   : <PixelButton color={colors.blue} onPress={() => sendRequest(p.id)} style={{ paddingHorizontal: 10, paddingVertical: 7 }}>+ ADD</PixelButton>}
               </PersonRow>
             ))
@@ -181,8 +181,8 @@ function PersonRow({ profile, busy, children }: { profile: Profile; busy: boolea
     <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: busy ? 0.5 : 1 }}>
       <Avatar />
       <View style={{ flex: 1 }}>
-        <PixelText color={colors.cyan} size={7}>{profile.username}</PixelText>
-        <PixelText color={colors.muted} size={5} style={{ marginTop: 3 }}>LVL {profile.level} · {profile.total_wins}W-{profile.total_losses}L</PixelText>
+        <BodyText color={colors.cyan} size={13} weight="medium">{profile.username}</BodyText>
+        <BodyText color={colors.muted} size={11} style={{ marginTop: 3 }}>LVL {profile.level} · {profile.total_wins}W-{profile.total_losses}L</BodyText>
       </View>
       <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>{children}</View>
     </Card>
@@ -192,7 +192,7 @@ function PersonRow({ profile, busy, children }: { profile: Profile; busy: boolea
 function Empty({ text }: { text: string }) {
   return (
     <Card style={{ alignItems: 'center', padding: 24 }}>
-      <PixelText color={colors.muted} size={6}>{text}</PixelText>
+      <BodyText color={colors.muted} size={13}>{text}</BodyText>
     </Card>
   );
 }

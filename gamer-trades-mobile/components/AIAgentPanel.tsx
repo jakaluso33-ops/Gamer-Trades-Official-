@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
-import { Card, PixelText, PixelButton } from './ui';
+import { Card, PixelText, BodyText, PixelButton } from './ui';
 import { colors } from '../lib/theme';
 import {
   runMarketAgent,
@@ -42,37 +42,37 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
       </View>
 
       {!result && !loading && !error && (
-        <PixelText color={colors.muted} size={6} style={{ lineHeight: 11 }}>
+        <BodyText color={colors.muted} size={13}>
           Get a live research synthesis for {symbol} — real news, analyzed by AI, with a verdict on
           whether to press this trade or sit it out.
-        </PixelText>
+        </BodyText>
       )}
 
-      {loading && <PixelText color={colors.purple} size={6}>Pulling live news and running research synthesis...</PixelText>}
+      {loading && <BodyText color={colors.purple} size={13}>Pulling live news and running research synthesis...</BodyText>}
 
-      {error && <PixelText color={colors.red} size={6} style={{ lineHeight: 10 }}>⚠ {error}</PixelText>}
+      {error && <BodyText color={colors.red} size={13}>⚠ {error}</BodyText>}
 
       {result && !loading && (
         <View style={{ gap: 10 }}>
           <View style={{ padding: 10, backgroundColor: `${color}0a`, borderWidth: 2, borderColor: `${color}55` }}>
-            <PixelText color={color} size={8} glow>{verdict && VERDICT_LABEL[verdict]}</PixelText>
-            <PixelText color={colors.muted} size={5} style={{ marginTop: 4 }}>
+            <BodyText color={color} size={15} weight="semibold" glow>{verdict && VERDICT_LABEL[verdict]}</BodyText>
+            <BodyText color={colors.muted} size={11} style={{ marginTop: 4 }}>
               CONFIDENCE: {result.recommendation.confidence}%{result.cached ? ' · CACHED' : ''}
-            </PixelText>
-            <PixelText color={SENTIMENT_COLOR[result.analysis.sentiment]} size={5} style={{ marginTop: 4 }}>
+            </BodyText>
+            <BodyText color={SENTIMENT_COLOR[result.analysis.sentiment]} size={11} style={{ marginTop: 4 }}>
               {result.analysis.sentiment.toUpperCase()}
-            </PixelText>
+            </BodyText>
           </View>
 
-          <PixelText color={colors.text} size={6} style={{ lineHeight: 11 }}>{result.analysis.summary}</PixelText>
+          <BodyText color={colors.text} size={13}>{result.analysis.summary}</BodyText>
 
           {result.analysis.key_factors?.length > 0 && (
             <View>
-              <PixelText color={colors.muted} size={5} style={{ marginBottom: 6 }}>KEY FACTORS</PixelText>
+              <BodyText color={colors.muted} size={11} style={{ marginBottom: 6 }}>KEY FACTORS</BodyText>
               {result.analysis.key_factors.map((f, i) => (
                 <View key={i} style={{ flexDirection: 'row', gap: 6, marginBottom: 4 }}>
-                  <PixelText color={color} size={6}>▸</PixelText>
-                  <PixelText color={colors.text} size={6} style={{ flex: 1, lineHeight: 10 }}>{f}</PixelText>
+                  <BodyText color={color} size={13}>▸</BodyText>
+                  <BodyText color={colors.text} size={13} style={{ flex: 1 }}>{f}</BodyText>
                 </View>
               ))}
             </View>
@@ -85,22 +85,22 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
               { k: 'TARGET', v: result.recommendation.take_profit, c: colors.green },
             ].map(({ k, v, c }) => (
               <View key={k} style={{ flex: 1, padding: 8, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}>
-                <PixelText color={colors.muted} size={5}>{k}</PixelText>
-                <PixelText color={v != null ? c : colors.border} size={6} style={{ marginTop: 4 }}>
+                <BodyText color={colors.muted} size={11}>{k}</BodyText>
+                <BodyText color={v != null ? c : colors.border} size={13} weight="medium" style={{ marginTop: 4 }}>
                   {v != null ? `$${v.toLocaleString()}` : '—'}
-                </PixelText>
+                </BodyText>
               </View>
             ))}
           </View>
 
           <View style={{ padding: 8, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
-            <PixelText color={colors.muted} size={5} style={{ marginBottom: 4 }}>WHY</PixelText>
-            <PixelText color={colors.muted} size={6} style={{ lineHeight: 10 }}>{result.recommendation.reasoning}</PixelText>
+            <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>WHY</BodyText>
+            <BodyText color={colors.muted} size={13}>{result.recommendation.reasoning}</BodyText>
           </View>
 
-          <PixelText color={colors.border} size={4} style={{ textAlign: 'center' }}>
+          <BodyText color={colors.border} size={11} style={{ textAlign: 'center' }}>
             Educational paper-trading analysis, not financial advice.
-          </PixelText>
+          </BodyText>
         </View>
       )}
     </Card>

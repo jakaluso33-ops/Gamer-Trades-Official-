@@ -1,6 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { View } from 'react-native';
-import { PixelText, PixelButton } from './ui';
+import { PixelText, BodyText, PixelButton } from './ui';
 import { colors } from '../lib/theme';
 
 interface Props {
@@ -30,9 +30,9 @@ export default class ErrorBoundary extends Component<Props, State> {
           <PixelText color={colors.red} size={11} glow style={{ textAlign: 'center' }}>
             GAME OVER — APP CRASHED
           </PixelText>
-          <PixelText color={colors.muted} size={6} style={{ textAlign: 'center', lineHeight: 11, maxWidth: 300 }}>
+          <BodyText color={colors.muted} size={13} style={{ textAlign: 'center', maxWidth: 300 }}>
             Something went wrong. Your account and trading data are safe on the server — try again below.
-          </PixelText>
+          </BodyText>
           <PixelButton color={colors.blue} onPress={() => this.setState({ hasError: false })}>
             ↺ TRY AGAIN
           </PixelButton>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, View, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Card, PixelText, PixelButton, Avatar } from '../../components/ui';
+import { Card, PixelText, BodyText, PixelButton, Avatar } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { deleteAccount } from '../../lib/account';
@@ -45,17 +45,17 @@ export default function ProfileScreen() {
       <Card style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
         <Avatar size={56} />
         <View style={{ flex: 1 }}>
-          <PixelText color={colors.cyan} size={9} glow>{profile?.username ?? '...'}</PixelText>
-          <PixelText color={colors.muted} size={5} style={{ marginTop: 6 }}>{user?.email}</PixelText>
-          <PixelText color={colors.muted} size={5} style={{ marginTop: 3 }}>{(profile?.plan ?? 'free').toUpperCase()} TIER</PixelText>
+          <BodyText color={colors.cyan} size={16} weight="semibold" glow>{profile?.username ?? '...'}</BodyText>
+          <BodyText color={colors.muted} size={12} style={{ marginTop: 6 }}>{user?.email}</BodyText>
+          <BodyText color={colors.muted} size={11} style={{ marginTop: 3 }}>{(profile?.plan ?? 'free').toUpperCase()} TIER</BodyText>
         </View>
       </Card>
 
       <Card>
-        <PixelText color={colors.purple} size={7} glow style={{ marginBottom: 8 }}>LEVEL {profile?.level ?? 1}</PixelText>
-        <PixelText color={colors.muted} size={5} style={{ marginBottom: 6 }}>
+        <BodyText color={colors.purple} size={13} weight="semibold" glow style={{ marginBottom: 8 }}>LEVEL {profile?.level ?? 1}</BodyText>
+        <BodyText color={colors.muted} size={12} style={{ marginBottom: 6 }}>
           XP: {(profile?.xp ?? 0).toLocaleString()} / {xpNeeded.toLocaleString()}
-        </PixelText>
+        </BodyText>
         <View style={{ height: 8, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
           <View style={{ width: `${Math.min(100, ((profile?.xp ?? 0) / xpNeeded) * 100)}%`, height: '100%', backgroundColor: colors.purple }} />
         </View>
@@ -63,11 +63,11 @@ export default function ProfileScreen() {
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Card style={{ flex: 1 }}>
-          <PixelText color={colors.muted} size={5}>WINS</PixelText>
+          <BodyText color={colors.muted} size={11}>WINS</BodyText>
           <PixelText color={colors.green} size={12} glow style={{ marginTop: 6 }}>{profile?.total_wins ?? 0}</PixelText>
         </Card>
         <Card style={{ flex: 1 }}>
-          <PixelText color={colors.muted} size={5}>LOSSES</PixelText>
+          <BodyText color={colors.muted} size={11}>LOSSES</BodyText>
           <PixelText color={colors.red} size={12} glow style={{ marginTop: 6 }}>{profile?.total_losses ?? 0}</PixelText>
         </Card>
       </View>
@@ -75,16 +75,16 @@ export default function ProfileScreen() {
       <PixelButton color={colors.red} onPress={signOut}>✕ SIGN OUT</PixelButton>
 
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14 }}>
-        <PixelText color={colors.muted} size={5} onPress={() => router.push('/privacy')}>PRIVACY POLICY</PixelText>
-        <PixelText color={colors.muted} size={5} onPress={() => router.push('/terms')}>TERMS OF SERVICE</PixelText>
+        <BodyText color={colors.muted} size={12} onPress={() => router.push('/privacy')}>PRIVACY POLICY</BodyText>
+        <BodyText color={colors.muted} size={12} onPress={() => router.push('/terms')}>TERMS OF SERVICE</BodyText>
       </View>
 
       <Card borderColor={colors.red}>
-        <PixelText color={colors.red} size={6} style={{ marginBottom: 8 }}>⚠ DANGER ZONE</PixelText>
-        <PixelText color={colors.muted} size={5} style={{ lineHeight: 9, marginBottom: 10 }}>
+        <BodyText color={colors.red} size={13} weight="semibold" style={{ marginBottom: 8 }}>⚠ DANGER ZONE</BodyText>
+        <BodyText color={colors.muted} size={12} style={{ marginBottom: 10 }}>
           Deleting your account permanently removes all your data — trades, positions, goals, and stats.
           This cannot be undone.
-        </PixelText>
+        </BodyText>
         <PixelButton color={colors.red} onPress={confirmDelete} disabled={deleting}>
           {deleting ? 'DELETING...' : '🗑 DELETE ACCOUNT'}
         </PixelButton>

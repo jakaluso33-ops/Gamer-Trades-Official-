@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
-import { Card, PixelText, PixelButton } from '../../components/ui';
+import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { supabase, TradingGoal, Task } from '../../lib/supabase';
 import { GOAL_TEMPLATES, syncTasks, TaskPeriod } from '../../lib/goals';
@@ -71,12 +71,12 @@ export default function ChallengesScreen() {
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText color={colors.green} size={13} glow>◆ GOALS &amp; TASKS</PixelText>
-        {syncing && <PixelText color={colors.muted} size={5}>syncing...</PixelText>}
+        {syncing && <BodyText color={colors.muted} size={11}>syncing...</BodyText>}
       </View>
 
       <Card borderColor={colors.purple}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <PixelText color={colors.purple} size={7} glow>★ YOUR GOALS</PixelText>
+          <BodyText color={colors.purple} size={13} weight="semibold" glow>★ YOUR GOALS</BodyText>
           {goals.length < 3 && availableTemplates.length > 0 && (
             <PixelButton color={colors.blue} onPress={() => setShowPicker(v => !v)} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
               {showPicker ? '✕ CLOSE' : '+ ADD'}
@@ -85,9 +85,9 @@ export default function ChallengesScreen() {
         </View>
 
         {goals.length === 0 && !showPicker && (
-          <PixelText color={colors.muted} size={6} style={{ textAlign: 'center', padding: 12 }}>
+          <BodyText color={colors.muted} size={13} style={{ textAlign: 'center', padding: 12 }}>
             Pick a goal below to get tasks tailored to it.
-          </PixelText>
+          </BodyText>
         )}
 
         <View style={{ gap: 8 }}>
@@ -99,11 +99,11 @@ export default function ChallengesScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <PixelText size={16}>{t.icon}</PixelText>
                   <Pressable onPress={() => removeGoal(g.id)}>
-                    <PixelText color={colors.muted} size={9}>✕</PixelText>
+                    <BodyText color={colors.muted} size={14}>✕</BodyText>
                   </Pressable>
                 </View>
-                <PixelText color={t.color} size={7} glow style={{ marginTop: 6 }}>{t.label}</PixelText>
-                <PixelText color={colors.muted} size={5} style={{ marginTop: 6 }}>{t.description}</PixelText>
+                <BodyText color={t.color} size={13} weight="semibold" glow style={{ marginTop: 6 }}>{t.label}</BodyText>
+                <BodyText color={colors.muted} size={12} style={{ marginTop: 6 }}>{t.description}</BodyText>
               </View>
             );
           })}
@@ -114,8 +114,8 @@ export default function ChallengesScreen() {
             {availableTemplates.map(t => (
               <Pressable key={t.id} onPress={() => addGoal(t.id, t.defaultTarget)} style={{ padding: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: `${t.color}66` }}>
                 <PixelText size={16}>{t.icon}</PixelText>
-                <PixelText color={t.color} size={7} style={{ marginTop: 6 }}>{t.label}</PixelText>
-                <PixelText color={colors.muted} size={5} style={{ marginTop: 6 }}>{t.description}</PixelText>
+                <BodyText color={t.color} size={13} weight="medium" style={{ marginTop: 6 }}>{t.label}</BodyText>
+                <BodyText color={colors.muted} size={12} style={{ marginTop: 6 }}>{t.description}</BodyText>
               </Pressable>
             ))}
           </View>
@@ -132,9 +132,9 @@ export default function ChallengesScreen() {
 
       {visibleTasks.length === 0 ? (
         <Card style={{ alignItems: 'center', padding: 24 }}>
-          <PixelText color={colors.muted} size={6}>
+          <BodyText color={colors.muted} size={13}>
             {goals.length === 0 ? 'Add a goal above to generate your tasks.' : 'No tasks for this period yet.'}
-          </PixelText>
+          </BodyText>
         </Card>
       ) : (
         <View style={{ gap: 10 }}>
@@ -147,16 +147,16 @@ export default function ChallengesScreen() {
             return (
               <Card key={task.id} borderColor={done ? accent : colors.border} style={{ opacity: expired ? 0.5 : 1 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <PixelText color={done ? accent : colors.text} size={7} glow={done}>{done ? '✓ ' : ''}{task.title}</PixelText>
-                  <PixelText color={colors.gold} size={5}>+{task.xp_reward} XP</PixelText>
+                  <BodyText color={done ? accent : colors.text} size={13} weight="medium" glow={done}>{done ? '✓ ' : ''}{task.title}</BodyText>
+                  <BodyText color={colors.gold} size={11}>+{task.xp_reward} XP</BodyText>
                 </View>
-                <PixelText color={colors.muted} size={5} style={{ marginBottom: 8 }}>{task.description}</PixelText>
+                <BodyText color={colors.muted} size={12} style={{ marginBottom: 8 }}>{task.description}</BodyText>
                 <View style={{ height: 6, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
                   <View style={{ width: `${pct}%`, height: '100%', backgroundColor: done ? accent : colors.blue }} />
                 </View>
-                <PixelText color={colors.muted} size={5} style={{ marginTop: 4, textAlign: 'right' }}>
+                <BodyText color={colors.muted} size={11} style={{ marginTop: 4, textAlign: 'right' }}>
                   {Math.min(task.progress, task.target)}/{task.target}{expired ? ' · EXPIRED' : ''}
-                </PixelText>
+                </BodyText>
               </Card>
             );
           })}

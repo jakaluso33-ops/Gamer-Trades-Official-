@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Card, PixelText, PixelButton } from '../components/ui';
+import { Screen, Card, PixelText, BodyText, PixelButton } from '../components/ui';
 import { colors } from '../lib/theme';
 import { supabase } from '../lib/supabase';
 import { DISCLAIMER_TEXT } from '../lib/legalContent';
@@ -125,11 +125,11 @@ export default function LoginScreen() {
 
             {mode === 'verify' ? (
               <>
-                <PixelText color={colors.gold} size={7} glow style={{ marginBottom: 10 }}>✉ CONFIRM YOUR EMAIL</PixelText>
-                {info ? <PixelText color={colors.muted} size={6} style={{ marginBottom: 12, lineHeight: 10 }}>{info}</PixelText> : null}
+                <BodyText color={colors.gold} size={13} weight="semibold" glow style={{ marginBottom: 10 }}>✉ CONFIRM YOUR EMAIL</BodyText>
+                {info ? <BodyText color={colors.muted} size={12} style={{ marginBottom: 12 }}>{info}</BodyText> : null}
 
                 <View style={{ marginBottom: 12 }}>
-                  <PixelText color={colors.muted} size={6} style={{ marginBottom: 4 }}>EMAIL</PixelText>
+                  <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>EMAIL</BodyText>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -142,7 +142,7 @@ export default function LoginScreen() {
                 </View>
 
                 <View style={{ marginBottom: 16 }}>
-                  <PixelText color={colors.muted} size={6} style={{ marginBottom: 4 }}>6-DIGIT CODE</PixelText>
+                  <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>6-DIGIT CODE</BodyText>
                   <TextInput
                     value={code}
                     onChangeText={t => setCode(t.replace(/\D/g, ''))}
@@ -156,7 +156,7 @@ export default function LoginScreen() {
 
                 {error ? (
                   <View style={{ padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544', marginBottom: 12 }}>
-                    <PixelText color={colors.red} size={6}>{error}</PixelText>
+                    <BodyText color={colors.red} size={12}>{error}</BodyText>
                   </View>
                 ) : null}
 
@@ -168,15 +168,15 @@ export default function LoginScreen() {
                   {cooldown > 0 ? `RESEND CODE (${cooldown}s)` : 'RESEND CODE'}
                 </PixelButton>
 
-                <PixelText color={colors.muted} size={6} style={{ textAlign: 'center' }} onPress={() => { setMode('signin'); setError(''); setInfo(''); setCode(''); }}>
+                <BodyText color={colors.muted} size={12} style={{ textAlign: 'center' }} onPress={() => { setMode('signin'); setError(''); setInfo(''); setCode(''); }}>
                   ◀ BACK TO SIGN IN
-                </PixelText>
+                </BodyText>
               </>
             ) : (
               <>
                 {mode === 'signup' && (
                   <View style={{ marginBottom: 12 }}>
-                    <PixelText color={colors.muted} size={6} style={{ marginBottom: 4 }}>USERNAME</PixelText>
+                    <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>USERNAME</BodyText>
                     <TextInput
                       value={username}
                       onChangeText={setUsername}
@@ -189,7 +189,7 @@ export default function LoginScreen() {
                 )}
 
                 <View style={{ marginBottom: 12 }}>
-                  <PixelText color={colors.muted} size={6} style={{ marginBottom: 4 }}>EMAIL</PixelText>
+                  <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>EMAIL</BodyText>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -202,7 +202,7 @@ export default function LoginScreen() {
                 </View>
 
                 <View style={{ marginBottom: 16 }}>
-                  <PixelText color={colors.muted} size={6} style={{ marginBottom: 4 }}>PASSWORD</PixelText>
+                  <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>PASSWORD</BodyText>
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
@@ -215,7 +215,7 @@ export default function LoginScreen() {
 
                 {error ? (
                   <View style={{ padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544', marginBottom: 12 }}>
-                    <PixelText color={colors.red} size={6}>{error}</PixelText>
+                    <BodyText color={colors.red} size={12}>{error}</BodyText>
                   </View>
                 ) : null}
 
@@ -224,25 +224,25 @@ export default function LoginScreen() {
                 </PixelButton>
 
                 {mode === 'signin' && (
-                  <PixelText
+                  <BodyText
                     color={colors.muted}
-                    size={4}
+                    size={11}
                     style={{ textAlign: 'center', marginTop: 12 }}
                     onPress={() => { setMode('verify'); setError(''); setInfo('Enter the code from your confirmation email, or resend a new one.'); }}
                   >
                     Already signed up but need to confirm your email?
-                  </PixelText>
+                  </BodyText>
                 )}
               </>
             )}
 
-            <PixelText color={colors.border} size={4} style={{ marginTop: 14, lineHeight: 8, textAlign: 'center' }}>
+            <BodyText color={colors.border} size={11} style={{ marginTop: 14, textAlign: 'center' }}>
               {DISCLAIMER_TEXT}
-            </PixelText>
+            </BodyText>
 
             <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginTop: 12 }}>
-              <PixelText color={colors.muted} size={5} onPress={() => router.push('/privacy')}>PRIVACY POLICY</PixelText>
-              <PixelText color={colors.muted} size={5} onPress={() => router.push('/terms')}>TERMS OF SERVICE</PixelText>
+              <BodyText color={colors.muted} size={12} onPress={() => router.push('/privacy')}>PRIVACY POLICY</BodyText>
+              <BodyText color={colors.muted} size={12} onPress={() => router.push('/terms')}>TERMS OF SERVICE</BodyText>
             </View>
           </Card>
         </Screen>

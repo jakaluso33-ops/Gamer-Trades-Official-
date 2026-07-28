@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Card, PixelText, PixelButton, Avatar } from '../../components/ui';
+import { Card, PixelText, BodyText, PixelButton, Avatar } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import PvpBattle from '../../components/PvpBattle';
 import { useAuth } from '../../lib/AuthContext';
@@ -100,8 +100,8 @@ function AiBattle() {
           <Card key={ai.id} borderColor={selectedAI.id === ai.id ? ai.color : colors.border} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
             <PixelText size={28}>{ai.icon}</PixelText>
             <View style={{ flex: 1 }}>
-              <PixelText color={ai.color} size={8} glow>{ai.name}</PixelText>
-              <PixelText color={colors.muted} size={5} style={{ marginTop: 4 }}>{ai.difficulty}</PixelText>
+              <BodyText color={ai.color} size={15} weight="semibold" glow>{ai.name}</BodyText>
+              <BodyText color={colors.muted} size={11} style={{ marginTop: 4 }}>{ai.difficulty}</BodyText>
             </View>
             <PixelButton color={selectedAI.id === ai.id ? ai.color : colors.muted} onPress={() => setSelectedAI(ai)} style={{ paddingHorizontal: 10, paddingVertical: 7 }}>
               {selectedAI.id === ai.id ? 'SELECTED' : 'SELECT'}
@@ -123,11 +123,11 @@ function AiBattle() {
           </PixelText>
           <View style={{ flexDirection: 'row', gap: 10, width: '100%', marginVertical: 16 }}>
             <View style={{ flex: 1, padding: 10, backgroundColor: colors.bg, borderWidth: 2, borderColor: colors.border }}>
-              <PixelText color={colors.muted} size={5}>YOUR P&amp;L</PixelText>
+              <BodyText color={colors.muted} size={11}>YOUR P&amp;L</BodyText>
               <PixelText color={playerPnL >= 0 ? colors.green : colors.red} size={10} style={{ marginTop: 4 }}>{playerPnL >= 0 ? '+' : ''}${playerPnL.toFixed(2)}</PixelText>
             </View>
             <View style={{ flex: 1, padding: 10, backgroundColor: colors.bg, borderWidth: 2, borderColor: colors.border }}>
-              <PixelText color={colors.muted} size={5}>{selectedAI.name}</PixelText>
+              <BodyText color={colors.muted} size={11}>{selectedAI.name}</BodyText>
               <PixelText color={aiPnL >= 0 ? colors.green : colors.red} size={10} style={{ marginTop: 4 }}>{aiPnL >= 0 ? '+' : ''}${aiPnL.toFixed(2)}</PixelText>
             </View>
           </View>
@@ -147,7 +147,7 @@ function AiBattle() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
           <View style={{ alignItems: 'center' }}>
             <Avatar size={40} />
-            <PixelText color={colors.cyan} size={7} style={{ marginTop: 6 }}>YOU</PixelText>
+            <BodyText color={colors.cyan} size={12} weight="medium" style={{ marginTop: 6 }}>YOU</BodyText>
             <PixelText color={playerPnL >= 0 ? colors.green : colors.red} size={12} glow style={{ marginTop: 4 }}>
               {playerPnL >= 0 ? '+' : ''}${playerPnL.toFixed(2)}
             </PixelText>
@@ -155,7 +155,7 @@ function AiBattle() {
           <PixelText color={colors.red} size={12} glow>VS</PixelText>
           <View style={{ alignItems: 'center' }}>
             <Avatar size={40} emoji={selectedAI.icon} borderColor={selectedAI.color} />
-            <PixelText color={selectedAI.color} size={7} style={{ marginTop: 6 }}>{selectedAI.name}</PixelText>
+            <BodyText color={selectedAI.color} size={12} weight="medium" style={{ marginTop: 6 }}>{selectedAI.name}</BodyText>
             <PixelText color={aiPnL >= 0 ? colors.green : colors.red} size={12} glow style={{ marginTop: 4 }}>
               {aiPnL >= 0 ? '+' : ''}${aiPnL.toFixed(2)}
             </PixelText>
@@ -163,7 +163,7 @@ function AiBattle() {
         </View>
       </Card>
       <Card>
-        <PixelText color={colors.cyan} size={7} glow style={{ marginBottom: 10 }}>YOUR MOVES</PixelText>
+        <BodyText color={colors.cyan} size={12} weight="semibold" glow style={{ marginBottom: 10 }}>YOUR MOVES</BodyText>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <PixelButton color={colors.green} onPress={() => trade('buy')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY</PixelButton>
           <PixelButton color={colors.red} onPress={() => trade('sell')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL</PixelButton>

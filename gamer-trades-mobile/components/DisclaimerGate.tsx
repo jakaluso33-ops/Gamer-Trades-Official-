@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PixelText, PixelButton, Card } from './ui';
+import { PixelText, BodyText, PixelButton, Card } from './ui';
 import { colors } from '../lib/theme';
 import { DISCLAIMER_TEXT } from '../lib/legalContent';
 
@@ -30,9 +30,9 @@ export default function DisclaimerGate() {
       <View style={{ flex: 1, backgroundColor: '#000000dd', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <Card borderColor={colors.gold} style={{ maxWidth: 420 }}>
           <PixelText color={colors.gold} size={9} glow style={{ marginBottom: 12 }}>⚠ BEFORE YOU START</PixelText>
-          <PixelText color={colors.text} size={6} style={{ lineHeight: 12, marginBottom: 16 }}>
+          <BodyText color={colors.text} size={13} style={{ marginBottom: 16 }}>
             {DISCLAIMER_TEXT}
-          </PixelText>
+          </BodyText>
           <PixelButton color={colors.green} onPress={acknowledge}>▶ I UNDERSTAND</PixelButton>
         </Card>
       </View>
