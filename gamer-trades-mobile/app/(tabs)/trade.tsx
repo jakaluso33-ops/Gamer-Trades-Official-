@@ -17,6 +17,7 @@ import {
   InsufficientFundsError,
 } from '../../lib/trading';
 import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, AssetClass, SymbolInfo } from '../../lib/symbols';
+import { pollLiveQuotes } from '../../lib/marketData';
 
 const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
 
@@ -75,6 +76,17 @@ export default function TradeScreen() {
 
   useEffect(() => {
     setLivePrice(selected.basePrice);
+  }, [selected]);
+
+  // Anchor the live-ticking price to real Polygon.io quotes when available (stocks,
+  // crypto, forex, indices). Futures/options aren't directly quotable in the
+  // simplified pass and keep ticking from their simulated baseline.
+  useEffect(() => {
+    const unsub = pollLiveQuotes([selected.symbol], 10000, quotes => {
+      const q = quotes[selected.symbol];
+      if (q) setLivePrice(parseFloat(q.price.toFixed(selected.decimals)));
+    });
+    return unsub;
   }, [selected]);
 
   useEffect(() => {
