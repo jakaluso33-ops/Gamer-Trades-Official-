@@ -2,6 +2,7 @@
   "expo": {
     "name": "GamerTrades",
     "slug": "gamer-trades-mobile",
+    "owner": "jmoneytradess-team",
     "scheme": "gamertrades",
     "version": "1.0.0",
     "orientation": "portrait",
