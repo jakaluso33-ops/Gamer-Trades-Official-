@@ -28,7 +28,17 @@ jobs:
     defaults:
       run:
         working-directory: gamer-trades-mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
+      - name: Check EXPO_TOKEN secret is set
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::EXPO_TOKEN secret is empty or not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "EXPO_TOKEN is set (length: ${#EXPO_TOKEN})"
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
