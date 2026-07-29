@@ -31,6 +31,8 @@ jobs:
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: Check EXPO_TOKEN secret is set
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
@@ -38,8 +40,6 @@ jobs:
             exit 1
           fi
           echo "EXPO_TOKEN is set (length: ${#EXPO_TOKEN})"
-
-      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
