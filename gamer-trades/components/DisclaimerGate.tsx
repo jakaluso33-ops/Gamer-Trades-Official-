@@ -28,10 +28,10 @@ export default function DisclaimerGate() {
       }}
     >
       <div className="retro-card" style={{ maxWidth: '440px', padding: '28px', borderColor: '#ffd700' }}>
-        <div style={{ fontSize: '9px', color: '#ffd700', textShadow: '0 0 10px #ffd700', marginBottom: '14px' }}>
+        <div className="font-pixel" style={{ fontSize: '11px', color: '#ffd700', textShadow: '0 0 10px #ffd700', marginBottom: '16px', lineHeight: 1.8 }}>
           ⚠ BEFORE YOU START
         </div>
-        <p style={{ fontSize: '11px', color: '#e2e8f0', lineHeight: 1.9, marginBottom: '20px' }}>
+        <p style={{ fontSize: '13px', color: '#e2e8f0', lineHeight: 1.8, marginBottom: '22px' }}>
           {DISCLAIMER_TEXT}
         </p>
         <button onClick={acknowledge} className="pixel-btn pixel-btn-green" style={{ fontSize: '12px', padding: '10px 16px', width: '100%' }}>

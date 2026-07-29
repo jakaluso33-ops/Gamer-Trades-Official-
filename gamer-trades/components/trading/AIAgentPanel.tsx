@@ -8,20 +8,36 @@ import {
   VERDICT_LABEL,
   SENTIMENT_COLOR,
 } from '@/lib/marketAgent';
+import { useAuth } from '@/lib/AuthContext';
+import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday } from '@/lib/plans';
 
 export default function AIAgentPanel({ symbol, technicalContext }: { symbol: string; technicalContext?: string }) {
+  const { user, profile } = useAuth();
   const [result, setResult] = useState<MarketAgentResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [runsToday, setRunsToday] = useState(0);
+
+  const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
+  const dailyLimit = aiAnalystDailyLimit(plan);
+  const limitReached = dailyLimit != null && runsToday >= dailyLimit;
+
+  useEffect(() => {
+    if (user) setRunsToday(getAiAnalystRunsToday(user.id));
+  }, [user]);
 
   const run = useCallback(() => {
+    if (limitReached) return;
     setLoading(true);
     setError(null);
     runMarketAgent(symbol, technicalContext)
-      .then(setResult)
+      .then(res => {
+        setResult(res);
+        if (user) setRunsToday(incrementAiAnalystRunsToday(user.id));
+      })
       .catch(err => setError(err instanceof Error ? err.message : 'Analysis failed'))
       .finally(() => setLoading(false));
-  }, [symbol, technicalContext]);
+  }, [symbol, technicalContext, limitReached, user]);
 
   useEffect(() => {
     setResult(null);
@@ -37,16 +53,23 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
         <span style={{ fontSize: '11px', color, textShadow: `0 0 8px ${color}` }}>🤖 AI MARKET ANALYST</span>
         <button
           onClick={run}
-          disabled={loading}
+          disabled={loading || limitReached}
           className="pixel-btn pixel-btn-blue"
-          style={{ fontSize: '10px', padding: '5px 10px', opacity: loading ? 0.6 : 1 }}
+          style={{ fontSize: '10px', padding: '5px 10px', opacity: loading || limitReached ? 0.6 : 1 }}
         >
-          {loading ? 'ANALYZING...' : result ? '↻ RE-RUN' : '▶ RUN ANALYSIS'}
+          {loading ? 'ANALYZING...' : limitReached ? '🔒 DAILY LIMIT HIT' : result ? '↻ RE-RUN' : '▶ RUN ANALYSIS'}
         </button>
       </div>
 
       <div style={{ padding: '12px' }}>
-        {!result && !loading && !error && (
+        {dailyLimit != null && (
+          <div style={{ fontSize: '9px', color: limitReached ? '#ffd700' : '#64748b', marginBottom: '10px' }}>
+            {limitReached
+              ? `Free plan: ${dailyLimit}/${dailyLimit} analyses used today. Upgrade to Pro for unlimited AI analysis.`
+              : `Free plan: ${runsToday}/${dailyLimit} analyses used today.`}
+          </div>
+        )}
+        {!result && !loading && !error && !limitReached && (
           <div style={{ fontSize: '10px', color: '#64748b', lineHeight: 1.8 }}>
             Get a real-time research synthesis for {symbol} — live news pulled from NewsAPI, analyzed by Claude,
             with a verdict on whether to press this trade, sit it out, or wait for confirmation.

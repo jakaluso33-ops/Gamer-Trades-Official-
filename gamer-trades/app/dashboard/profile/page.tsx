@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import XPBar from '@/components/gamification/XPBar';
 import AchievementBadge, { ACHIEVEMENTS } from '@/components/gamification/AchievementBadge';
 import MiniChart from '@/components/trading/MiniChart';
@@ -11,31 +11,26 @@ import { deleteAccount } from '@/lib/account';
 import { listOpenTrades, listClosedTrades, computePnl, DbTrade } from '@/lib/trading';
 import { getBasePrice } from '@/lib/symbols';
 import { getAiBattleStats, AiBattleStats } from '@/lib/aiBattles';
+import { PLANS } from '@/lib/plans';
 
 const AI_OPPONENT_NAMES: Record<string, string> = { algoace: 'AlgoAce', trendtina: 'TrendTina', gridgareth: 'GridGareth' };
 
-const PLANS = [
-  {
-    name: 'FREE', price: '$0', color: '#64748b',
-    features: ['3 trades/day', 'Stocks + Crypto', 'Rookie AI only', 'View leaderboard', '1 daily challenge'],
-    current: true,
-  },
-  {
-    name: 'PRO', price: '$9.99/mo', color: '#00aaff',
-    features: ['Unlimited trades', 'All asset classes', 'All AI difficulties', 'Post to leaderboard', '3 daily challenges', 'Tournament access'],
-    current: false,
-  },
-  {
-    name: 'LEGEND', price: '$24.99/mo', color: '#ffd700',
-    features: ['Everything in PRO', 'Exclusive AI personalities', 'Custom avatar skins', 'Priority leaderboard badge', 'Early access features', 'Tournament seeding'],
-    current: false,
-  },
-];
-
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilePageInner />
+    </Suspense>
+  );
+}
+
+function ProfilePageInner() {
   const { user, profile, signOut } = useAuth();
   const router = useRouter();
-  const [tab, setTab] = useState<'stats' | 'achievements' | 'settings' | 'upgrade'>('stats');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [tab, setTab] = useState<'stats' | 'achievements' | 'settings' | 'upgrade'>(
+    initialTab === 'upgrade' ? 'upgrade' : 'stats'
+  );
   const [sound, setSound] = useState(true);
   const [scanlines, setScanlines] = useState(true);
   const [theme, setTheme] = useState('SYNTHWAVE');
@@ -345,48 +340,54 @@ export default function ProfilePage() {
             UNLOCK MORE POWER — CHOOSE YOUR PLAN
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            {PLANS.map(plan => (
-              <div
-                key={plan.name}
-                style={{
-                  flex: 1,
-                  padding: '20px',
-                  background: plan.current ? '#0a0e1a' : plan.name === 'LEGEND' ? '#1a1000' : '#0f1629',
-                  border: `2px solid ${plan.current ? '#1e3a5f' : plan.color}`,
-                  boxShadow: `4px 4px 0 #000${plan.current ? '' : `, 0 0 16px ${plan.color}33`}`,
-                  position: 'relative',
-                  textAlign: 'center',
-                }}
-              >
-                {plan.current && (
-                  <div style={{ position: 'absolute', top: '-2px', left: '50%', transform: 'translateX(-50%)', background: '#64748b', padding: '2px 10px', fontSize: '9px', color: '#fff', whiteSpace: 'nowrap' }}>
-                    CURRENT PLAN
-                  </div>
-                )}
-                {plan.name === 'LEGEND' && !plan.current && (
-                  <div style={{ position: 'absolute', top: '-2px', left: '50%', transform: 'translateX(-50%)', background: '#ffd700', padding: '2px 10px', fontSize: '9px', color: '#000', whiteSpace: 'nowrap' }}>
-                    ★ BEST VALUE
-                  </div>
-                )}
-                <div style={{ fontSize: '9px', color: plan.color, textShadow: `0 0 10px ${plan.color}`, marginBottom: '6px', marginTop: '8px' }}>{plan.name}</div>
-                <div style={{ fontSize: '10px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '14px' }}>{plan.price}</div>
-                {plan.features.map(f => (
-                  <div key={f} style={{ fontSize: '9px', color: '#64748b', padding: '4px 0', borderBottom: '1px solid #0f1629', textAlign: 'left' }}>
-                    <span style={{ color: plan.color, marginRight: '6px' }}>▶</span>{f}
-                  </div>
-                ))}
-                <button
-                  className={`pixel-btn ${plan.current ? '' : plan.name === 'LEGEND' ? 'pixel-btn-green' : 'pixel-btn-blue'}`}
+            {PLANS.map(plan => {
+              const isCurrent = (profile?.plan ?? 'free') === plan.name.toLowerCase();
+              return (
+                <div
+                  key={plan.name}
                   style={{
-                    width: '100%', fontSize: '11px', padding: '10px', marginTop: '14px',
-                    ...(plan.current ? { background: '#0a0e1a', color: '#64748b', borderColor: '#1e3a5f', cursor: 'default' } : {}),
+                    flex: 1,
+                    padding: '20px',
+                    background: isCurrent ? '#0a0e1a' : plan.name === 'legend' ? '#1a1000' : '#0f1629',
+                    border: `2px solid ${isCurrent ? '#1e3a5f' : plan.color}`,
+                    boxShadow: `4px 4px 0 #000${isCurrent ? '' : `, 0 0 16px ${plan.color}33`}`,
+                    position: 'relative',
+                    textAlign: 'center',
                   }}
-                  disabled={plan.current}
                 >
-                  {plan.current ? '✓ CURRENT' : `UPGRADE TO ${plan.name}`}
-                </button>
-              </div>
-            ))}
+                  {isCurrent && (
+                    <div style={{ position: 'absolute', top: '-2px', left: '50%', transform: 'translateX(-50%)', background: '#64748b', padding: '2px 10px', fontSize: '9px', color: '#fff', whiteSpace: 'nowrap' }}>
+                      CURRENT PLAN
+                    </div>
+                  )}
+                  {plan.name === 'legend' && !isCurrent && (
+                    <div style={{ position: 'absolute', top: '-2px', left: '50%', transform: 'translateX(-50%)', background: '#ffd700', padding: '2px 10px', fontSize: '9px', color: '#000', whiteSpace: 'nowrap' }}>
+                      ★ BEST VALUE
+                    </div>
+                  )}
+                  <div style={{ fontSize: '9px', color: plan.color, textShadow: `0 0 10px ${plan.color}`, marginBottom: '6px', marginTop: '8px' }}>{plan.name.toUpperCase()}</div>
+                  <div style={{ fontSize: '10px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: plan.annualPrice ? '2px' : '14px' }}>{plan.price}</div>
+                  {plan.annualPrice && (
+                    <div style={{ fontSize: '9px', color: '#00ff88', marginBottom: '14px' }}>or {plan.annualPrice} (save ~60%)</div>
+                  )}
+                  {plan.features.map(f => (
+                    <div key={f} style={{ fontSize: '9px', color: '#64748b', padding: '4px 0', borderBottom: '1px solid #0f1629', textAlign: 'left' }}>
+                      <span style={{ color: plan.color, marginRight: '6px' }}>▶</span>{f}
+                    </div>
+                  ))}
+                  <button
+                    className={`pixel-btn ${isCurrent ? '' : plan.name === 'legend' ? 'pixel-btn-green' : 'pixel-btn-blue'}`}
+                    style={{
+                      width: '100%', fontSize: '11px', padding: '10px', marginTop: '14px',
+                      ...(isCurrent ? { background: '#0a0e1a', color: '#64748b', borderColor: '#1e3a5f', cursor: 'default' } : {}),
+                    }}
+                    disabled={isCurrent}
+                  >
+                    {isCurrent ? '✓ CURRENT' : `UPGRADE TO ${plan.name.toUpperCase()}`}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

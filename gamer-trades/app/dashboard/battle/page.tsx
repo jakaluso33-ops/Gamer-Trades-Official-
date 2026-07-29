@@ -7,6 +7,8 @@ import PvpBattle from '@/components/trading/PvpBattle';
 import { logEvent } from '@/lib/activity';
 import { useAuth } from '@/lib/AuthContext';
 import { recordAiBattle, AiOpponentId, AiDifficulty } from '@/lib/aiBattles';
+import { canPlayAiBattle, canPlayPvp } from '@/lib/plans';
+import UpgradeGate from '@/components/gamification/UpgradeGate';
 
 const AI_OPPONENTS = [
   {
@@ -79,6 +81,9 @@ function BattleModeSwitcher() {
   const searchParams = useSearchParams();
   const challengeId = searchParams.get('challenge');
   const [battleType, setBattleType] = useState<'ai' | 'friend'>(challengeId ? 'friend' : 'ai');
+  const { profile } = useAuth();
+  const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
+  const locked = battleType === 'ai' ? !canPlayAiBattle(plan) : !canPlayPvp(plan);
 
   return (
     <div>
@@ -108,7 +113,20 @@ function BattleModeSwitcher() {
           ⚔ VS FRIEND
         </button>
       </div>
-      {battleType === 'ai' ? <AiBattle /> : <PvpBattle presetChallengeId={challengeId ?? undefined} />}
+      {locked ? (
+        <UpgradeGate
+          title={battleType === 'ai' ? '★ AI BATTLES ARE A PRO FEATURE' : '⚔ PVP BATTLES ARE A PRO FEATURE'}
+          description={
+            battleType === 'ai'
+              ? 'Free accounts get the full 6-market trading experience, but battling AI opponents is reserved for Pro and Legend traders. Upgrade to challenge AlgoAce, TrendTina, and GridGareth.'
+              : 'Free accounts get the full 6-market trading experience, but live PvP battles against friends are reserved for Pro and Legend traders. Upgrade to challenge your friends.'
+          }
+        />
+      ) : battleType === 'ai' ? (
+        <AiBattle />
+      ) : (
+        <PvpBattle presetChallengeId={challengeId ?? undefined} />
+      )}
     </div>
   );
 }

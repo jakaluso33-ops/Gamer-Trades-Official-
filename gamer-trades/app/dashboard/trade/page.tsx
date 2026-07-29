@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import CandlestickChart from '@/components/trading/CandlestickChart';
+import CandlestickChart, { Timeframe } from '@/components/trading/CandlestickChart';
+import PnlIcon from '@/components/gamification/PnlIcon';
 import OrderPanel from '@/components/trading/OrderPanel';
 import AIAgentPanel from '@/components/trading/AIAgentPanel';
 import GameOverScreen from '@/components/modals/GameOverScreen';
@@ -43,7 +44,7 @@ export default function TradePage() {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [activeIndicators, setActiveIndicators] = useState<string[]>(['RSI']);
-  const [timeframe, setTimeframe] = useState('1m');
+  const [timeframe, setTimeframe] = useState<Timeframe>('1m');
   const [gameOver, setGameOver] = useState<{ type: 'GAME_OVER' | 'NICE_WORK'; pnl: number } | null>(null);
   const [orderLog, setOrderLog] = useState<string[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -208,6 +209,7 @@ export default function TradePage() {
             }}
           >
             {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
+            <PnlIcon pnl={totalPnL} />
           </span>
           <Link href="/dashboard/battle">
             <button className="pixel-btn pixel-btn-blue" style={{ fontSize: '11px' }}>★ VS AI</button>
@@ -270,7 +272,7 @@ export default function TradePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid #1e3a5f', flexWrap: 'wrap' }}>
               {/* Timeframes */}
               <div style={{ display: 'flex', gap: '3px' }}>
-                {['1m', '5m', '15m', '1h', '4h', '1D'].map(tf => (
+                {(['1m', '5m', '15m', '1H', '4H', '1D'] as const).map(tf => (
                   <button
                     key={tf}
                     onClick={() => setTimeframe(tf)}
@@ -339,6 +341,7 @@ export default function TradePage() {
               symbol={selected.symbol}
               basePrice={selected.basePrice}
               livePrice={livePrice}
+              timeframe={timeframe}
               height={300}
               enabledStrategies={activeStrategies}
               onSignal={setLatestSignal}
@@ -422,6 +425,7 @@ export default function TradePage() {
                       <span style={{ color: '#e2e8f0' }}>${current.toFixed(2)}</span>
                       <span style={{ color: up ? '#00ff88' : '#ff3355', textShadow: up ? '0 0 6px #00ff88' : '0 0 6px #ff3355' }}>
                         {up ? '+' : ''}${pnl.toFixed(2)}
+                        <PnlIcon pnl={pnl} pct={(pnl / (t.entry_price * t.quantity)) * 100} />
                       </span>
                       <button onClick={() => closePositionAt(t, current, false)} className="pixel-btn pixel-btn-red" style={{ fontSize: '9px', padding: '4px 6px' }}>CLOSE</button>
                     </div>

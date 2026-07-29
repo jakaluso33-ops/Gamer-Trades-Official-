@@ -3,18 +3,36 @@
 import { useEffect, useRef, useState } from 'react';
 import { Candle, DetectorId, StrategySignal, scanStrategies, sma } from '@/lib/strategyEngine';
 
-function generateCandles(count: number, basePrice: number): Candle[] {
+export type Timeframe = '1m' | '5m' | '15m' | '1H' | '4H' | '1D';
+
+/** Bar width in ms for each timeframe — this is what makes the candles actually represent the selected timeframe. */
+export const TIMEFRAME_MS: Record<Timeframe, number> = {
+  '1m': 60_000,
+  '5m': 5 * 60_000,
+  '15m': 15 * 60_000,
+  '1H': 60 * 60_000,
+  '4H': 4 * 60 * 60_000,
+  '1D': 24 * 60 * 60_000,
+};
+
+const MAX_HISTORY = 300;
+const MIN_ZOOM = 20;
+const MAX_ZOOM = 150;
+
+function generateCandles(count: number, basePrice: number, barMs: number): Candle[] {
   const candles: Candle[] = [];
   let price = basePrice;
   const now = Date.now();
+  // Scale per-bar volatility with bar duration (bigger timeframe = bigger swings per bar).
+  const volatility = 0.006 * Math.sqrt(barMs / 60_000);
   for (let i = count; i >= 0; i--) {
     const open = price;
-    const change = (Math.random() - 0.48) * price * 0.012;
+    const change = (Math.random() - 0.48) * price * volatility;
     const close = Math.max(1, open + change);
-    const high = Math.max(open, close) + Math.random() * price * 0.005;
-    const low = Math.min(open, close) - Math.random() * price * 0.005;
+    const high = Math.max(open, close) + Math.random() * price * volatility * 0.4;
+    const low = Math.min(open, close) - Math.random() * price * volatility * 0.4;
     candles.push({
-      time: now - i * 60000,
+      time: now - i * barMs,
       open: parseFloat(open.toFixed(2)),
       high: parseFloat(high.toFixed(2)),
       low: parseFloat(low.toFixed(2)),
@@ -31,6 +49,7 @@ interface Props {
   basePrice: number;
   /** Latest real-time price (from live quotes or tick simulation) to anchor new candles to. */
   livePrice?: number;
+  timeframe?: Timeframe;
   height?: number;
   enabledStrategies?: DetectorId[];
   onSignal?: (signal: StrategySignal | null) => void;
@@ -38,50 +57,66 @@ interface Props {
 
 const ALL_DETECTORS: DetectorId[] = ['breakout', 'orb', 'fibonacci', 'support_resistance', 'ma_crossover', 'rsi_reversal'];
 
-export default function CandlestickChart({ symbol, basePrice, livePrice, height = 320, enabledStrategies = ALL_DETECTORS, onSignal }: Props) {
+function formatAxisTime(ms: number, barMs: number): string {
+  const d = new Date(ms);
+  if (barMs >= TIMEFRAME_MS['1D']) return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (barMs >= TIMEFRAME_MS['1H']) return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 320, enabledStrategies = ALL_DETECTORS, onSignal }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [candles, setCandles] = useState<Candle[]>(() => generateCandles(80, basePrice));
+  const barMs = TIMEFRAME_MS[timeframe];
+  const [candles, setCandles] = useState<Candle[]>(() => generateCandles(80, basePrice, barMs));
   const [hovered, setHovered] = useState<Candle | null>(null);
   const [mouseX, setMouseX] = useState<number | null>(null);
   const [signals, setSignals] = useState<StrategySignal[]>([]);
+  const [zoom, setZoom] = useState(80);
   const onSignalRef = useRef(onSignal);
   useEffect(() => { onSignalRef.current = onSignal; }, [onSignal]);
   const livePriceRef = useRef(livePrice);
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
 
-  // Reset the chart when switching instruments — otherwise the old symbol's
-  // candle history sticks around and the chart appears frozen.
+  // Reset the chart when switching instruments or timeframe — otherwise the old
+  // symbol/timeframe's candle history sticks around and the chart looks frozen
+  // or mislabeled.
   useEffect(() => {
-    setCandles(generateCandles(80, basePrice));
+    setCandles(generateCandles(80, basePrice, barMs));
     setHovered(null);
     setMouseX(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol]);
+  }, [symbol, timeframe]);
 
-  // Add new candle every 3 seconds
+  // Push a new bar on a steady real-world cadence, but the bar's own "time" advances
+  // by the selected timeframe's width — so a 1H chart shows bars an hour apart even
+  // though we're not waiting a real hour between updates.
   useEffect(() => {
     const id = setInterval(() => {
       setCandles(prev => {
         const last = prev[prev.length - 1];
         const open = last.close;
         const anchor = livePriceRef.current;
+        const volatility = 0.006 * Math.sqrt(barMs / 60_000);
         // Track the real live price when we have one, otherwise fall back to a random walk.
-        const close = anchor != null ? Math.max(1, anchor) : Math.max(1, open + (Math.random() - 0.48) * open * 0.008);
-        const high = Math.max(open, close) + Math.random() * open * 0.003;
-        const low = Math.min(open, close) - Math.random() * open * 0.003;
+        const close = anchor != null ? Math.max(1, anchor) : Math.max(1, open + (Math.random() - 0.48) * open * volatility);
+        const high = Math.max(open, close) + Math.random() * open * volatility * 0.4;
+        const low = Math.min(open, close) - Math.random() * open * volatility * 0.4;
         const newCandle: Candle = {
-          time: Date.now(),
+          time: last.time + barMs,
           open: parseFloat(open.toFixed(2)),
           high: parseFloat(high.toFixed(2)),
           low: parseFloat(low.toFixed(2)),
           close: parseFloat(close.toFixed(2)),
           volume: Math.floor(Math.random() * 500000 + 50000),
         };
-        return [...prev.slice(-79), newCandle];
+        return [...prev.slice(-(MAX_HISTORY - 1)), newCandle];
       });
     }, 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [barMs]);
+
+  const zoomIn = () => setZoom(z => Math.max(MIN_ZOOM, z - 15));
+  const zoomOut = () => setZoom(z => Math.min(Math.min(MAX_ZOOM, candles.length), z + 15));
 
   // Live strategy scanner — re-runs on every new candle
   useEffect(() => {
@@ -97,7 +132,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, height 
     if (!ctx) return;
 
     const W = canvas.width;
-    const H = canvas.height - 60; // reserve bottom for volume
+    const H = canvas.height - 74; // reserve bottom for volume + time axis
     const padL = 8, padR = 56, padT = 10, padB = 8;
 
     ctx.clearRect(0, 0, W, canvas.height);
@@ -114,7 +149,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, height 
       ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
     }
 
-    const visible = candles;
+    const visible = candles.slice(-zoom);
     const prices = visible.flatMap(c => [c.high, c.low]);
     const minP = Math.min(...prices);
     const maxP = Math.max(...prices);
@@ -250,15 +285,33 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, height 
     ctx.font = '8px monospace';
     ctx.fillText('VOL', padL, volY + 10);
 
-  }, [candles, mouseX, signals, enabledStrategies]);
+    // Time axis labels
+    ctx.fillStyle = '#64748b';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'center';
+    const labelStep = Math.max(1, Math.round(visible.length / 6));
+    for (let i = 0; i < visible.length; i += labelStep) {
+      const x = padL + i * cW + cW / 2;
+      ctx.fillText(formatAxisTime(visible[i].time, barMs), x, canvas.height - 4);
+    }
+    ctx.textAlign = 'left';
+
+  }, [candles, mouseX, signals, enabledStrategies, zoom, barMs]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (e.currentTarget.width / rect.width);
     setMouseX(x);
-    const cW = (e.currentTarget.width - 64) / candles.length;
+    const visible = candles.slice(-zoom);
+    const cW = (e.currentTarget.width - 64) / visible.length;
     const idx = Math.floor((x - 8) / cW);
-    if (idx >= 0 && idx < candles.length) setHovered(candles[idx]);
+    if (idx >= 0 && idx < visible.length) setHovered(visible[idx]);
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (e.deltaY < 0) zoomIn();
+    else zoomOut();
   };
 
   const last = candles[candles.length - 1];
@@ -281,13 +334,35 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, height 
             <span style={{ color: c ?? '#e2e8f0' }}>{v}</span>
           </span>
         ))}
+        <span style={{ marginLeft: 'auto', display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <span style={{ color: '#1e3a5f' }}>ZOOM</span>
+          <button
+            type="button"
+            onClick={zoomOut}
+            disabled={zoom >= Math.min(MAX_ZOOM, candles.length)}
+            className="pixel-btn"
+            style={{ fontSize: '9px', padding: '2px 7px', lineHeight: 1 }}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={zoomIn}
+            disabled={zoom <= MIN_ZOOM}
+            className="pixel-btn"
+            style={{ fontSize: '9px', padding: '2px 7px', lineHeight: 1 }}
+          >
+            +
+          </button>
+        </span>
       </div>
       <canvas
         ref={canvasRef}
         width={900}
-        height={height + 60}
-        style={{ width: '100%', height: `${height + 60}px`, cursor: 'crosshair', display: 'block' }}
+        height={height + 74}
+        style={{ width: '100%', height: `${height + 74}px`, cursor: 'crosshair', display: 'block' }}
         onMouseMove={handleMouseMove}
+        onWheel={handleWheel}
         onMouseLeave={() => { setMouseX(null); setHovered(null); }}
       />
     </div>

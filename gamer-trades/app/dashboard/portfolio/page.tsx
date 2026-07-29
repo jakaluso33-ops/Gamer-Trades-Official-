@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import MiniChart from '@/components/trading/MiniChart';
+import PnlIcon from '@/components/gamification/PnlIcon';
 import { useAuth } from '@/lib/AuthContext';
 import { getPortfolio, listOpenTrades, listClosedTrades, computePnl, Portfolio, DbTrade } from '@/lib/trading';
 import { getBasePrice, getSymbolInfo, ASSET_CLASS_COLOR, AssetClass } from '@/lib/symbols';
@@ -104,15 +105,18 @@ export default function PortfolioPage() {
       <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
         {[
           { k: 'TOTAL EQUITY', v: '$' + totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 }), c: '#00aaff', icon: '◈' },
-          { k: 'UNREALIZED P&L', v: `${unrealizedPnl >= 0 ? '+' : ''}$${unrealizedPnl.toFixed(2)}`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355', icon: '📈' },
+          { k: 'UNREALIZED P&L', v: `${unrealizedPnl >= 0 ? '+' : ''}$${unrealizedPnl.toFixed(2)}`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355', icon: '📈', pnl: unrealizedPnl },
           { k: 'TOTAL RETURN', v: `${unrealizedPnl >= 0 ? '+' : ''}${totalPct}%`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355', icon: '%' },
-          { k: 'REALIZED P&L', v: `${totalRealized >= 0 ? '+' : ''}$${totalRealized.toFixed(2)}`, c: totalRealized >= 0 ? '#00ff88' : '#ff3355', icon: '✓' },
+          { k: 'REALIZED P&L', v: `${totalRealized >= 0 ? '+' : ''}$${totalRealized.toFixed(2)}`, c: totalRealized >= 0 ? '#00ff88' : '#ff3355', icon: '✓', pnl: totalRealized },
           { k: 'CASH', v: '$' + cashBalance.toFixed(2), c: '#64748b', icon: '💰' },
           { k: 'WIN RATE', v: `${winRate}%`, c: '#ffd700', icon: '★' },
         ].map(s => (
           <div key={s.k} className="retro-card" style={{ padding: '10px 14px', flex: '1 1 120px' }}>
             <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '6px' }}>{s.icon} {s.k}</div>
-            <div style={{ fontSize: '9px', color: s.c, textShadow: `0 0 8px ${s.c}` }}>{s.v}</div>
+            <div style={{ fontSize: '9px', color: s.c, textShadow: `0 0 8px ${s.c}` }}>
+              {s.v}
+              {s.pnl !== undefined && <PnlIcon pnl={s.pnl} />}
+            </div>
           </div>
         ))}
       </div>

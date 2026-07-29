@@ -29,7 +29,7 @@ export default function DisclaimerGate() {
     <Modal visible transparent animationType="fade">
       <View style={{ flex: 1, backgroundColor: '#000000dd', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <Card borderColor={colors.gold} style={{ maxWidth: 420 }}>
-          <PixelText color={colors.gold} size={9} glow style={{ marginBottom: 12 }}>⚠ BEFORE YOU START</PixelText>
+          <PixelText color={colors.gold} size={11} glow style={{ marginBottom: 12 }}>⚠ BEFORE YOU START</PixelText>
           <BodyText color={colors.text} size={13} style={{ marginBottom: 16 }}>
             {DISCLAIMER_TEXT}
           </BodyText>
