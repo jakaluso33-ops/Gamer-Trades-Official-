@@ -12,6 +12,7 @@ import { listOpenTrades, listClosedTrades, computePnl, DbTrade } from '@/lib/tra
 import { getBasePrice } from '@/lib/symbols';
 import { getAiBattleStats, AiBattleStats } from '@/lib/aiBattles';
 import { PLANS } from '@/lib/plans';
+import { startCheckout } from '@/lib/checkout';
 
 const AI_OPPONENT_NAMES: Record<string, string> = { algoace: 'AlgoAce', trendtina: 'TrendTina', gridgareth: 'GridGareth' };
 
@@ -38,6 +39,19 @@ function ProfilePageInner() {
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<DbTrade[]>([]);
   const [battleStats, setBattleStats] = useState<AiBattleStats | null>(null);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const handleUpgrade = async (priceId: string) => {
+    setCheckoutError(null);
+    setCheckoutBusy(true);
+    try {
+      await startCheckout(priceId);
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Could not start checkout');
+      setCheckoutBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -375,20 +389,48 @@ function ProfilePageInner() {
                       <span style={{ color: plan.color, marginRight: '6px' }}>▶</span>{f}
                     </div>
                   ))}
-                  <button
-                    className={`pixel-btn ${isCurrent ? '' : plan.name === 'legend' ? 'pixel-btn-green' : 'pixel-btn-blue'}`}
-                    style={{
-                      width: '100%', fontSize: '11px', padding: '10px', marginTop: '14px',
-                      ...(isCurrent ? { background: '#0a0e1a', color: '#64748b', borderColor: '#1e3a5f', cursor: 'default' } : {}),
-                    }}
-                    disabled={isCurrent}
-                  >
-                    {isCurrent ? '✓ CURRENT' : `UPGRADE TO ${plan.name.toUpperCase()}`}
-                  </button>
+                  {isCurrent || !plan.priceId ? (
+                    <button
+                      className="pixel-btn"
+                      style={{
+                        width: '100%', fontSize: '11px', padding: '10px', marginTop: '14px',
+                        background: '#0a0e1a', color: '#64748b', borderColor: '#1e3a5f', cursor: 'default',
+                      }}
+                      disabled
+                    >
+                      ✓ CURRENT
+                    </button>
+                  ) : (
+                    <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <button
+                        className={`pixel-btn ${plan.name === 'legend' ? 'pixel-btn-green' : 'pixel-btn-blue'}`}
+                        style={{ width: '100%', fontSize: '11px', padding: '10px', opacity: checkoutBusy ? 0.6 : 1 }}
+                        disabled={checkoutBusy}
+                        onClick={() => handleUpgrade(plan.priceId!)}
+                      >
+                        {checkoutBusy ? '...' : `UPGRADE ${plan.annualPriceId ? '(MONTHLY)' : ''}`}
+                      </button>
+                      {plan.annualPriceId && (
+                        <button
+                          className="pixel-btn pixel-btn-green"
+                          style={{ width: '100%', fontSize: '11px', padding: '10px', opacity: checkoutBusy ? 0.6 : 1 }}
+                          disabled={checkoutBusy}
+                          onClick={() => handleUpgrade(plan.annualPriceId!)}
+                        >
+                          {checkoutBusy ? '...' : `UPGRADE (ANNUAL — SAVE)`}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
+          {checkoutError && (
+            <div style={{ fontSize: '10px', color: '#ff3355', padding: '10px', marginTop: '12px', background: '#ff335511', border: '1px solid #ff335544', textAlign: 'center' }}>
+              ⚠ {checkoutError}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -47,6 +47,7 @@ export const PLANS = [
   {
     name: 'PRO' as Plan,
     price: '$9.99/mo',
+    priceId: 'price_1TyPNg2L13T2P1hwBpKLA24J',
     color: '#00aaff',
     features: [
       'Everything in Free',
@@ -60,7 +61,9 @@ export const PLANS = [
   {
     name: 'LEGEND' as Plan,
     price: '$24.99/mo',
+    priceId: 'price_1TyPOM2L13T2P1hw9tGtlMU9',
     annualPrice: '$120/yr',
+    annualPriceId: 'price_1TyPOP2L13T2P1hwLwvXyBdS',
     color: '#ffd700',
     features: [
       'Everything in PRO',
