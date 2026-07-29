@@ -16,7 +16,7 @@ function RootNavigation() {
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(tabs)';
-    const isPublicRoute = segments[0] === 'privacy' || segments[0] === 'terms';
+    const isPublicRoute = segments[0] === 'privacy' || segments[0] === 'terms' || segments[0] === 'reset-password';
     if (isPublicRoute) return;
     if (!session && inAuthGroup) {
       router.replace('/login');
@@ -39,6 +39,7 @@ function RootNavigation() {
         <Stack.Screen name="login" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="terms" />
+        <Stack.Screen name="reset-password" />
         <Stack.Screen name="(tabs)" />
       </Stack>
       <DisclaimerGate />

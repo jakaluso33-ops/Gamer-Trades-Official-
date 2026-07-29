@@ -10,11 +10,12 @@ import { DISCLAIMER_TEXT } from '@/lib/legalContent';
 export default function LoginPage() {
   const router = useRouter();
   const { session } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setInfo('');
     setBusy(true);
     try {
       if (mode === 'signup') {
@@ -33,11 +35,18 @@ export default function LoginPage() {
           options: { data: { username: username.trim() || undefined } },
         });
         if (error) throw error;
+        router.push('/dashboard');
+      } else if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setInfo(`If an account exists for ${email}, a password reset link has been sent.`);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        router.push('/dashboard');
       }
-      router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -65,32 +74,40 @@ export default function LoginPage() {
           <div className="font-pixel" style={{ fontSize: '9px', color: '#00ffff', textShadow: '0 0 10px #00ffff' }}>GAMER TRADES</div>
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
-          <button
-            onClick={() => { setMode('signin'); setError(''); }}
-            className="pixel-btn"
-            style={{
-              flex: 1, fontSize: '11px', padding: '9px',
-              background: mode === 'signin' ? '#00ffff22' : '#0a0e1a',
-              color: mode === 'signin' ? '#00ffff' : '#64748b',
-              borderColor: mode === 'signin' ? '#00ffff' : '#1e3a5f',
-            }}
-          >
-            SIGN IN
-          </button>
-          <button
-            onClick={() => { setMode('signup'); setError(''); }}
-            className="pixel-btn"
-            style={{
-              flex: 1, fontSize: '11px', padding: '9px',
-              background: mode === 'signup' ? '#00ff8822' : '#0a0e1a',
-              color: mode === 'signup' ? '#00ff88' : '#64748b',
-              borderColor: mode === 'signup' ? '#00ff88' : '#1e3a5f',
-            }}
-          >
-            SIGN UP
-          </button>
-        </div>
+        {mode !== 'forgot' && (
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+            <button
+              onClick={() => { setMode('signin'); setError(''); setInfo(''); }}
+              className="pixel-btn"
+              style={{
+                flex: 1, fontSize: '11px', padding: '9px',
+                background: mode === 'signin' ? '#00ffff22' : '#0a0e1a',
+                color: mode === 'signin' ? '#00ffff' : '#64748b',
+                borderColor: mode === 'signin' ? '#00ffff' : '#1e3a5f',
+              }}
+            >
+              SIGN IN
+            </button>
+            <button
+              onClick={() => { setMode('signup'); setError(''); setInfo(''); }}
+              className="pixel-btn"
+              style={{
+                flex: 1, fontSize: '11px', padding: '9px',
+                background: mode === 'signup' ? '#00ff8822' : '#0a0e1a',
+                color: mode === 'signup' ? '#00ff88' : '#64748b',
+                borderColor: mode === 'signup' ? '#00ff88' : '#1e3a5f',
+              }}
+            >
+              SIGN UP
+            </button>
+          </div>
+        )}
+
+        {mode === 'forgot' && (
+          <div className="font-pixel" style={{ fontSize: '10px', color: '#ffd700', textShadow: '0 0 6px #ffd700', marginBottom: '16px' }}>
+            ✉ RESET PASSWORD
+          </div>
+        )}
 
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {mode === 'signup' && (
@@ -116,18 +133,36 @@ export default function LoginPage() {
               style={inputStyle}
             />
           </div>
-          <div>
-            <label style={{ fontSize: '10px', color: '#64748b', display: 'block', marginBottom: '4px' }}>PASSWORD</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={inputStyle}
-            />
-          </div>
+          {mode !== 'forgot' && (
+            <div>
+              <label style={{ fontSize: '10px', color: '#64748b', display: 'block', marginBottom: '4px' }}>PASSWORD</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={inputStyle}
+              />
+            </div>
+          )}
+
+          {mode === 'signin' && (
+            <button
+              type="button"
+              onClick={() => { setMode('forgot'); setError(''); setInfo(''); }}
+              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '10px', cursor: 'pointer', textAlign: 'right', padding: 0 }}
+            >
+              Forgot password?
+            </button>
+          )}
+
+          {info && (
+            <div style={{ fontSize: '10px', color: '#00ff88', padding: '8px', background: '#00ff8811', border: '1px solid #00ff8844', lineHeight: 1.7 }}>
+              {info}
+            </div>
+          )}
 
           {error && (
             <div style={{ fontSize: '10px', color: '#ff3355', padding: '8px', background: '#ff335511', border: '1px solid #ff335544' }}>
@@ -141,8 +176,18 @@ export default function LoginPage() {
             className="pixel-btn pixel-btn-green"
             style={{ fontSize: '9px', padding: '12px', marginTop: '4px', opacity: busy ? 0.6 : 1 }}
           >
-            {busy ? '...' : mode === 'signup' ? '▶ CREATE ACCOUNT' : '▶ ENTER'}
+            {busy ? '...' : mode === 'signup' ? '▶ CREATE ACCOUNT' : mode === 'forgot' ? '▶ SEND RESET LINK' : '▶ ENTER'}
           </button>
+
+          {mode === 'forgot' && (
+            <button
+              type="button"
+              onClick={() => { setMode('signin'); setError(''); setInfo(''); }}
+              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '10px', cursor: 'pointer', textAlign: 'center' }}
+            >
+              ◀ BACK TO SIGN IN
+            </button>
+          )}
         </form>
 
         <p style={{ fontSize: '9px', color: '#1e3a5f', lineHeight: 1.8, marginTop: '18px', textAlign: 'center' }}>
