@@ -10,7 +10,10 @@ import {
   SENTIMENT_COLOR,
 } from '../lib/marketAgent';
 import { useAuth } from '../lib/AuthContext';
-import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday } from '../lib/plans';
+import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday, PLANS } from '../lib/plans';
+import { startCheckout } from '../lib/checkout';
+
+const PRO_PRICE_ID = PLANS.find(p => p.name === 'pro')?.priceId;
 
 export default function AIAgentPanel({ symbol, technicalContext }: { symbol: string; technicalContext?: string }) {
   const { user, profile } = useAuth();
@@ -18,6 +21,7 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runsToday, setRunsToday] = useState(0);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
   const dailyLimit = aiAnalystDailyLimit(plan);
@@ -40,6 +44,18 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
       .finally(() => setLoading(false));
   }, [symbol, technicalContext, limitReached, user]);
 
+  const handleUpgrade = useCallback(async () => {
+    if (!PRO_PRICE_ID) return;
+    setCheckoutBusy(true);
+    try {
+      await startCheckout(PRO_PRICE_ID);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start checkout');
+    } finally {
+      setCheckoutBusy(false);
+    }
+  }, []);
+
   useEffect(() => {
     setResult(null);
     setError(null);
@@ -52,8 +68,13 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
     <Card borderColor={color}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <PixelText color={color} size={7} glow>🤖 AI ANALYST</PixelText>
-        <PixelButton color={colors.blue} onPress={run} disabled={loading || limitReached} style={{ paddingHorizontal: 8, paddingVertical: 6 }}>
-          {loading ? '...' : limitReached ? '🔒 LIMIT' : result ? '↻ RE-RUN' : '▶ RUN'}
+        <PixelButton
+          color={limitReached ? colors.green : colors.blue}
+          onPress={limitReached ? handleUpgrade : run}
+          disabled={loading || checkoutBusy}
+          style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+        >
+          {loading ? '...' : checkoutBusy ? '...' : limitReached ? '★ UPGRADE' : result ? '↻ RE-RUN' : '▶ RUN'}
         </PixelButton>
       </View>
 

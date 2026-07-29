@@ -9,7 +9,10 @@ import {
   SENTIMENT_COLOR,
 } from '@/lib/marketAgent';
 import { useAuth } from '@/lib/AuthContext';
-import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday } from '@/lib/plans';
+import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday, PLANS } from '@/lib/plans';
+import { startCheckout } from '@/lib/checkout';
+
+const PRO_PRICE_ID = PLANS.find(p => p.name === 'pro')?.priceId;
 
 export default function AIAgentPanel({ symbol, technicalContext }: { symbol: string; technicalContext?: string }) {
   const { user, profile } = useAuth();
@@ -17,6 +20,7 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runsToday, setRunsToday] = useState(0);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
   const dailyLimit = aiAnalystDailyLimit(plan);
@@ -39,6 +43,17 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
       .finally(() => setLoading(false));
   }, [symbol, technicalContext, limitReached, user]);
 
+  const handleUpgrade = useCallback(async () => {
+    if (!PRO_PRICE_ID) return;
+    setCheckoutBusy(true);
+    try {
+      await startCheckout(PRO_PRICE_ID);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start checkout');
+      setCheckoutBusy(false);
+    }
+  }, []);
+
   useEffect(() => {
     setResult(null);
     setError(null);
@@ -52,12 +67,12 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
       <div style={{ padding: '10px 12px', borderBottom: '2px solid #1e3a5f', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: '11px', color, textShadow: `0 0 8px ${color}` }}>🤖 AI MARKET ANALYST</span>
         <button
-          onClick={run}
-          disabled={loading || limitReached}
-          className="pixel-btn pixel-btn-blue"
-          style={{ fontSize: '10px', padding: '5px 10px', opacity: loading || limitReached ? 0.6 : 1 }}
+          onClick={limitReached ? handleUpgrade : run}
+          disabled={loading || checkoutBusy}
+          className={`pixel-btn ${limitReached ? 'pixel-btn-green' : 'pixel-btn-blue'}`}
+          style={{ fontSize: '10px', padding: '5px 10px', opacity: loading || checkoutBusy ? 0.6 : 1 }}
         >
-          {loading ? 'ANALYZING...' : limitReached ? '🔒 DAILY LIMIT HIT' : result ? '↻ RE-RUN' : '▶ RUN ANALYSIS'}
+          {loading ? 'ANALYZING...' : checkoutBusy ? '...' : limitReached ? '★ UPGRADE FOR MORE' : result ? '↻ RE-RUN' : '▶ RUN ANALYSIS'}
         </button>
       </div>
 
