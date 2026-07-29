@@ -5,6 +5,7 @@ import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { getPortfolio, listOpenTrades, computePnl, Portfolio, DbTrade } from '../../lib/trading';
 import { getBasePrice } from '../../lib/symbols';
+import PnlIcon from '../../components/PnlIcon';
 
 interface Holding {
   symbol: string;
@@ -69,9 +70,12 @@ export default function PortfolioScreen() {
         <PixelText color={colors.green} size={16} glow style={{ marginTop: 6 }}>
           ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </PixelText>
-        <BodyText color={unrealizedPnl >= 0 ? colors.green : colors.red} size={13} weight="medium" style={{ marginTop: 6 }}>
-          {unrealizedPnl >= 0 ? '▲' : '▼'} {unrealizedPnl >= 0 ? '+' : ''}${unrealizedPnl.toFixed(2)} unrealized
-        </BodyText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+          <BodyText color={unrealizedPnl >= 0 ? colors.green : colors.red} size={13} weight="medium">
+            {unrealizedPnl >= 0 ? '▲' : '▼'} {unrealizedPnl >= 0 ? '+' : ''}${unrealizedPnl.toFixed(2)} unrealized
+          </BodyText>
+          <PnlIcon pnl={unrealizedPnl} />
+        </View>
         <BodyText color={colors.muted} size={11} style={{ marginTop: 6 }}>
           CASH: ${cashBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </BodyText>

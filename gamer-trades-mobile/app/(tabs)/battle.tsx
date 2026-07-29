@@ -7,6 +7,8 @@ import PvpBattle from '../../components/PvpBattle';
 import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
 import { recordAiBattle, AiOpponentId, AiDifficulty } from '../../lib/aiBattles';
+import { canPlayAiBattle, canPlayPvp } from '../../lib/plans';
+import UpgradeGate from '../../components/UpgradeGate';
 
 const AI_OPPONENTS: { id: AiOpponentId; name: string; icon: string; difficulty: AiDifficulty; color: string }[] = [
   { id: 'algoace', name: 'ALGO ACE', icon: '🤖', difficulty: 'VETERAN', color: colors.blue },
@@ -176,6 +178,9 @@ function AiBattle() {
 export default function BattleScreen() {
   const params = useLocalSearchParams<{ challenge?: string }>();
   const [mode, setMode] = useState<'ai' | 'friend'>(params.challenge ? 'friend' : 'ai');
+  const { profile } = useAuth();
+  const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
+  const locked = mode === 'ai' ? !canPlayAiBattle(plan) : !canPlayPvp(plan);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -183,7 +188,22 @@ export default function BattleScreen() {
         <PixelButton color={mode === 'ai' ? colors.purple : colors.muted} onPress={() => setMode('ai')} style={{ flex: 1 }}>★ VS AI</PixelButton>
         <PixelButton color={mode === 'friend' ? colors.cyan : colors.muted} onPress={() => setMode('friend')} style={{ flex: 1 }}>⚔ VS FRIEND</PixelButton>
       </View>
-      {mode === 'ai' ? <AiBattle /> : <PvpBattle presetChallengeId={params.challenge} />}
+      {locked ? (
+        <View style={{ padding: 16 }}>
+          <UpgradeGate
+            title={mode === 'ai' ? '★ AI BATTLES ARE A PRO FEATURE' : '⚔ PVP BATTLES ARE A PRO FEATURE'}
+            description={
+              mode === 'ai'
+                ? 'Free accounts get the full 6-market trading experience, but battling AI opponents is reserved for Pro and Legend traders.'
+                : 'Free accounts get the full 6-market trading experience, but live PvP battles against friends are reserved for Pro and Legend traders.'
+            }
+          />
+        </View>
+      ) : mode === 'ai' ? (
+        <AiBattle />
+      ) : (
+        <PvpBattle presetChallengeId={params.challenge} />
+      )}
     </View>
   );
 }

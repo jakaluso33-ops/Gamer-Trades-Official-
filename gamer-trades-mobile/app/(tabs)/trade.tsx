@@ -18,8 +18,11 @@ import {
 } from '../../lib/trading';
 import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, AssetClass, SymbolInfo } from '../../lib/symbols';
 import { pollLiveQuotes } from '../../lib/marketData';
+import CandlestickChart, { Timeframe } from '../../components/CandlestickChart';
+import PnlIcon from '../../components/PnlIcon';
 
 const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
+const TIMEFRAMES: Timeframe[] = ['1m', '5m', '15m', '1H', '4H', '1D'];
 
 const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
   { id: 'breakout', label: 'BREAKOUT' },
@@ -65,6 +68,7 @@ export default function TradeScreen() {
   const [log, setLog] = useState<string[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(SCANNER_STRATEGIES.map(s => s.id));
+  const [timeframe, setTimeframe] = useState<Timeframe>('1m');
   const candlesRef = useRef<Candle[]>(generateCandles(60, ALL_SYMBOLS[0].basePrice));
   const [signals, setSignals] = useState<StrategySignal[]>([]);
   const livePriceRef = useRef(livePrice);
@@ -206,13 +210,29 @@ export default function TradeScreen() {
         )}
       </Card>
 
-      <Card>
+      <Card borderColor={colors.cyan}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-          <BodyText color={colors.muted} size={12}>SYMBOL</BodyText>
+          <BodyText color={colors.cyan} size={13} weight="semibold" glow>{selected.symbol}</BodyText>
           <BodyText color={colors.text} size={13} weight="medium">
             ${livePrice.toLocaleString(undefined, { minimumFractionDigits: selected.decimals, maximumFractionDigits: selected.decimals })}
           </BodyText>
         </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+          {TIMEFRAMES.map(tf => (
+            <PixelButton
+              key={tf}
+              color={timeframe === tf ? colors.blue : colors.muted}
+              onPress={() => setTimeframe(tf)}
+              style={{ paddingHorizontal: 8, paddingVertical: 5 }}
+            >
+              {tf}
+            </PixelButton>
+          ))}
+        </View>
+        <CandlestickChart symbol={selected.symbol} basePrice={selected.basePrice} livePrice={livePrice} timeframe={timeframe} height={200} />
+      </Card>
+
+      <Card>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
           {ASSET_CLASSES.map(cls => (
             <PixelButton
@@ -262,9 +282,12 @@ export default function TradeScreen() {
       <Card borderColor={colors.blue}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
           <BodyText color={colors.blue} size={12} weight="semibold" glow>◈ POSITIONS</BodyText>
-          <BodyText color={totalPnl >= 0 ? colors.green : colors.red} size={12} weight="medium">
-            {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
-          </BodyText>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <BodyText color={totalPnl >= 0 ? colors.green : colors.red} size={12} weight="medium">
+              {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+            </BodyText>
+            <PnlIcon pnl={totalPnl} />
+          </View>
         </View>
         {openTrades.length === 0
           ? <BodyText color={colors.border} size={13}>No open positions</BodyText>
@@ -280,7 +303,10 @@ export default function TradeScreen() {
                     {t.direction === 'long' ? 'BUY' : 'SELL'} {t.quantity}x @ ${t.entry_price.toFixed(2)}
                   </BodyText>
                 </View>
-                <BodyText color={up ? colors.green : colors.red} size={13}>{up ? '+' : ''}${pnl.toFixed(2)}</BodyText>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <BodyText color={up ? colors.green : colors.red} size={13}>{up ? '+' : ''}${pnl.toFixed(2)}</BodyText>
+                  <PnlIcon pnl={pnl} pct={(pnl / (t.entry_price * t.quantity)) * 100} />
+                </View>
                 <PixelButton color={colors.red} onPress={() => closePosition(t)} style={{ paddingHorizontal: 8, paddingVertical: 6 }}>CLOSE</PixelButton>
               </View>
             );

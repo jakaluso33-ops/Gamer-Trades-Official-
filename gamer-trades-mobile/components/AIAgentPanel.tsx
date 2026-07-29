@@ -9,20 +9,36 @@ import {
   VERDICT_LABEL,
   SENTIMENT_COLOR,
 } from '../lib/marketAgent';
+import { useAuth } from '../lib/AuthContext';
+import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday } from '../lib/plans';
 
 export default function AIAgentPanel({ symbol, technicalContext }: { symbol: string; technicalContext?: string }) {
+  const { user, profile } = useAuth();
   const [result, setResult] = useState<MarketAgentResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [runsToday, setRunsToday] = useState(0);
+
+  const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
+  const dailyLimit = aiAnalystDailyLimit(plan);
+  const limitReached = dailyLimit != null && runsToday >= dailyLimit;
+
+  useEffect(() => {
+    if (user) getAiAnalystRunsToday(user.id).then(setRunsToday);
+  }, [user]);
 
   const run = useCallback(() => {
+    if (limitReached) return;
     setLoading(true);
     setError(null);
     runMarketAgent(symbol, technicalContext)
-      .then(setResult)
+      .then(res => {
+        setResult(res);
+        if (user) incrementAiAnalystRunsToday(user.id).then(setRunsToday);
+      })
       .catch(err => setError(err instanceof Error ? err.message : 'Analysis failed'))
       .finally(() => setLoading(false));
-  }, [symbol, technicalContext]);
+  }, [symbol, technicalContext, limitReached, user]);
 
   useEffect(() => {
     setResult(null);
@@ -36,12 +52,20 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
     <Card borderColor={color}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <PixelText color={color} size={7} glow>🤖 AI ANALYST</PixelText>
-        <PixelButton color={colors.blue} onPress={run} disabled={loading} style={{ paddingHorizontal: 8, paddingVertical: 6 }}>
-          {loading ? '...' : result ? '↻ RE-RUN' : '▶ RUN'}
+        <PixelButton color={colors.blue} onPress={run} disabled={loading || limitReached} style={{ paddingHorizontal: 8, paddingVertical: 6 }}>
+          {loading ? '...' : limitReached ? '🔒 LIMIT' : result ? '↻ RE-RUN' : '▶ RUN'}
         </PixelButton>
       </View>
 
-      {!result && !loading && !error && (
+      {dailyLimit != null && (
+        <BodyText color={limitReached ? colors.gold : colors.muted} size={11} style={{ marginBottom: 8 }}>
+          {limitReached
+            ? `Free plan: ${dailyLimit}/${dailyLimit} analyses used today. Upgrade to Pro for unlimited.`
+            : `Free plan: ${runsToday}/${dailyLimit} analyses used today.`}
+        </BodyText>
+      )}
+
+      {!result && !loading && !error && !limitReached && (
         <BodyText color={colors.muted} size={13}>
           Get a live research synthesis for {symbol} — real news, analyzed by AI, with a verdict on
           whether to press this trade or sit it out.

@@ -5,6 +5,7 @@ import { Card, PixelText, BodyText, PixelButton, Avatar } from '../../components
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { deleteAccount } from '../../lib/account';
+import { PLANS } from '../../lib/plans';
 
 export default function ProfileScreen() {
   const { profile, user, signOut } = useAuth();
@@ -70,6 +71,32 @@ export default function ProfileScreen() {
           <BodyText color={colors.muted} size={11}>LOSSES</BodyText>
           <PixelText color={colors.red} size={12} glow style={{ marginTop: 6 }}>{profile?.total_losses ?? 0}</PixelText>
         </Card>
+      </View>
+
+      <View>
+        <PixelText color={colors.gold} size={11} glow style={{ marginBottom: 10 }}>★ PLANS</PixelText>
+        {PLANS.map(plan => {
+          const isCurrent = (profile?.plan ?? 'free') === plan.name.toLowerCase();
+          return (
+            <Card key={plan.name} borderColor={isCurrent ? colors.border : plan.color} style={{ marginBottom: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <BodyText color={plan.color} size={13} weight="semibold" glow>{plan.name}</BodyText>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <BodyText color={colors.gold} size={13} weight="medium">{plan.price}</BodyText>
+                  {plan.annualPrice && <BodyText color={colors.green} size={11}>or {plan.annualPrice}</BodyText>}
+                </View>
+              </View>
+              {plan.features.map(f => (
+                <BodyText key={f} color={colors.muted} size={12} style={{ marginBottom: 3 }}>▶ {f}</BodyText>
+              ))}
+              {!isCurrent && (
+                <View style={{ marginTop: 10 }}>
+                  <PixelButton color={plan.color}>UPGRADE TO {plan.name}</PixelButton>
+                </View>
+              )}
+            </Card>
+          );
+        })}
       </View>
 
       <PixelButton color={colors.red} onPress={signOut}>✕ SIGN OUT</PixelButton>
