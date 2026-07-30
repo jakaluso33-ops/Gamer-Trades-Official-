@@ -35,6 +35,8 @@ jobs:
         working-directory: gamer-trades-mobile
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +47,16 @@ jobs:
             exit 1
           fi
           echo "EXPO_TOKEN is set (length: ${#EXPO_TOKEN})"
+
+      - name: Write App Store Connect API key (iOS only)
+        if: ${{ inputs.platform == 'ios' || inputs.platform == 'all' }}
+        run: |
+          if [ -z "${{ secrets.ASC_API_KEY_P8 }}" ]; then
+            echo "::error::ASC_API_KEY_P8 secret is empty or not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "${{ secrets.ASC_API_KEY_P8 }}" > AuthKey.p8
+          echo "EXPO_ASC_API_KEY_PATH=$(pwd)/AuthKey.p8" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
