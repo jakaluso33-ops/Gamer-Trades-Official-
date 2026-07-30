@@ -34,9 +34,17 @@ export async function incrementAiAnalystRunsToday(userId: string): Promise<numbe
   return next;
 }
 
-export const PLANS = [
+export const PLANS: {
+  name: Plan;
+  price: string;
+  priceId?: string;
+  annualPrice?: string;
+  annualPriceId?: string;
+  color: string;
+  features: string[];
+}[] = [
   {
-    name: 'FREE' as Plan,
+    name: 'free',
     price: '$0',
     color: '#64748b',
     features: [
@@ -47,7 +55,7 @@ export const PLANS = [
     ],
   },
   {
-    name: 'PRO' as Plan,
+    name: 'pro',
     price: '$9.99/mo',
     priceId: 'price_1TyPNg2L13T2P1hwBpKLA24J',
     color: '#00aaff',
@@ -61,7 +69,7 @@ export const PLANS = [
     ],
   },
   {
-    name: 'LEGEND' as Plan,
+    name: 'legend',
     price: '$24.99/mo',
     priceId: 'price_1TyPOM2L13T2P1hw9tGtlMU9',
     annualPrice: '$120/yr',

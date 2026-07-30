@@ -95,7 +95,7 @@ export default function ProfileScreen() {
           return (
             <Card key={plan.name} borderColor={isCurrent ? colors.border : plan.color} style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <BodyText color={plan.color} size={13} weight="semibold" glow>{plan.name}</BodyText>
+                <BodyText color={plan.color} size={13} weight="semibold" glow>{plan.name.toUpperCase()}</BodyText>
                 <View style={{ alignItems: 'flex-end' }}>
                   <BodyText color={colors.gold} size={13} weight="medium">{plan.price}</BodyText>
                   {plan.annualPrice && <BodyText color={colors.green} size={11}>or {plan.annualPrice}</BodyText>}

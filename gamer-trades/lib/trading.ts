@@ -118,6 +118,36 @@ export async function openTrade(userId: string, portfolio: Portfolio, params: Op
   return { trade: trade as DbTrade, portfolio: updatedPortfolio as Portfolio };
 }
 
+export class InvalidDepositAmountError extends Error {
+  constructor() {
+    super('Deposit amount must be a positive number');
+    this.name = 'InvalidDepositAmountError';
+  }
+}
+
+/**
+ * Manually top up the paper-trading account. Increases both cash and starting_balance so
+ * the deposit counts as new principal, not as profit in any future return-on-investment math.
+ */
+export async function depositFunds(userId: string, portfolio: Portfolio, amount: number): Promise<Portfolio> {
+  if (!Number.isFinite(amount) || amount <= 0) throw new InvalidDepositAmountError();
+
+  const { data: updatedPortfolio, error } = await supabase
+    .from('portfolios')
+    .update({
+      cash_balance: portfolio.cash_balance + amount,
+      starting_balance: portfolio.starting_balance + amount,
+    })
+    .eq('id', portfolio.id)
+    .select()
+    .single();
+  if (error) throw error;
+
+  await logEvent(userId, 'funds_deposited', { amount });
+
+  return updatedPortfolio as Portfolio;
+}
+
 export function computePnl(trade: Pick<DbTrade, 'direction' | 'quantity' | 'entry_price'>, exitPrice: number): number {
   const diff = trade.direction === 'long' ? exitPrice - trade.entry_price : trade.entry_price - exitPrice;
   return diff * trade.quantity;

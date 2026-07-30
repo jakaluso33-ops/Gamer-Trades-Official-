@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, View } from 'react-native';
-import { Card, PixelText, BodyText } from '../../components/ui';
+import { ScrollView, View, Modal, TextInput, Pressable } from 'react-native';
+import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
-import { getPortfolio, listOpenTrades, computePnl, Portfolio, DbTrade } from '../../lib/trading';
+import { getPortfolio, listOpenTrades, computePnl, depositFunds, Portfolio, DbTrade } from '../../lib/trading';
 import { getBasePrice } from '../../lib/symbols';
 import PnlIcon from '../../components/PnlIcon';
 
@@ -35,6 +35,10 @@ export default function PortfolioScreen() {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositBusy, setDepositBusy] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -46,6 +50,27 @@ export default function PortfolioScreen() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user]);
+
+  const handleDeposit = async () => {
+    if (!user || !portfolio) return;
+    const amount = parseFloat(depositAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setDepositError('Enter an amount greater than $0');
+      return;
+    }
+    setDepositBusy(true);
+    setDepositError(null);
+    try {
+      const updated = await depositFunds(user.id, portfolio, amount);
+      setPortfolio(updated);
+      setShowDeposit(false);
+      setDepositAmount('');
+    } catch (err) {
+      setDepositError(err instanceof Error ? err.message : 'Could not deposit funds');
+    } finally {
+      setDepositBusy(false);
+    }
+  };
 
   const holdings = aggregateHoldings(openTrades);
   const holdingsValue = holdings.reduce((s, h) => s + h.current * h.qty, 0);
@@ -79,7 +104,52 @@ export default function PortfolioScreen() {
         <BodyText color={colors.muted} size={11} style={{ marginTop: 6 }}>
           CASH: ${cashBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </BodyText>
+        <PixelButton color={colors.green} onPress={() => setShowDeposit(true)} style={{ marginTop: 10 }}>
+          + ADD FUNDS
+        </PixelButton>
       </Card>
+
+      <Modal visible={showDeposit} transparent animationType="fade" onRequestClose={() => !depositBusy && setShowDeposit(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onPress={() => !depositBusy && setShowDeposit(false)}
+        >
+          <Pressable onPress={e => e.stopPropagation()} style={{ width: '100%' }}>
+            <Card borderColor={colors.green} style={{ padding: 24 }}>
+              <PixelText color={colors.green} size={12} glow style={{ textAlign: 'center', marginBottom: 14 }}>
+                💰 ADD FUNDS
+              </PixelText>
+              <BodyText color={colors.muted} size={12} style={{ textAlign: 'center', marginBottom: 14 }}>
+                Top up your paper-trading balance with any amount. This is simulated money — no real charge.
+              </BodyText>
+              <TextInput
+                keyboardType="decimal-pad"
+                placeholder="Amount (USD)"
+                placeholderTextColor={colors.muted}
+                value={depositAmount}
+                onChangeText={t => { setDepositAmount(t); setDepositError(null); }}
+                style={{
+                  fontSize: 15, padding: 12, backgroundColor: colors.bg, color: colors.text,
+                  borderWidth: 2, borderColor: colors.border, marginBottom: 10,
+                }}
+              />
+              {depositError && (
+                <BodyText color={colors.red} size={11} style={{ textAlign: 'center', marginBottom: 10 }}>
+                  ⚠ {depositError}
+                </BodyText>
+              )}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <PixelButton color={colors.muted} disabled={depositBusy} onPress={() => setShowDeposit(false)} style={{ flex: 1 }}>
+                  CANCEL
+                </PixelButton>
+                <PixelButton color={colors.green} disabled={depositBusy} onPress={handleDeposit} style={{ flex: 1 }}>
+                  {depositBusy ? '...' : 'CONFIRM'}
+                </PixelButton>
+              </View>
+            </Card>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Card>
         <BodyText color={colors.blue} size={12} weight="semibold" glow style={{ marginBottom: 10 }}>HOLDINGS</BodyText>

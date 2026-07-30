@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import MiniChart from '@/components/trading/MiniChart';
 import PnlIcon from '@/components/gamification/PnlIcon';
 import { useAuth } from '@/lib/AuthContext';
-import { getPortfolio, listOpenTrades, listClosedTrades, computePnl, Portfolio, DbTrade } from '@/lib/trading';
+import { getPortfolio, listOpenTrades, listClosedTrades, computePnl, depositFunds, Portfolio, DbTrade } from '@/lib/trading';
 import { getBasePrice, getSymbolInfo, ASSET_CLASS_COLOR, AssetClass } from '@/lib/symbols';
 
 interface Holding {
@@ -39,6 +39,10 @@ export default function PortfolioPage() {
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<DbTrade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositBusy, setDepositBusy] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +55,27 @@ export default function PortfolioPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user]);
+
+  const handleDeposit = async () => {
+    if (!user || !portfolio) return;
+    const amount = parseFloat(depositAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setDepositError('Enter an amount greater than $0');
+      return;
+    }
+    setDepositBusy(true);
+    setDepositError(null);
+    try {
+      const updated = await depositFunds(user.id, portfolio, amount);
+      setPortfolio(updated);
+      setShowDeposit(false);
+      setDepositAmount('');
+    } catch (err) {
+      setDepositError(err instanceof Error ? err.message : 'Could not deposit funds');
+    } finally {
+      setDepositBusy(false);
+    }
+  };
 
   const holdings = aggregateHoldings(openTrades);
   const totalValue = holdings.reduce((s, h) => s + h.current * h.qty, 0);
@@ -98,8 +123,64 @@ export default function PortfolioPage() {
           <div className="font-pixel" style={{ fontSize: '12px', color: '#ffd700', textShadow: '0 0 12px #ffd700' }}>
             ${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
+          <button
+            onClick={() => setShowDeposit(true)}
+            className="pixel-btn pixel-btn-green"
+            style={{ fontSize: '9px', padding: '6px 10px', marginTop: '8px' }}
+          >
+            + ADD FUNDS
+          </button>
         </div>
       </div>
+
+      {showDeposit && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+          onClick={() => !depositBusy && setShowDeposit(false)}
+        >
+          <div className="retro-card" style={{ padding: '24px', width: '300px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '12px', color: '#00ff88', textShadow: '0 0 10px #00ff88', marginBottom: '16px' }}>💰 ADD FUNDS</div>
+            <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '14px', lineHeight: 1.8 }}>
+              Top up your paper-trading balance with any amount. This is simulated money — no real charge.
+            </div>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              autoFocus
+              placeholder="Amount (USD)"
+              value={depositAmount}
+              onChange={e => { setDepositAmount(e.target.value); setDepositError(null); }}
+              onKeyDown={e => { if (e.key === 'Enter') handleDeposit(); }}
+              style={{
+                width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', fontSize: '13px', padding: '10px',
+                background: '#0a0e1a', color: '#e2e8f0', border: '2px solid #1e3a5f', outline: 'none', marginBottom: '10px',
+              }}
+            />
+            {depositError && (
+              <div style={{ fontSize: '10px', color: '#ff3355', marginBottom: '10px' }}>⚠ {depositError}</div>
+            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setShowDeposit(false)}
+                disabled={depositBusy}
+                className="pixel-btn"
+                style={{ flex: 1, fontSize: '10px', padding: '10px', opacity: depositBusy ? 0.6 : 1 }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleDeposit}
+                disabled={depositBusy}
+                className="pixel-btn pixel-btn-green"
+                style={{ flex: 1, fontSize: '10px', padding: '10px', opacity: depositBusy ? 0.6 : 1 }}
+              >
+                {depositBusy ? '...' : 'CONFIRM'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Top stat strip */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
