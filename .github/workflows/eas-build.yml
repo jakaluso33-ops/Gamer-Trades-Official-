@@ -54,10 +54,12 @@ jobs:
           echo "ASC_KEY_ID length: ${#ASC_KEY_ID_INLINE}"
           echo "ASC_ISSUER_ID length: ${#ASC_ISSUER_ID_INLINE}"
           echo "ASC_API_KEY_P8 length: ${#ASC_API_KEY_P8_INLINE}"
+          echo "ZZZ_TEST length: ${#ZZZ_TEST_INLINE}"
         env:
           ASC_KEY_ID_INLINE: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID_INLINE: ${{ secrets.ASC_ISSUER_ID }}
           ASC_API_KEY_P8_INLINE: ${{ secrets.ASC_API_KEY_P8 }}
+          ZZZ_TEST_INLINE: ${{ secrets.ZZZ_TEST }}
 
       - name: Write App Store Connect API key (iOS only)
         if: ${{ inputs.platform == 'ios' || inputs.platform == 'all' }}
