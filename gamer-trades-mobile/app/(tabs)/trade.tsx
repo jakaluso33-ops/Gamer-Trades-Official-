@@ -229,7 +229,16 @@ export default function TradeScreen() {
             </PixelButton>
           ))}
         </View>
-        <CandlestickChart symbol={selected.symbol} basePrice={selected.basePrice} livePrice={livePrice} timeframe={timeframe} height={200} />
+        <CandlestickChart
+          symbol={selected.symbol}
+          basePrice={selected.basePrice}
+          livePrice={livePrice}
+          timeframe={timeframe}
+          height={200}
+          positions={openTrades
+            .filter(t => t.symbol === selected.symbol)
+            .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+        />
       </Card>
 
       <Card>

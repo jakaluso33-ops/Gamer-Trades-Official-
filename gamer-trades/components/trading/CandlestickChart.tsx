@@ -44,6 +44,12 @@ function generateCandles(count: number, basePrice: number, barMs: number): Candl
   return candles;
 }
 
+export interface ChartPosition {
+  entryPrice: number;
+  direction: 'long' | 'short';
+  quantity?: number;
+}
+
 interface Props {
   symbol: string;
   basePrice: number;
@@ -53,6 +59,8 @@ interface Props {
   height?: number;
   enabledStrategies?: DetectorId[];
   onSignal?: (signal: StrategySignal | null) => void;
+  /** Open positions for the current symbol — drawn as entry-price marker lines. */
+  positions?: ChartPosition[];
 }
 
 const ALL_DETECTORS: DetectorId[] = ['breakout', 'orb', 'fibonacci', 'support_resistance', 'ma_crossover', 'rsi_reversal'];
@@ -64,7 +72,7 @@ function formatAxisTime(ms: number, barMs: number): string {
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 320, enabledStrategies = ALL_DETECTORS, onSignal }: Props) {
+export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 320, enabledStrategies = ALL_DETECTORS, onSignal, positions = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const barMs = TIMEFRAME_MS[timeframe];
   const [candles, setCandles] = useState<Candle[]>(() => generateCandles(80, basePrice, barMs));
@@ -150,7 +158,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
     }
 
     const visible = candles.slice(-zoom);
-    const prices = visible.flatMap(c => [c.high, c.low]);
+    const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice));
     const minP = Math.min(...prices);
     const maxP = Math.max(...prices);
     const priceRange = maxP - minP || 1;
@@ -242,6 +250,31 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
       ctx.fillText(sig.label, padL + 4, y - 4);
     });
 
+    // Open position markers — dashed line at entry price, colored by current P&L
+    positions.forEach((pos, i) => {
+      const currentPrice = livePriceRef.current ?? last.close;
+      const inProfit = pos.direction === 'long' ? currentPrice >= pos.entryPrice : currentPrice <= pos.entryPrice;
+      const color = inProfit ? '#00ff88' : '#ff3355';
+      const y = toY(pos.entryPrice);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(W - padR, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Flag/label on the right edge showing entry price + side
+      const label = `${pos.direction === 'long' ? '▲' : '▼'} ENTRY $${pos.entryPrice.toFixed(2)}`;
+      ctx.font = 'bold 9px monospace';
+      const labelW = ctx.measureText(label).width + 8;
+      ctx.fillStyle = color;
+      ctx.fillRect(W - padR - labelW, y - (i === 0 ? 9 : 18), labelW, 14);
+      ctx.fillStyle = '#0a0e1a';
+      ctx.fillText(label, W - padR - labelW + 4, y - (i === 0 ? 9 : 18) + 10);
+    });
+
     // Crosshair
     if (mouseX !== null) {
       const idx = Math.floor((mouseX - padL) / cW);
@@ -296,7 +329,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
     }
     ctx.textAlign = 'left';
 
-  }, [candles, mouseX, signals, enabledStrategies, zoom, barMs]);
+  }, [candles, mouseX, signals, enabledStrategies, zoom, barMs, positions]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

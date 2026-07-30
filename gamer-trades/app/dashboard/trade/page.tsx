@@ -345,6 +345,9 @@ export default function TradePage() {
               height={300}
               enabledStrategies={activeStrategies}
               onSignal={setLatestSignal}
+              positions={openTrades
+                .filter(t => t.symbol === selected.symbol)
+                .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
             />
 
             {/* Live signal callout */}

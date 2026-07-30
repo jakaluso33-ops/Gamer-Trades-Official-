@@ -51,15 +51,23 @@ function formatAxisTime(ms: number, barMs: number): string {
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+export interface ChartPosition {
+  entryPrice: number;
+  direction: 'long' | 'short';
+  quantity?: number;
+}
+
 interface Props {
   symbol: string;
   basePrice: number;
   livePrice?: number;
   timeframe?: Timeframe;
   height?: number;
+  /** Open positions for the current symbol — drawn as entry-price marker lines. */
+  positions?: ChartPosition[];
 }
 
-export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220 }: Props) {
+export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [] }: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
   const [candles, setCandles] = useState<Candle[]>(() => generateCandles(60, basePrice, barMs));
   const [zoom, setZoom] = useState(50);
@@ -103,7 +111,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const H = height - volH - 16;
   const padL = 4, padR = 44;
   const visible = candles.slice(-zoom);
-  const prices = visible.flatMap(c => [c.high, c.low]);
+  const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice));
   const minP = Math.min(...prices);
   const maxP = Math.max(...prices);
   const range = maxP - minP || 1;
@@ -147,6 +155,23 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
             <SvgText key={i} x={W - padR + 4} y={toY(p) + 3} fontSize="8" fill={colors.muted}>
               {p.toFixed(2)}
             </SvgText>
+          );
+        })}
+        {/* Open position markers */}
+        {positions.map((pos, i) => {
+          const currentPrice = livePriceRef.current ?? visible[visible.length - 1]?.close ?? pos.entryPrice;
+          const inProfit = pos.direction === 'long' ? currentPrice >= pos.entryPrice : currentPrice <= pos.entryPrice;
+          const color = inProfit ? colors.green : colors.red;
+          const y = toY(pos.entryPrice);
+          const label = `${pos.direction === 'long' ? '▲' : '▼'} $${pos.entryPrice.toFixed(2)}`;
+          return (
+            <Fragment key={'pos' + i}>
+              <Line x1={padL} y1={y} x2={W - padR} y2={y} stroke={color} strokeWidth={1.5} strokeDasharray="2,3" />
+              <Rect x={W - padR - 46} y={y - (i === 0 ? 9 : 18)} width={46} height={12} fill={color} />
+              <SvgText x={W - padR - 43} y={y - (i === 0 ? 9 : 18) + 9} fontSize="7" fill={colors.bg} fontWeight="bold">
+                {label}
+              </SvgText>
+            </Fragment>
           );
         })}
         {/* Volume bars */}
