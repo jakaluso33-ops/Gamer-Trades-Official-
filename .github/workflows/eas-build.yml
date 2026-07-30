@@ -20,6 +20,7 @@ on:
         options:
           - development
           - preview
+          - preview_simulator
           - production
       local:
         description: "Build locally on the runner instead of on EAS servers (diagnostic — surfaces full Gradle output in this log)"
