@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { View, Dimensions } from 'react-native';
-import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg';
+import Svg, { Rect, Line, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { PixelButton, BodyText } from './ui';
 import { colors } from '../lib/theme';
 import { Candle } from '../lib/strategyEngine';
@@ -118,6 +118,22 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const toY = (p: number) => ((maxP - p) / range) * H;
   const cW = (W - padL - padR) / visible.length;
   const maxVol = Math.max(...visible.map(c => c.volume));
+  const currentPrice = livePriceRef.current ?? visible[visible.length - 1]?.close ?? basePrice;
+
+  // Combine same-direction entries into one averaged position line, like a real trading platform.
+  const posGroups = new Map<'long' | 'short', { qty: number; notional: number }>();
+  positions.forEach(pos => {
+    const qty = pos.quantity ?? 1;
+    const g = posGroups.get(pos.direction) ?? { qty: 0, notional: 0 };
+    g.qty += qty;
+    g.notional += qty * pos.entryPrice;
+    posGroups.set(pos.direction, g);
+  });
+  const positionLines = Array.from(posGroups.entries()).map(([direction, g]) => {
+    const avgEntry = g.notional / g.qty;
+    const pnl = direction === 'long' ? (currentPrice - avgEntry) * g.qty : (avgEntry - currentPrice) * g.qty;
+    return { direction, avgEntry, pnl };
+  });
 
   return (
     <View>
@@ -126,6 +142,16 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
         <PixelButton color={colors.muted} onPress={zoomIn} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>+</PixelButton>
       </View>
       <Svg width={W} height={height}>
+        <Defs>
+          <LinearGradient id="candleUp" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={colors.green} stopOpacity={0.75} />
+            <Stop offset="1" stopColor={colors.green} stopOpacity={0.3} />
+          </LinearGradient>
+          <LinearGradient id="candleDown" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={colors.red} stopOpacity={0.75} />
+            <Stop offset="1" stopColor={colors.red} stopOpacity={0.3} />
+          </LinearGradient>
+        </Defs>
         {visible.map((c, i) => {
           const x = padL + i * cW;
           const xMid = x + cW / 2;
@@ -133,15 +159,18 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
           const color = isUp ? colors.green : colors.red;
           const bodyTop = toY(Math.max(c.open, c.close));
           const bodyBot = toY(Math.min(c.open, c.close));
+          const bodyW = Math.max(2, cW - 2);
+          const bodyH = Math.max(2, bodyBot - bodyTop);
           return (
             <Fragment key={c.time.toString()}>
-              <Line x1={xMid} y1={toY(c.high)} x2={xMid} y2={toY(c.low)} stroke={color} strokeWidth={1} />
+              <Line x1={xMid} y1={toY(c.high)} x2={xMid} y2={toY(c.low)} stroke={color} strokeWidth={1.2} />
               <Rect
                 x={x + 1}
                 y={bodyTop}
-                width={Math.max(1, cW - 2)}
-                height={Math.max(1, bodyBot - bodyTop)}
-                fill={`${color}66`}
+                width={bodyW}
+                height={bodyH}
+                rx={Math.min(2, bodyW / 3)}
+                fill={isUp ? 'url(#candleUp)' : 'url(#candleDown)'}
                 stroke={color}
                 strokeWidth={1}
               />
@@ -157,23 +186,49 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
             </SvgText>
           );
         })}
-        {/* Open position markers */}
-        {positions.map((pos, i) => {
-          const currentPrice = livePriceRef.current ?? visible[visible.length - 1]?.close ?? pos.entryPrice;
-          const inProfit = pos.direction === 'long' ? currentPrice >= pos.entryPrice : currentPrice <= pos.entryPrice;
+        {/* Open position markers — combined per direction, with a money-emoji P&L pill */}
+        {positionLines.map((pos, i) => {
+          const inProfit = pos.pnl >= 0;
           const color = inProfit ? colors.green : colors.red;
-          const y = toY(pos.entryPrice);
-          const label = `${pos.direction === 'long' ? '▲' : '▼'} $${pos.entryPrice.toFixed(2)}`;
+          const y = toY(pos.avgEntry);
+          const yCurrent = toY(currentPrice);
+          const emoji = inProfit ? '💰' : '💸';
+          const label = `${emoji} ${pos.pnl >= 0 ? '+' : '-'}$${Math.abs(pos.pnl).toFixed(2)}`;
+          const labelW = 12 + label.length * 5.5;
+          const labelY = y - 10 - i * 18;
           return (
-            <Fragment key={'pos' + i}>
+            <Fragment key={'pos' + pos.direction}>
+              <Rect
+                x={padL}
+                y={Math.min(y, yCurrent)}
+                width={W - padR - padL}
+                height={Math.max(1, Math.abs(yCurrent - y))}
+                fill={inProfit ? `${colors.green}0f` : `${colors.red}0f`}
+              />
               <Line x1={padL} y1={y} x2={W - padR} y2={y} stroke={color} strokeWidth={1.5} strokeDasharray="2,3" />
-              <Rect x={W - padR - 46} y={y - (i === 0 ? 9 : 18)} width={46} height={12} fill={color} />
-              <SvgText x={W - padR - 43} y={y - (i === 0 ? 9 : 18) + 9} fontSize="7" fill={colors.bg} fontWeight="bold">
+              <Rect x={W - padR - labelW} y={labelY} width={labelW} height={16} rx={8} fill={color} />
+              <SvgText x={W - padR - labelW + 6} y={labelY + 11} fontSize="8" fill={colors.bg} fontWeight="bold">
                 {label}
               </SvgText>
             </Fragment>
           );
         })}
+        {/* Live current-price line */}
+        <Fragment>
+          <Line
+            x1={padL}
+            y1={toY(currentPrice)}
+            x2={W - padR}
+            y2={toY(currentPrice)}
+            stroke="#e0f0ffb3"
+            strokeWidth={1}
+            strokeDasharray="5,4"
+          />
+          <Rect x={W - padR} y={toY(currentPrice) - 8} width={44} height={16} fill={colors.blue} />
+          <SvgText x={W - padR + 4} y={toY(currentPrice) + 3} fontSize="7.5" fill={colors.bg} fontWeight="bold">
+            {`$${currentPrice.toFixed(2)}`}
+          </SvgText>
+        </Fragment>
         {/* Volume bars */}
         {visible.map((c, i) => {
           const x = padL + i * cW;

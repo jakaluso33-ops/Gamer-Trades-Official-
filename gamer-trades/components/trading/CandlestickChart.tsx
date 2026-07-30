@@ -166,21 +166,23 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
     const toY = (p: number) => padT + ((maxP - p) / priceRange) * (H - padT - padB);
     const cW = (W - padL - padR) / visible.length;
 
-    // Draw candles
+    // Draw candles — rounded, gradient-filled bodies with a soft glow for a more polished look
     visible.forEach((c, i) => {
       const x = padL + i * cW;
       const xMid = x + cW / 2;
       const isUp = c.close >= c.open;
       const color = isUp ? '#00ff88' : '#ff3355';
-      const shadow = isUp ? '0 0 4px #00ff88' : '0 0 4px #ff3355';
+      const colorDark = isUp ? '#00cc6a' : '#cc2944';
 
       const bodyTop = toY(Math.max(c.open, c.close));
       const bodyBot = toY(Math.min(c.open, c.close));
-      const bodyH = Math.max(1, bodyBot - bodyTop);
+      const bodyH = Math.max(2, bodyBot - bodyTop);
+      const bodyW = Math.max(2, cW - 2);
+      const radius = Math.min(2, bodyW / 3, bodyH / 3);
 
       // Wick
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.2;
       ctx.shadowColor = color;
       ctx.shadowBlur = 2;
       ctx.beginPath();
@@ -188,13 +190,22 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
       ctx.lineTo(xMid, toY(c.low));
       ctx.stroke();
 
-      // Body
-      ctx.fillStyle = isUp ? '#00ff8844' : '#ff335544';
+      // Body — subtle top-to-bottom gradient + rounded corners
+      const grad = ctx.createLinearGradient(0, bodyTop, 0, bodyBot);
+      grad.addColorStop(0, `${color}99`);
+      grad.addColorStop(1, `${colorDark}55`);
+      ctx.fillStyle = grad;
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
-      ctx.shadowBlur = 3;
-      ctx.fillRect(x + 1, bodyTop, Math.max(1, cW - 2), bodyH);
-      ctx.strokeRect(x + 1, bodyTop, Math.max(1, cW - 2), bodyH);
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x + 1, bodyTop, bodyW, bodyH, radius);
+      } else {
+        ctx.rect(x + 1, bodyTop, bodyW, bodyH);
+      }
+      ctx.fill();
+      ctx.stroke();
     });
 
     ctx.shadowBlur = 0;
@@ -250,12 +261,33 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
       ctx.fillText(sig.label, padL + 4, y - 4);
     });
 
-    // Open position markers — dashed line at entry price, colored by current P&L
-    positions.forEach((pos, i) => {
-      const currentPrice = livePriceRef.current ?? last.close;
-      const inProfit = pos.direction === 'long' ? currentPrice >= pos.entryPrice : currentPrice <= pos.entryPrice;
+    const currentPrice = livePriceRef.current ?? last.close;
+
+    // Open position markers — all entries in the same direction are combined into one
+    // averaged line (matches how positions stack on a real trading platform).
+    const posGroups = new Map<'long' | 'short', { qty: number; notional: number }>();
+    positions.forEach(pos => {
+      const qty = pos.quantity ?? 1;
+      const g = posGroups.get(pos.direction) ?? { qty: 0, notional: 0 };
+      g.qty += qty;
+      g.notional += qty * pos.entryPrice;
+      posGroups.set(pos.direction, g);
+    });
+
+    let posRow = 0;
+    posGroups.forEach((g, direction) => {
+      const avgEntry = g.notional / g.qty;
+      const pnl = direction === 'long' ? (currentPrice - avgEntry) * g.qty : (avgEntry - currentPrice) * g.qty;
+      const inProfit = pnl >= 0;
       const color = inProfit ? '#00ff88' : '#ff3355';
-      const y = toY(pos.entryPrice);
+      const y = toY(avgEntry);
+      const yCurrent = toY(currentPrice);
+
+      // Shaded zone between entry and current price
+      ctx.fillStyle = inProfit ? 'rgba(0,255,136,0.06)' : 'rgba(255,51,85,0.06)';
+      ctx.fillRect(padL, Math.min(y, yCurrent), W - padR - padL, Math.abs(yCurrent - y));
+
+      // Entry line
       ctx.strokeStyle = color;
       ctx.lineWidth = 1.5;
       ctx.setLineDash([2, 3]);
@@ -265,15 +297,47 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Flag/label on the right edge showing entry price + side
-      const label = `${pos.direction === 'long' ? '▲' : '▼'} ENTRY $${pos.entryPrice.toFixed(2)}`;
-      ctx.font = 'bold 9px monospace';
-      const labelW = ctx.measureText(label).width + 8;
+      // Pill label — money emoji + signed P&L
+      const emoji = inProfit ? '💰' : '💸';
+      const label = `${emoji} ${pnl >= 0 ? '+' : '-'}$${Math.abs(pnl).toFixed(2)}`;
+      ctx.font = 'bold 11px sans-serif';
+      const labelW = ctx.measureText(label).width + 14;
+      const labelY = y - 10 - posRow * 20;
       ctx.fillStyle = color;
-      ctx.fillRect(W - padR - labelW, y - (i === 0 ? 9 : 18), labelW, 14);
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(W - padR - labelW - 4, labelY, labelW, 20, 10);
+      } else {
+        ctx.rect(W - padR - labelW - 4, labelY, labelW, 20);
+      }
+      ctx.fill();
       ctx.fillStyle = '#0a0e1a';
-      ctx.fillText(label, W - padR - labelW + 4, y - (i === 0 ? 9 : 18) + 10);
+      ctx.fillText(label, W - padR - labelW + 3, labelY + 14);
+      posRow++;
     });
+
+    // Live current-price line — always visible, clearly separate from position markers
+    {
+      const y = toY(currentPrice);
+      const upTick = currentPrice >= (prev?.close ?? currentPrice);
+      const priceColor = upTick ? '#00ff88' : '#ff3355';
+      ctx.strokeStyle = 'rgba(224, 240, 255, 0.7)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(W - padR, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const label = `$${currentPrice.toFixed(2)}`;
+      ctx.font = 'bold 10px monospace';
+      const labelW = ctx.measureText(label).width + 12;
+      ctx.fillStyle = priceColor;
+      ctx.fillRect(W - padR, y - 8, labelW, 16);
+      ctx.fillStyle = '#0a0e1a';
+      ctx.fillText(label, W - padR + 6, y + 4);
+    }
 
     // Crosshair
     if (mouseX !== null) {
