@@ -27,6 +27,11 @@ on:
         required: false
         default: false
         type: boolean
+      submit:
+        description: "After a successful iOS build, automatically submit it to TestFlight"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -91,3 +96,7 @@ jobs:
       - name: Build on EAS
         if: ${{ !inputs.local }}
         run: eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive
+
+      - name: Submit to TestFlight
+        if: ${{ !inputs.local && inputs.submit && (inputs.platform == 'ios' || inputs.platform == 'all') }}
+        run: eas submit --platform ios --latest --non-interactive
