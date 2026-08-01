@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, Modal, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
@@ -16,7 +16,7 @@ import {
   DbTrade,
   InsufficientFundsError,
 } from '../../lib/trading';
-import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, AssetClass, SymbolInfo } from '../../lib/symbols';
+import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, ASSET_CLASS_ICON, AssetClass, SymbolInfo } from '../../lib/symbols';
 import { pollLiveQuotes } from '../../lib/marketData';
 import CandlestickChart, { Timeframe } from '../../components/CandlestickChart';
 import PnlIcon from '../../components/PnlIcon';
@@ -71,8 +71,32 @@ export default function TradeScreen() {
   const [timeframe, setTimeframe] = useState<Timeframe>('1m');
   const candlesRef = useRef<Candle[]>(generateCandles(60, ALL_SYMBOLS[0].basePrice));
   const [signals, setSignals] = useState<StrategySignal[]>([]);
+  const [changes, setChanges] = useState<Record<string, number>>({});
+  const [chartFullscreen, setChartFullscreen] = useState(false);
   const livePriceRef = useRef(livePrice);
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
+
+  // Seed + nudge simulated % change for whatever symbols are visible in the current
+  // watchlist tab, so the list feels alive without needing a live quote per row.
+  useEffect(() => {
+    setChanges(prev => {
+      const next = { ...prev };
+      for (const s of SYMBOLS_BY_CLASS[classTab]) {
+        if (next[s.symbol] === undefined) next[s.symbol] = (Math.random() - 0.5) * 6;
+      }
+      return next;
+    });
+    const id = setInterval(() => {
+      setChanges(prev => {
+        const next = { ...prev };
+        for (const s of SYMBOLS_BY_CLASS[classTab]) {
+          next[s.symbol] = (next[s.symbol] ?? 0) + (Math.random() - 0.5) * 0.4;
+        }
+        return next;
+      });
+    }, 3000);
+    return () => clearInterval(id);
+  }, [classTab]);
 
   useEffect(() => {
     if (!user) return;
@@ -229,17 +253,55 @@ export default function TradeScreen() {
             </PixelButton>
           ))}
         </View>
-        <CandlestickChart
-          symbol={selected.symbol}
-          basePrice={selected.basePrice}
-          livePrice={livePrice}
-          timeframe={timeframe}
-          height={200}
-          positions={openTrades
-            .filter(t => t.symbol === selected.symbol)
-            .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
-        />
+        <Pressable onPress={() => setChartFullscreen(true)}>
+          <CandlestickChart
+            symbol={selected.symbol}
+            basePrice={selected.basePrice}
+            livePrice={livePrice}
+            timeframe={timeframe}
+            height={200}
+            positions={openTrades
+              .filter(t => t.symbol === selected.symbol)
+              .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+          />
+        </Pressable>
+        <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 4 }}>
+          TAP CHART TO EXPAND ⤢
+        </BodyText>
       </Card>
+
+      <Modal visible={chartFullscreen} animationType="slide" onRequestClose={() => setChartFullscreen(false)}>
+        <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: 50, paddingHorizontal: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <PixelText color={colors.cyan} size={13} glow>{selected.symbol}</PixelText>
+            <PixelButton color={colors.muted} onPress={() => setChartFullscreen(false)} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
+              ✕ CLOSE
+            </PixelButton>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+            {TIMEFRAMES.map(tf => (
+              <PixelButton
+                key={tf}
+                color={timeframe === tf ? colors.blue : colors.muted}
+                onPress={() => setTimeframe(tf)}
+                style={{ paddingHorizontal: 8, paddingVertical: 5 }}
+              >
+                {tf}
+              </PixelButton>
+            ))}
+          </View>
+          <CandlestickChart
+            symbol={selected.symbol}
+            basePrice={selected.basePrice}
+            livePrice={livePrice}
+            timeframe={timeframe}
+            height={Dimensions.get('window').height - 260}
+            positions={openTrades
+              .filter(t => t.symbol === selected.symbol)
+              .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+          />
+        </View>
+      </Modal>
 
       <Card>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
@@ -254,12 +316,59 @@ export default function TradeScreen() {
             </PixelButton>
           ))}
         </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {SYMBOLS_BY_CLASS[classTab].map(s => (
-            <PixelButton key={s.symbol} color={selected.symbol === s.symbol ? colors.cyan : colors.muted} onPress={() => setSelected(s)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-              {s.symbol}
-            </PixelButton>
-          ))}
+        <View style={{ borderWidth: 2, borderColor: colors.border }}>
+          {SYMBOLS_BY_CLASS[classTab].map((s, i) => {
+            const isSelected = selected.symbol === s.symbol;
+            const change = changes[s.symbol] ?? 0;
+            const up = change >= 0;
+            const changeColor = up ? colors.green : colors.red;
+            const price = s.symbol === selected.symbol ? livePrice : s.basePrice;
+            return (
+              <Pressable
+                key={s.symbol}
+                onPress={() => setSelected(s)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                  paddingHorizontal: 10,
+                  paddingVertical: 10,
+                  backgroundColor: isSelected ? `${colors.cyan}14` : 'transparent',
+                  borderBottomWidth: i === SYMBOLS_BY_CLASS[classTab].length - 1 ? 0 : 1,
+                  borderBottomColor: colors.border,
+                  borderLeftWidth: isSelected ? 3 : 0,
+                  borderLeftColor: colors.cyan,
+                }}
+              >
+                <View
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: `${ASSET_CLASS_COLOR[classTab]}22`,
+                    borderWidth: 2,
+                    borderColor: ASSET_CLASS_COLOR[classTab],
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <BodyText size={14}>{ASSET_CLASS_ICON[classTab]}</BodyText>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <BodyText color={isSelected ? colors.cyan : colors.text} size={13} weight="semibold">{s.symbol}</BodyText>
+                  <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }} numberOfLines={1}>{s.name}</BodyText>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <BodyText color={colors.text} size={13} weight="medium">
+                    {price.toLocaleString(undefined, { minimumFractionDigits: s.decimals, maximumFractionDigits: s.decimals })}
+                  </BodyText>
+                  <BodyText color={changeColor} size={11} style={{ marginTop: 2 }}>
+                    {up ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
+                  </BodyText>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
 
         <BodyText color={colors.muted} size={12} style={{ marginTop: 16, marginBottom: 8 }}>QUANTITY: {qty}</BodyText>

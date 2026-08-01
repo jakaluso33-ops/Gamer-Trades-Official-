@@ -132,6 +132,15 @@ export const ASSET_CLASS_LABEL: Record<AssetClass, string> = {
   OPTIONS: 'OPTIONS',
 };
 
+export const ASSET_CLASS_ICON: Record<AssetClass, string> = {
+  STOCK: '📈',
+  CRYPTO: '₿',
+  FOREX: '💱',
+  INDEX: '📊',
+  FUTURES: '🛢️',
+  OPTIONS: 'Ⓞ',
+};
+
 export const ASSET_CLASS_COLOR: Record<AssetClass, string> = {
   STOCK: '#00aaff',
   CRYPTO: '#ffd700',
