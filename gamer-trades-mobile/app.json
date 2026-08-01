@@ -10,7 +10,7 @@
     "userInterfaceStyle": "dark",
     "description": "Gamified paper trading — practice stocks, crypto, and forex with zero real-money risk. Educational simulation only.",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.gamertrades.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
