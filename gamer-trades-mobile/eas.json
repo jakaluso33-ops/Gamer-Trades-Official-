@@ -28,7 +28,14 @@
   "submit": {
     "production": {
       "ios": {
-        "appleTeamId": "CG4759H9QC"
+        "appleTeamId": "CG4759H9QC",
+        "ascAppId": "6796792838"
+      }
+    },
+    "preview": {
+      "ios": {
+        "appleTeamId": "CG4759H9QC",
+        "ascAppId": "6796792838"
       }
     }
   }
