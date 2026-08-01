@@ -184,6 +184,9 @@ export default function BattleScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 60 }}>
+        <PixelText color={colors.cyan} size={13} glow>⚔ BATTLE ARENA</PixelText>
+      </View>
       <View style={{ flexDirection: 'row', gap: 8, padding: 16, paddingBottom: 0 }}>
         <PixelButton color={mode === 'ai' ? colors.purple : colors.muted} onPress={() => setMode('ai')} style={{ flex: 1 }}>★ VS AI</PixelButton>
         <PixelButton color={mode === 'friend' ? colors.cyan : colors.muted} onPress={() => setMode('friend')} style={{ flex: 1 }}>⚔ VS FRIEND</PixelButton>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,14 +6,9 @@ import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
+import { getPortfolio, listOpenTrades, computePnl, Portfolio, DbTrade } from '../../lib/trading';
+import { getBasePrice } from '../../lib/symbols';
 import InsightsCard from '../../components/InsightsCard';
-
-const POSITIONS = [
-  { symbol: 'AAPL', side: 'LONG', qty: 50, pnl: 107.0 },
-  { symbol: 'TSLA', side: 'SHORT', qty: 20, pnl: 64.6 },
-  { symbol: 'BTC', side: 'LONG', qty: 0.5, pnl: 660.0 },
-  { symbol: 'NVDA', side: 'LONG', qty: 15, pnl: -72.0 },
-];
 
 const QUICK_LINKS = [
   { label: 'PORTFOLIO', icon: '◉', href: '/(tabs)/portfolio', color: colors.blue },
@@ -25,7 +20,19 @@ const QUICK_LINKS = [
 export default function DashboardScreen() {
   const { user, profile } = useAuth();
   const router = useRouter();
-  const totalPnl = POSITIONS.reduce((s, p) => s + p.pnl, 0);
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+  const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getPortfolio(user.id).then(setPortfolio).catch(console.error);
+    listOpenTrades(user.id).then(setOpenTrades).catch(console.error);
+  }, [user]);
+
+  const totalPnl = openTrades.reduce((s, t) => s + computePnl(t, getBasePrice(t.symbol) || t.entry_price), 0);
+  const winRate = profile && profile.total_wins + profile.total_losses > 0
+    ? Math.round((profile.total_wins / (profile.total_wins + profile.total_losses)) * 100)
+    : 0;
 
   // Log at most one check-in per day toward the "trade with discipline" goal
   useEffect(() => {
@@ -45,6 +52,7 @@ export default function DashboardScreen() {
       <View>
         <BodyText color={colors.muted} size={12}>▶ WELCOME BACK, {profile?.username ?? '...'}</BodyText>
         <PixelText color={colors.cyan} size={14} glow style={{ marginTop: 6 }}>TRADING ARENA</PixelText>
+        <BodyText color={colors.gold} size={12} weight="semibold" style={{ marginTop: 6 }}>🎮 GAME ON, TRADE ON</BodyText>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -57,9 +65,7 @@ export default function DashboardScreen() {
         <Card style={{ flex: 1 }}>
           <BodyText color={colors.muted} size={11}>WIN RATE</BodyText>
           <PixelText color={colors.gold} size={12} glow style={{ marginTop: 6 }}>
-            {profile && profile.total_wins + profile.total_losses > 0
-              ? `${Math.round((profile.total_wins / (profile.total_wins + profile.total_losses)) * 100)}%`
-              : '—'}
+            {winRate}%
           </PixelText>
         </Card>
       </View>
@@ -69,15 +75,22 @@ export default function DashboardScreen() {
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
           <BodyText color={colors.blue} size={12} weight="semibold" glow>◈ OPEN POSITIONS</BodyText>
-          <BodyText color={colors.muted} size={12}>{POSITIONS.length} ACTIVE</BodyText>
+          <BodyText color={colors.muted} size={12}>{openTrades.length} ACTIVE</BodyText>
         </View>
-        {POSITIONS.map(p => (
-          <View key={p.symbol} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <BodyText color={colors.blue} size={13} weight="medium">{p.symbol}</BodyText>
-            <BodyText color={p.side === 'LONG' ? colors.green : colors.red} size={12}>{p.side} x{p.qty}</BodyText>
-            <BodyText color={p.pnl >= 0 ? colors.green : colors.red} size={13}>{p.pnl >= 0 ? '+' : ''}${p.pnl.toFixed(2)}</BodyText>
-          </View>
-        ))}
+        {openTrades.length === 0 ? (
+          <BodyText color={colors.border} size={13}>No open positions yet — head to the Trading Arena to place your first trade.</BodyText>
+        ) : openTrades.map(t => {
+          const pnl = computePnl(t, getBasePrice(t.symbol) || t.entry_price);
+          return (
+            <View key={t.id} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <BodyText color={colors.blue} size={13} weight="medium">{t.symbol}</BodyText>
+              <BodyText color={t.direction === 'long' ? colors.green : colors.red} size={12}>
+                {t.direction === 'long' ? 'LONG' : 'SHORT'} x{t.quantity}
+              </BodyText>
+              <BodyText color={pnl >= 0 ? colors.green : colors.red} size={13}>{pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</BodyText>
+            </View>
+          );
+        })}
       </Card>
 
       <Card borderColor={colors.purple}>

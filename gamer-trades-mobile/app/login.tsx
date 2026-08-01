@@ -53,6 +53,7 @@ export default function LoginScreen() {
             <View style={{ alignItems: 'center', marginBottom: 24 }}>
               <PixelText size={32}>🎮</PixelText>
               <PixelText color={colors.cyan} size={11} glow style={{ marginTop: 8 }}>GAMER TRADES</PixelText>
+              <BodyText color={colors.gold} size={12} weight="semibold" style={{ marginTop: 8 }}>GAME ON, TRADE ON</BodyText>
             </View>
 
             {mode !== 'forgot' && (

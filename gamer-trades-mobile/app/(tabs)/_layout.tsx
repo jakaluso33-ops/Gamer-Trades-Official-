@@ -22,6 +22,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="battle" options={{ title: 'BATTLE', tabBarIcon: ({ color }) => <TabIcon icon="⚔" color={color} /> }} />
       <Tabs.Screen name="friends" options={{ title: 'FRIENDS', tabBarIcon: ({ color }) => <TabIcon icon="♥" color={color} /> }} />
       <Tabs.Screen name="profile" options={{ title: 'PROFILE', tabBarIcon: ({ color }) => <TabIcon icon="◎" color={color} /> }} />
+      <Tabs.Screen name="trade-desk" options={{ href: null }} />
       <Tabs.Screen name="portfolio" options={{ href: null }} />
       <Tabs.Screen name="leaderboard" options={{ href: null }} />
       <Tabs.Screen name="challenges" options={{ href: null }} />
