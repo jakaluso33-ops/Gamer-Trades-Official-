@@ -16,7 +16,7 @@ import {
   DbTrade,
   InsufficientFundsError,
 } from '../../lib/trading';
-import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, ASSET_CLASS_ICON, AssetClass, SymbolInfo } from '../../lib/symbols';
+import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, ASSET_CLASS_ICON, SYMBOL_ICON, AssetClass, SymbolInfo } from '../../lib/symbols';
 import { pollLiveQuotes } from '../../lib/marketData';
 import CandlestickChart, { Timeframe } from '../../components/CandlestickChart';
 import PnlIcon from '../../components/PnlIcon';
@@ -352,7 +352,7 @@ export default function TradeScreen() {
                     justifyContent: 'center',
                   }}
                 >
-                  <BodyText size={14}>{ASSET_CLASS_ICON[classTab]}</BodyText>
+                  <BodyText size={14}>{SYMBOL_ICON[s.symbol] ?? ASSET_CLASS_ICON[classTab]}</BodyText>
                 </View>
                 <View style={{ flex: 1 }}>
                   <BodyText color={isSelected ? colors.cyan : colors.text} size={13} weight="semibold">{s.symbol}</BodyText>

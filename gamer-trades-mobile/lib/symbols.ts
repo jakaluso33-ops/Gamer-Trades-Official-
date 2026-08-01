@@ -141,6 +141,63 @@ export const ASSET_CLASS_ICON: Record<AssetClass, string> = {
   OPTIONS: 'Ⓞ',
 };
 
+/**
+ * Per-instrument icon, one notch more specific than the asset-class icon.
+ * Uses generic pictograms (not real company logos/trademarks) so each
+ * market is instantly recognizable without any brand-licensing risk —
+ * e.g. Gold gets a bar/coin glyph, Amazon gets a shipping box, etc.
+ */
+export const SYMBOL_ICON: Record<string, string> = {
+  // Stocks
+  AAPL: '🍎',
+  MSFT: '🪟',
+  GOOGL: '🔍',
+  AMZN: '📦',
+  NVDA: '🖥️',
+  TSLA: '🚗',
+  META: '👓',
+  JPM: '🏦',
+  V: '💳',
+  WMT: '🛒',
+  DIS: '🏰',
+  NFLX: '🎬',
+  AMD: '🔷',
+  BA: '✈️',
+  XOM: '⛽',
+  // Crypto
+  'BTC/USD': '₿',
+  'ETH/USD': 'Ξ',
+  'SOL/USD': '◎',
+  'XRP/USD': '✕',
+  'DOGE/USD': '🐕',
+  'ADA/USD': '₳',
+  'AVAX/USD': '🏔️',
+  'LINK/USD': '🔗',
+  // Forex
+  'EUR/USD': '🇪🇺',
+  'GBP/USD': '🇬🇧',
+  'USD/JPY': '🇯🇵',
+  'USD/CHF': '🇨🇭',
+  'AUD/USD': '🇦🇺',
+  'USD/CAD': '🇨🇦',
+  'NZD/USD': '🇳🇿',
+  'EUR/GBP': '🇪🇺',
+  // Indices
+  SPX: '🗽',
+  NDX: '💻',
+  DJI: '🏭',
+  RUT: '🏢',
+  VIX: '🌪️',
+  // Futures
+  ES: '🗽',
+  NQ: '💻',
+  CL: '🛢️',
+  GC: '🪙',
+  SI: '🥈',
+  NG: '🔥',
+  ZB: '📜',
+};
+
 export const ASSET_CLASS_COLOR: Record<AssetClass, string> = {
   STOCK: '#00aaff',
   CRYPTO: '#ffd700',

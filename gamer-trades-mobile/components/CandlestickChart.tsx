@@ -67,12 +67,21 @@ interface Props {
   positions?: ChartPosition[];
 }
 
+function touchDistance(touches: { pageX: number; pageY: number }[]): number {
+  const [a, b] = touches;
+  const dx = a.pageX - b.pageX;
+  const dy = a.pageY - b.pageY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [] }: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
   const [candles, setCandles] = useState<Candle[]>(() => generateCandles(60, basePrice, barMs));
   const [zoom, setZoom] = useState(50);
   const livePriceRef = useRef(livePrice);
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
+  const pinchStartDist = useRef<number | null>(null);
+  const pinchStartZoom = useRef(zoom);
 
   useEffect(() => {
     setCandles(generateCandles(60, basePrice, barMs));
@@ -141,6 +150,28 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
         <PixelButton color={colors.muted} onPress={zoomOut} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>−</PixelButton>
         <PixelButton color={colors.muted} onPress={zoomIn} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>+</PixelButton>
       </View>
+      <View
+        onStartShouldSetResponder={(e) => e.nativeEvent.touches.length === 2}
+        onMoveShouldSetResponder={(e) => e.nativeEvent.touches.length === 2}
+        onResponderGrant={(e) => {
+          const touches = e.nativeEvent.touches;
+          if (touches.length === 2) {
+            pinchStartDist.current = touchDistance(touches);
+            pinchStartZoom.current = zoom;
+          }
+        }}
+        onResponderMove={(e) => {
+          const touches = e.nativeEvent.touches;
+          if (touches.length === 2 && pinchStartDist.current) {
+            const dist = touchDistance(touches);
+            const scale = dist / pinchStartDist.current;
+            const newZoom = Math.round(pinchStartZoom.current / scale);
+            setZoom(Math.min(Math.max(newZoom, MIN_ZOOM), Math.min(MAX_ZOOM, candles.length)));
+          }
+        }}
+        onResponderRelease={() => { pinchStartDist.current = null; }}
+        onResponderTerminate={() => { pinchStartDist.current = null; }}
+      >
       <Svg width={W} height={height}>
         <Defs>
           <LinearGradient id="candleUp" x1="0" y1="0" x2="0" y2="1">
@@ -256,8 +287,9 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
           );
         })}
       </Svg>
+      </View>
       <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 2 }}>
-        Pinch not yet supported — use +/− to zoom
+        Pinch to zoom, or use +/−
       </BodyText>
     </View>
   );
