@@ -80,14 +80,14 @@ export default function PortfolioScreen() {
 
   if (loading) {
     return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16 }}>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         <BodyText color={colors.muted} size={13}>Loading portfolio...</BodyText>
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <PixelText color={colors.blue} size={13} glow>◉ PORTFOLIO</PixelText>
 
       <Card borderColor={colors.green}>

@@ -213,7 +213,7 @@ export default function TradeDeskScreen() {
   const totalPnl = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText color={colors.blue} size={13} glow>◈ TRADE DESK</PixelText>
         <BodyText color={colors.muted} size={11} onPress={() => router.push('/(tabs)/trade' as never)}>◀ ARENA</BodyText>

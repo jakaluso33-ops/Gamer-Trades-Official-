@@ -22,7 +22,7 @@ export default function TradingArenaScreen() {
   const openMarkets = ASSET_CLASSES.filter(cls => isMarketOpen(cls));
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <PixelText color={colors.blue} size={13} glow>◈ TRADING ARENA</PixelText>
       <BodyText color={colors.muted} size={12}>
         {openMarkets.length > 0

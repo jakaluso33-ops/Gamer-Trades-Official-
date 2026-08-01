@@ -16,7 +16,7 @@ export default function LeaderboardScreen() {
   }, []);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <PixelText color={colors.gold} size={13} glow>♛ LEADERBOARD</PixelText>
 
       {entries === null ? (

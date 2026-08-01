@@ -20,13 +20,13 @@ export default function TabsLayout() {
       <Tabs.Screen name="dashboard" options={{ title: 'HOME', tabBarIcon: ({ color }) => <TabIcon icon="⊞" color={color} /> }} />
       <Tabs.Screen name="trade" options={{ title: 'TRADE', tabBarIcon: ({ color }) => <TabIcon icon="◈" color={color} /> }} />
       <Tabs.Screen name="battle" options={{ title: 'BATTLE', tabBarIcon: ({ color }) => <TabIcon icon="⚔" color={color} /> }} />
-      <Tabs.Screen name="friends" options={{ title: 'FRIENDS', tabBarIcon: ({ color }) => <TabIcon icon="♥" color={color} /> }} />
+      <Tabs.Screen name="academy" options={{ title: 'LEARN', tabBarIcon: ({ color }) => <TabIcon icon="🧠" color={color} /> }} />
       <Tabs.Screen name="profile" options={{ title: 'PROFILE', tabBarIcon: ({ color }) => <TabIcon icon="◎" color={color} /> }} />
       <Tabs.Screen name="trade-desk" options={{ href: null }} />
+      <Tabs.Screen name="friends" options={{ href: null }} />
       <Tabs.Screen name="portfolio" options={{ href: null }} />
       <Tabs.Screen name="leaderboard" options={{ href: null }} />
       <Tabs.Screen name="challenges" options={{ href: null }} />
-      <Tabs.Screen name="academy" options={{ href: null }} />
     </Tabs>
   );
 }

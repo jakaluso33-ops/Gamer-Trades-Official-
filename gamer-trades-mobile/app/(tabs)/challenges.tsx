@@ -68,7 +68,7 @@ export default function ChallengesScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText color={colors.green} size={13} glow>◆ GOALS &amp; TASKS</PixelText>
         {syncing && <BodyText color={colors.muted} size={11}>syncing...</BodyText>}

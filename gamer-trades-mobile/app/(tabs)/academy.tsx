@@ -3,6 +3,8 @@ import { ScrollView, View, Pressable } from 'react-native';
 import { Card, PixelText, BodyText } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { STRATEGIES, StrategyDifficulty } from '../../lib/strategyContent';
+import StrategyIcon from '../../components/StrategyIcon';
+import { DetectorId } from '../../lib/strategyEngine';
 
 const DIFF_COLOR: Record<StrategyDifficulty, string> = {
   BEGINNER: colors.green,
@@ -14,7 +16,7 @@ export default function AcademyScreen() {
   const [selected, setSelected] = useState(STRATEGIES[0]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <View>
         <BodyText color={colors.muted} size={12}>🧠 AI STRATEGY ACADEMY</BodyText>
         <PixelText color={colors.cyan} size={13} glow style={{ marginTop: 6 }}>LEARN &amp; DETECT</PixelText>
@@ -34,7 +36,10 @@ export default function AcademyScreen() {
               borderWidth: 2, borderColor: selected.id === s.id ? s.color : colors.border,
             }}
           >
-            <BodyText color={selected.id === s.id ? s.color : colors.muted} size={12}>{s.icon} {s.name}</BodyText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <StrategyIcon id={s.id as DetectorId} color={selected.id === s.id ? s.color : colors.muted} size={14} />
+              <BodyText color={selected.id === s.id ? s.color : colors.muted} size={12}>{s.icon} {s.name}</BodyText>
+            </View>
           </Pressable>
         ))}
       </View>
@@ -46,6 +51,11 @@ export default function AcademyScreen() {
             <BodyText color={selected.color} size={15} weight="semibold" glow>{selected.name}</BodyText>
             <BodyText color={DIFF_COLOR[selected.difficulty]} size={11} style={{ marginTop: 4 }}>{selected.difficulty}</BodyText>
           </View>
+        </View>
+
+        <View style={{ alignItems: 'center', paddingVertical: 14, marginBottom: 14, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
+          <StrategyIcon id={selected.id as DetectorId} color={selected.color} size={48} />
+          <BodyText color={colors.muted} size={10} style={{ marginTop: 8 }}>WHAT THE SETUP LOOKS LIKE</BodyText>
         </View>
 
         <BodyText color={colors.text} size={13} style={{ marginBottom: 14 }}>{selected.summary}</BodyText>

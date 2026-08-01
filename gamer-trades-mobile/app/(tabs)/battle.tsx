@@ -96,7 +96,7 @@ function AiBattle() {
 
   if (phase === 'select') {
     return (
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
         <PixelText color={colors.purple} size={7} glow>★ CHOOSE AI OPPONENT</PixelText>
         {AI_OPPONENTS.map(ai => (
           <Card key={ai.id} borderColor={selectedAI.id === ai.id ? ai.color : colors.border} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
@@ -117,7 +117,7 @@ function AiBattle() {
 
   if (phase === 'result') {
     return (
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100, alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
         <Card borderColor={playerWon ? colors.green : colors.red} style={{ width: '100%', padding: 24, alignItems: 'center' }}>
           <PixelText size={40}>{playerWon ? '🏆' : '😵'}</PixelText>
           <PixelText color={playerWon ? colors.green : colors.red} size={14} glow style={{ marginTop: 10 }}>
@@ -140,7 +140,7 @@ function AiBattle() {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <PixelText color={colors.red} size={7} glow>⚔ BATTLE IN PROGRESS</PixelText>
         <PixelText color={timeLeft < 30 ? colors.red : colors.gold} size={12} glow>{formatTime(timeLeft)}</PixelText>

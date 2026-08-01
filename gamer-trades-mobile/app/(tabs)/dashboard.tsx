@@ -12,7 +12,7 @@ import InsightsCard from '../../components/InsightsCard';
 
 const QUICK_LINKS = [
   { label: 'PORTFOLIO', icon: '◉', href: '/(tabs)/portfolio', color: colors.blue },
-  { label: 'ACADEMY', icon: '🧠', href: '/(tabs)/academy', color: colors.purple },
+  { label: 'FRIENDS', icon: '♥', href: '/(tabs)/friends', color: colors.red },
   { label: 'LEADERBOARD', icon: '♛', href: '/(tabs)/leaderboard', color: colors.gold },
   { label: 'CHALLENGES', icon: '◆', href: '/(tabs)/challenges', color: colors.green },
 ];
@@ -48,7 +48,7 @@ export default function DashboardScreen() {
   }, [user]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <View>
         <BodyText color={colors.muted} size={12}>▶ WELCOME BACK, {profile?.username ?? '...'}</BodyText>
         <PixelText color={colors.cyan} size={14} glow style={{ marginTop: 6 }}>TRADING ARENA</PixelText>

@@ -109,7 +109,7 @@ export default function FriendsScreen() {
   const counts: Record<Tab, number> = { friends: friends.length, incoming: incoming.length, outgoing: outgoing.length, find: 0 };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <PixelText color={colors.green} size={13} glow>♥ FRIENDS</PixelText>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>

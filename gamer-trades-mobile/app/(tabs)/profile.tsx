@@ -55,7 +55,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <PixelText color={colors.cyan} size={13} glow>◎ PROFILE</PixelText>
 
       <Card style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
