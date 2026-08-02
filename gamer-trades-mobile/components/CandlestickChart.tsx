@@ -3,7 +3,8 @@ import { View, Dimensions, Animated, Easing } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { PixelButton, BodyText } from './ui';
 import { colors } from '../lib/theme';
-import { Candle } from '../lib/strategyEngine';
+import { Candle, StrategySignal } from '../lib/strategyEngine';
+import { getStrategy } from '../lib/strategyContent';
 
 export type Timeframe = '1m' | '5m' | '15m' | '1H' | '4H' | '1D';
 
@@ -68,6 +69,8 @@ interface Props {
   height?: number;
   /** Open positions for the current symbol — drawn as entry-price marker lines. */
   positions?: ChartPosition[];
+  /** The latest detected strategy signal, if any — annotated live on the chart itself. */
+  signal?: StrategySignal | null;
 }
 
 function touchDistance(touches: { pageX: number; pageY: number }[]): number {
@@ -77,7 +80,7 @@ function touchDistance(touches: { pageX: number; pageY: number }[]): number {
   return Math.max(1, Math.sqrt(dx * dx + dy * dy));
 }
 
-export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [] }: Props) {
+export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [], signal = null }: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
   const [candles, setCandles] = useState<Candle[]>(() => generateCandles(60, basePrice, barMs));
   const [zoom, setZoom] = useState(50);
@@ -130,7 +133,8 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const H = height - volH - 16;
   const padL = 4, padR = 44;
   const visible = candles.slice(-zoom);
-  const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice));
+  const signalLevels = signal ? [signal.level, signal.level2].filter((n): n is number => n != null) : [];
+  const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice), signalLevels);
   const rawMinP = Math.min(...prices);
   const rawMaxP = Math.max(...prices);
   const priceMid = (rawMinP + rawMaxP) / 2;
@@ -290,6 +294,36 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
             </Fragment>
           );
         })}
+        {/* Live detected-signal annotation — the same concept shown in the Live Signals
+            panel, drawn directly on the chart at the price level(s) it revolves around. */}
+        {signal && (() => {
+          const strat = getStrategy(signal.strategyId);
+          const sigColor = signal.direction === 'bullish' ? colors.green : colors.red;
+          const hasZone = signal.level != null && signal.level2 != null;
+          const label = `${strat?.icon ?? ''} ${signal.label}`;
+          const labelW = 14 + label.length * 5.5;
+          return (
+            <Fragment>
+              {hasZone && (
+                <Rect
+                  x={padL}
+                  y={Math.min(toY(signal.level!), toY(signal.level2!))}
+                  width={W - padR - padL}
+                  height={Math.max(1, Math.abs(toY(signal.level2!) - toY(signal.level!)))}
+                  fill={`${sigColor}14`}
+                  stroke={sigColor}
+                  strokeWidth={1}
+                  strokeDasharray="2,3"
+                />
+              )}
+              {signal.level != null && !hasZone && (
+                <Line x1={padL} y1={toY(signal.level)} x2={W - padR} y2={toY(signal.level)} stroke={sigColor} strokeWidth={1.5} strokeDasharray="5,3" />
+              )}
+              <Rect x={padL} y={6} width={labelW} height={16} rx={8} fill={sigColor} />
+              <SvgText x={padL + 7} y={17} fontSize="8" fill={colors.bg} fontWeight="bold">{label}</SvgText>
+            </Fragment>
+          );
+        })()}
         {/* Live current-price line */}
         <Fragment>
           <Line

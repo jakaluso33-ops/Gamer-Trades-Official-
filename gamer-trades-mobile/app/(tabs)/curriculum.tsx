@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
+import ConceptDiagram from '../../components/ConceptDiagram';
 import {
   SkillLevel,
   SKILL_LEVELS,
@@ -18,6 +19,7 @@ import {
 
 function LessonDetail({ lesson, color, onComplete, done }: { lesson: Lesson; color: string; onComplete: () => void; done: boolean }) {
   const [answered, setAnswered] = useState<number | null>(null);
+  const router = useRouter();
 
   const correct = answered === lesson.quiz.correctIndex;
 
@@ -28,6 +30,21 @@ function LessonDetail({ lesson, color, onComplete, done }: { lesson: Lesson; col
         <BodyText color={color} size={15} weight="semibold" glow style={{ flex: 1 }}>{lesson.title}</BodyText>
         {done && <BodyText color={colors.green} size={12}>✓ DONE</BodyText>}
       </View>
+
+      <View style={{ alignItems: 'center', paddingVertical: 14, marginBottom: 14, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
+        <ConceptDiagram lesson={lesson} height={160} />
+        <BodyText color={colors.muted} size={10} style={{ marginTop: 8 }}>WHAT THIS LOOKS LIKE</BodyText>
+      </View>
+
+      {lesson.chartConcept && (
+        <PixelButton
+          color={color}
+          onPress={() => router.push({ pathname: '/(tabs)/trade-desk', params: { focusStrategy: lesson.chartConcept } } as never)}
+          style={{ marginBottom: 14, paddingVertical: 12 }}
+        >
+          📡 VIEW LIVE ON CHART
+        </PixelButton>
+      )}
 
       {lesson.body.map((p, i) => (
         <BodyText key={i} color={colors.text} size={13} style={{ marginBottom: 10 }}>{p}</BodyText>

@@ -67,8 +67,9 @@ function generateCandles(count: number, basePrice: number): Candle[] {
 export default function TradeDeskScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const params = useLocalSearchParams<{ symbol?: string }>();
+  const params = useLocalSearchParams<{ symbol?: string; focusStrategy?: string }>();
   const initialSymbol = ALL_SYMBOLS.find(s => s.symbol === params.symbol) ?? ALL_SYMBOLS[0];
+  const initialFocus = SCANNER_STRATEGIES.find(s => s.id === params.focusStrategy)?.id ?? null;
   const [classTab, setClassTab] = useState<AssetClass>(initialSymbol.class);
   const [selected, setSelected] = useState<SymbolInfo>(initialSymbol);
   const [qty, setQty] = useState(10);
@@ -77,7 +78,9 @@ export default function TradeDeskScreen() {
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [log, setLog] = useState<string[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
-  const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(SCANNER_STRATEGIES.map(s => s.id));
+  const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(
+    initialFocus ? [initialFocus] : SCANNER_STRATEGIES.map(s => s.id)
+  );
   const [timeframe, setTimeframe] = useState<Timeframe>('1m');
   const candlesRef = useRef<Candle[]>(generateCandles(60, initialSymbol.basePrice));
   const [signals, setSignals] = useState<StrategySignal[]>([]);
@@ -98,6 +101,13 @@ export default function TradeDeskScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.symbol]);
+
+  // A "VIEW LIVE ON CHART" link from a lesson narrows the scanner to just that concept.
+  useEffect(() => {
+    const focus = SCANNER_STRATEGIES.find(s => s.id === params.focusStrategy)?.id;
+    if (focus) setActiveStrategies([focus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.focusStrategy]);
 
   // Seed + nudge simulated % change for whatever symbols are visible in the current
   // watchlist tab, so the list feels alive without needing a live quote per row.
@@ -317,6 +327,7 @@ export default function TradeDeskScreen() {
             positions={openTrades
               .filter(t => t.symbol === selected.symbol)
               .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+            signal={latest}
           />
         </Pressable>
         <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 4 }}>

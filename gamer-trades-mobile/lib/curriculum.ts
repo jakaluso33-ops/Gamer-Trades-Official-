@@ -39,12 +39,16 @@ export interface QuizQuestion {
   correctIndex: number;
 }
 
+export type DetectorId = 'breakout' | 'orb' | 'fibonacci' | 'support_resistance' | 'ma_crossover' | 'rsi_reversal';
+
 export interface Lesson {
   id: string;
   title: string;
   icon: string;
   body: string[];
   quiz: QuizQuestion;
+  /** If set, this lesson's pattern can be spotted live — lesson gets a "VIEW LIVE ON CHART" button. */
+  chartConcept?: DetectorId;
 }
 
 export const CURRICULUM: Record<SkillLevel, Lesson[]> = {
@@ -145,6 +149,7 @@ export const CURRICULUM: Record<SkillLevel, Lesson[]> = {
         options: ['Floor that stops price from falling', 'Ceiling that stops price from rising', 'Random price with no meaning', 'Guaranteed reversal signal'],
         correctIndex: 1,
       },
+      chartConcept: 'support_resistance',
     },
     {
       id: 'i_trends',
@@ -222,6 +227,7 @@ export const CURRICULUM: Record<SkillLevel, Lesson[]> = {
         options: ['Always reliable', 'More likely to fail', 'Guaranteed profit', 'Irrelevant to volume'],
         correctIndex: 1,
       },
+      chartConcept: 'breakout',
     },
     {
       id: 'a_orb',
@@ -237,6 +243,7 @@ export const CURRICULUM: Record<SkillLevel, Lesson[]> = {
         options: ['The whole trading day\'s range', 'The high/low in the first few minutes after open', 'Yesterday\'s closing range', 'A random price window'],
         correctIndex: 1,
       },
+      chartConcept: 'orb',
     },
     {
       id: 'a_fibonacci',
@@ -252,6 +259,7 @@ export const CURRICULUM: Record<SkillLevel, Lesson[]> = {
         options: ['Random price targets', 'Likely pullback zones within a trend', 'Guaranteed reversal points', 'Trading fees'],
         correctIndex: 1,
       },
+      chartConcept: 'fibonacci',
     },
     {
       id: 'a_ma_crossover',
@@ -267,6 +275,23 @@ export const CURRICULUM: Record<SkillLevel, Lesson[]> = {
         options: ['Bearish', 'Bullish', 'Meaningless', 'A sell signal only'],
         correctIndex: 1,
       },
+      chartConcept: 'ma_crossover',
+    },
+    {
+      id: 'a_rsi_reversal',
+      title: 'RSI Overbought / Oversold',
+      icon: '⚡',
+      body: [
+        'RSI (Relative Strength Index) measures how fast and how far price has moved recently, on a scale of 0-100.',
+        'RSI above 70 is generally considered "overbought" — the move may be stretched and due for a pullback. Below 30 is "oversold" — potentially due for a bounce.',
+        'RSI extremes are a caution flag, not an automatic reversal signal — a strong trend can stay "overbought" for a long time.',
+      ],
+      quiz: {
+        question: 'RSI above 70 generally signals...',
+        options: ['Oversold conditions', 'Overbought conditions', 'A guaranteed crash', 'Nothing meaningful'],
+        correctIndex: 1,
+      },
+      chartConcept: 'rsi_reversal',
     },
   ],
   expert: [
