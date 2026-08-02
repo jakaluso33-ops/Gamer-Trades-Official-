@@ -25,6 +25,8 @@ export interface Profile {
   total_wins: number;
   total_losses: number;
   created_at: string;
+  skill_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | null;
+  completed_lessons: string[];
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';

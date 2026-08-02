@@ -8,7 +8,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
 import { getPortfolio, listOpenTrades, computePnl, Portfolio, DbTrade } from '../../lib/trading';
 import { getBasePrice } from '../../lib/symbols';
-import InsightsCard from '../../components/InsightsCard';
+import SkillPathCard from '../../components/SkillPathCard';
 
 const QUICK_LINKS = [
   { label: 'PORTFOLIO', icon: '◉', href: '/(tabs)/portfolio', color: colors.blue },
@@ -73,7 +73,7 @@ export default function DashboardScreen() {
         </Card>
       </View>
 
-      <InsightsCard />
+      <SkillPathCard />
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>

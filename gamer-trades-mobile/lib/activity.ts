@@ -9,7 +9,8 @@ export type ActivityEventType =
   | 'friend_request_sent'
   | 'friend_added'
   | 'daily_checkin'
-  | 'funds_deposited';
+  | 'funds_deposited'
+  | 'lesson_completed';
 
 export async function logEvent(userId: string, eventType: ActivityEventType, metadata: Record<string, unknown> = {}) {
   await supabase.from('activity_events').insert({ user_id: userId, event_type: eventType, metadata });
