@@ -19,6 +19,8 @@ export const TIMEFRAME_MS: Record<Timeframe, number> = {
 const MAX_HISTORY = 300;
 const MIN_ZOOM = 15;
 const MAX_ZOOM = 80;
+const MIN_PRICE_ZOOM = 0.4;
+const MAX_PRICE_ZOOM = 3;
 const MONEY_PARTICLES = 5;
 
 function generateCandles(count: number, basePrice: number, barMs: number): Candle[] {
@@ -68,26 +70,27 @@ interface Props {
   positions?: ChartPosition[];
 }
 
-function touchDistance(touches: { pageX: number; pageY: number }[]): number {
+function touchDelta(touches: { pageX: number; pageY: number }[]): { dx: number; dy: number } {
   const [a, b] = touches;
-  const dx = a.pageX - b.pageX;
-  const dy = a.pageY - b.pageY;
-  return Math.sqrt(dx * dx + dy * dy);
+  return { dx: Math.max(1, Math.abs(a.pageX - b.pageX)), dy: Math.max(1, Math.abs(a.pageY - b.pageY)) };
 }
 
 export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [] }: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
   const [candles, setCandles] = useState<Candle[]>(() => generateCandles(60, basePrice, barMs));
   const [zoom, setZoom] = useState(50);
+  const [priceZoom, setPriceZoom] = useState(1);
   const livePriceRef = useRef(livePrice);
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
-  const pinchStartDist = useRef<number | null>(null);
+  const pinchStart = useRef<{ dx: number; dy: number } | null>(null);
   const pinchStartZoom = useRef(zoom);
+  const pinchStartPriceZoom = useRef(priceZoom);
   const moneyAnims = useRef(Array.from({ length: MONEY_PARTICLES }, () => new Animated.Value(0))).current;
   const moneyX = useRef(Array.from({ length: MONEY_PARTICLES }, () => Math.random())).current;
 
   useEffect(() => {
     setCandles(generateCandles(60, basePrice, barMs));
+    setPriceZoom(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol, timeframe]);
 
@@ -117,6 +120,8 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
 
   const zoomIn = () => setZoom(z => Math.max(MIN_ZOOM, z - 10));
   const zoomOut = () => setZoom(z => Math.min(Math.min(MAX_ZOOM, candles.length), z + 10));
+  const priceZoomIn = () => setPriceZoom(z => Math.max(MIN_PRICE_ZOOM, parseFloat((z - 0.2).toFixed(2))));
+  const priceZoomOut = () => setPriceZoom(z => Math.min(MAX_PRICE_ZOOM, parseFloat((z + 0.2).toFixed(2))));
 
   const W = Dimensions.get('window').width - 56;
   const volH = 30;
@@ -124,9 +129,12 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const padL = 4, padR = 44;
   const visible = candles.slice(-zoom);
   const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice));
-  const minP = Math.min(...prices);
-  const maxP = Math.max(...prices);
-  const range = maxP - minP || 1;
+  const rawMinP = Math.min(...prices);
+  const rawMaxP = Math.max(...prices);
+  const priceMid = (rawMinP + rawMaxP) / 2;
+  const range = (rawMaxP - rawMinP || 1) * priceZoom;
+  const minP = priceMid - range / 2;
+  const maxP = priceMid + range / 2;
   const toY = (p: number) => ((maxP - p) / range) * H;
   const cW = (W - padL - padR) / visible.length;
   const maxVol = Math.max(...visible.map(c => c.volume));
@@ -169,9 +177,17 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
 
   return (
     <View>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 6, marginBottom: 4 }}>
-        <PixelButton color={colors.muted} onPress={zoomOut} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>−</PixelButton>
-        <PixelButton color={colors.muted} onPress={zoomIn} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>+</PixelButton>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginBottom: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <BodyText color={colors.border} size={8}>TIME</BodyText>
+          <PixelButton color={colors.muted} onPress={zoomOut} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>−</PixelButton>
+          <PixelButton color={colors.muted} onPress={zoomIn} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>+</PixelButton>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <BodyText color={colors.border} size={8}>PRICE</BodyText>
+          <PixelButton color={colors.muted} onPress={priceZoomOut} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>−</PixelButton>
+          <PixelButton color={colors.muted} onPress={priceZoomIn} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>+</PixelButton>
+        </View>
       </View>
       <View
         style={{ position: 'relative', width: W }}
@@ -180,21 +196,25 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
         onResponderGrant={(e) => {
           const touches = e.nativeEvent.touches;
           if (touches.length === 2) {
-            pinchStartDist.current = touchDistance(touches);
+            pinchStart.current = touchDelta(touches);
             pinchStartZoom.current = zoom;
+            pinchStartPriceZoom.current = priceZoom;
           }
         }}
         onResponderMove={(e) => {
           const touches = e.nativeEvent.touches;
-          if (touches.length === 2 && pinchStartDist.current) {
-            const dist = touchDistance(touches);
-            const scale = dist / pinchStartDist.current;
-            const newZoom = Math.round(pinchStartZoom.current / scale);
+          if (touches.length === 2 && pinchStart.current) {
+            const { dx, dy } = touchDelta(touches);
+            const scaleX = dx / pinchStart.current.dx;
+            const scaleY = dy / pinchStart.current.dy;
+            const newZoom = Math.round(pinchStartZoom.current / scaleX);
             setZoom(Math.min(Math.max(newZoom, MIN_ZOOM), Math.min(MAX_ZOOM, candles.length)));
+            const newPriceZoom = pinchStartPriceZoom.current / scaleY;
+            setPriceZoom(Math.min(MAX_PRICE_ZOOM, Math.max(MIN_PRICE_ZOOM, newPriceZoom)));
           }
         }}
-        onResponderRelease={() => { pinchStartDist.current = null; }}
-        onResponderTerminate={() => { pinchStartDist.current = null; }}
+        onResponderRelease={() => { pinchStart.current = null; }}
+        onResponderTerminate={() => { pinchStart.current = null; }}
       >
       <Svg width={W} height={height}>
         <Defs>
@@ -335,7 +355,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
       )}
       </View>
       <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 2 }}>
-        Pinch to zoom, or use +/−
+        Pinch horizontally or vertically to zoom, or use +/−
       </BodyText>
     </View>
   );

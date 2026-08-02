@@ -23,6 +23,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="academy" options={{ title: 'LEARN', tabBarIcon: ({ color }) => <TabIcon icon="🧠" color={color} /> }} />
       <Tabs.Screen name="profile" options={{ title: 'PROFILE', tabBarIcon: ({ color }) => <TabIcon icon="◎" color={color} /> }} />
       <Tabs.Screen name="trade-desk" options={{ href: null }} />
+      <Tabs.Screen name="trade-history" options={{ href: null }} />
       <Tabs.Screen name="friends" options={{ href: null }} />
       <Tabs.Screen name="portfolio" options={{ href: null }} />
       <Tabs.Screen name="leaderboard" options={{ href: null }} />

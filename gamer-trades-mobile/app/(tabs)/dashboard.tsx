@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
@@ -56,12 +56,15 @@ export default function DashboardScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Card style={{ flex: 1 }}>
-          <BodyText color={colors.muted} size={11}>TODAY&apos;S P&amp;L</BodyText>
-          <PixelText color={totalPnl >= 0 ? colors.green : colors.red} size={12} glow style={{ marginTop: 6 }}>
-            {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
-          </PixelText>
-        </Card>
+        <Pressable style={{ flex: 1 }} onPress={() => router.push('/(tabs)/trade-history' as never)}>
+          <Card>
+            <BodyText color={colors.muted} size={11}>TODAY&apos;S P&amp;L</BodyText>
+            <PixelText color={totalPnl >= 0 ? colors.green : colors.red} size={12} glow style={{ marginTop: 6 }}>
+              {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+            </PixelText>
+            <BodyText color={colors.border} size={9} style={{ marginTop: 4 }}>TAP FOR HISTORY ▶</BodyText>
+          </Card>
+        </Pressable>
         <Card style={{ flex: 1 }}>
           <BodyText color={colors.muted} size={11}>WIN RATE</BodyText>
           <PixelText color={colors.gold} size={12} glow style={{ marginTop: 6 }}>

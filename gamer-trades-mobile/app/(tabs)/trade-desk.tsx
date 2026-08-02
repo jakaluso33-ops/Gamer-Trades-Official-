@@ -34,6 +34,13 @@ const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
   { id: 'rsi_reversal', label: 'RSI' },
 ];
 
+/** Bigger steps at higher quantities so the stepper stays fast to use across a wide range. */
+function stepFor(qty: number): number {
+  if (qty >= 100) return 10;
+  if (qty >= 10) return 5;
+  return 1;
+}
+
 function generateCandles(count: number, basePrice: number): Candle[] {
   const candles: Candle[] = [];
   let price = basePrice;
@@ -303,6 +310,11 @@ export default function TradeDeskScreen() {
             <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
           </View>
         )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}>
+          <PixelButton color={colors.muted} onPress={() => setQty(q => Math.max(1, q - stepFor(q)))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>−</PixelButton>
+          <BodyText color={colors.text} size={15} weight="semibold">QTY: {qty}</BodyText>
+          <PixelButton color={colors.muted} onPress={() => setQty(q => q + stepFor(q))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>+</PixelButton>
+        </View>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
           <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
           <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
@@ -344,6 +356,11 @@ export default function TradeDeskScreen() {
               <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
             </View>
           )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}>
+            <PixelButton color={colors.muted} onPress={() => setQty(q => Math.max(1, q - stepFor(q)))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>−</PixelButton>
+            <BodyText color={colors.text} size={15} weight="semibold">QTY: {qty}</BodyText>
+            <PixelButton color={colors.muted} onPress={() => setQty(q => q + stepFor(q))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>+</PixelButton>
+          </View>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
             <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
             <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>

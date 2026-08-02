@@ -4,6 +4,7 @@ import { Card, PixelText, BodyText } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { STRATEGIES, StrategyDifficulty } from '../../lib/strategyContent';
 import StrategyIcon from '../../components/StrategyIcon';
+import StrategyDiagram from '../../components/StrategyDiagram';
 import { DetectorId } from '../../lib/strategyEngine';
 
 const DIFF_COLOR: Record<StrategyDifficulty, string> = {
@@ -54,7 +55,7 @@ export default function AcademyScreen() {
         </View>
 
         <View style={{ alignItems: 'center', paddingVertical: 14, marginBottom: 14, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
-          <StrategyIcon id={selected.id as DetectorId} color={selected.color} size={48} />
+          <StrategyDiagram id={selected.id as DetectorId} height={170} />
           <BodyText color={colors.muted} size={10} style={{ marginTop: 8 }}>WHAT THE SETUP LOOKS LIKE</BodyText>
         </View>
 
