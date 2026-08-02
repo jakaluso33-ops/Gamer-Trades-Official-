@@ -20,6 +20,7 @@ import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, AS
 import { pollLiveQuotes } from '../../lib/marketData';
 import CandlestickChart, { Timeframe } from '../../components/CandlestickChart';
 import StrategyIcon from '../../components/StrategyIcon';
+import AiPatternInsight from '../../components/AiPatternInsight';
 import PnlIcon from '../../components/PnlIcon';
 
 const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
@@ -65,7 +66,7 @@ function generateCandles(count: number, basePrice: number): Candle[] {
 }
 
 export default function TradeDeskScreen() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; focusStrategy?: string }>();
   const initialSymbol = ALL_SYMBOLS.find(s => s.symbol === params.symbol) ?? ALL_SYMBOLS[0];
@@ -296,6 +297,9 @@ export default function TradeDeskScreen() {
         })() : (
           <BodyText color={colors.muted} size={13}>Scanning the market for setups...</BodyText>
         )}
+        <View style={{ marginTop: 10 }}>
+          <AiPatternInsight symbol={selected.symbol} signal={latest ?? null} skillLevel={profile?.skill_level ?? null} />
+        </View>
       </Card>
 
       <Card borderColor={colors.cyan}>
