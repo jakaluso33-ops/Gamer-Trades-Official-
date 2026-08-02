@@ -362,6 +362,86 @@ export function lessonsForLevel(level: SkillLevel): Lesson[] {
   return CURRICULUM[level];
 }
 
+const QUIZ_SIZE = 5;
+const QUIZ_PASS_FRACTION = 0.8;
+const TRADE_CHALLENGE_TARGET = 3;
+
+export interface ProfileLike {
+  completed_lessons: string[];
+  quiz_passed_levels: string[];
+  trade_passed_levels: string[];
+}
+
+/** All lessons completed for this level. */
+export function isLevelComplete(profile: ProfileLike, level: SkillLevel): boolean {
+  return CURRICULUM[level].every(l => profile.completed_lessons.includes(l.id));
+}
+
+export function isQuizPassed(profile: ProfileLike, level: SkillLevel): boolean {
+  return profile.quiz_passed_levels.includes(level);
+}
+
+export function isTradeChallengePassed(profile: ProfileLike, level: SkillLevel): boolean {
+  return profile.trade_passed_levels.includes(level);
+}
+
+export function isLevelMastered(profile: ProfileLike, level: SkillLevel): boolean {
+  return isLevelComplete(profile, level) && isQuizPassed(profile, level) && isTradeChallengePassed(profile, level);
+}
+
+/** Beginner is always open; every other level requires the previous one fully mastered. */
+export function isLevelUnlocked(profile: ProfileLike, level: SkillLevel): boolean {
+  const idx = SKILL_LEVELS.indexOf(level);
+  if (idx <= 0) return true;
+  return isLevelMastered(profile, SKILL_LEVELS[idx - 1]);
+}
+
+export function quizPassThreshold(level: SkillLevel): number {
+  return Math.ceil(Math.min(QUIZ_SIZE, CURRICULUM[level].length) * QUIZ_PASS_FRACTION);
+}
+
+/** Draws up to QUIZ_SIZE randomized questions from this level's lesson pool. */
+export function drawQuiz(level: SkillLevel): QuizQuestion[] {
+  const pool = [...CURRICULUM[level].map(l => l.quiz)];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, QUIZ_SIZE);
+}
+
+export const TRADE_CHALLENGE_TARGET_CORRECT = TRADE_CHALLENGE_TARGET;
+
+const LEVEL_XP_BONUS = 150;
+
+/** Records a passing quiz attempt for a level (idempotent) and awards a one-time XP bonus. */
+export async function passQuiz(userId: string, level: SkillLevel, currentPassed: string[]): Promise<string[]> {
+  if (currentPassed.includes(level)) return currentPassed;
+  const next = [...currentPassed, level];
+  const { error } = await supabase.from('profiles').update({ quiz_passed_levels: next }).eq('id', userId);
+  if (error) throw error;
+
+  const { data: profile } = await supabase.from('profiles').select('xp').eq('id', userId).single();
+  if (profile) await supabase.from('profiles').update({ xp: (profile as { xp: number }).xp + LEVEL_XP_BONUS }).eq('id', userId);
+
+  await logEvent(userId, 'skill_quiz_passed', { level });
+  return next;
+}
+
+/** Records a passed live Trade-with-AI challenge for a level (idempotent) and awards a one-time XP bonus. */
+export async function passTradeChallenge(userId: string, level: SkillLevel, currentPassed: string[]): Promise<string[]> {
+  if (currentPassed.includes(level)) return currentPassed;
+  const next = [...currentPassed, level];
+  const { error } = await supabase.from('profiles').update({ trade_passed_levels: next }).eq('id', userId);
+  if (error) throw error;
+
+  const { data: profile } = await supabase.from('profiles').select('xp').eq('id', userId).single();
+  if (profile) await supabase.from('profiles').update({ xp: (profile as { xp: number }).xp + LEVEL_XP_BONUS }).eq('id', userId);
+
+  await logEvent(userId, 'skill_trade_challenge_passed', { level });
+  return next;
+}
+
 const LESSON_XP = 25;
 
 export async function setSkillLevel(userId: string, level: SkillLevel): Promise<void> {

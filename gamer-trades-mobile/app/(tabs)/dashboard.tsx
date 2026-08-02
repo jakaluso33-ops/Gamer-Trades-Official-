@@ -55,6 +55,8 @@ export default function DashboardScreen() {
         <BodyText color={colors.gold} size={12} weight="semibold" style={{ marginTop: 6 }}>🎮 GAME ON, TRADE ON</BodyText>
       </View>
 
+      <SkillPathCard />
+
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Pressable style={{ flex: 1 }} onPress={() => router.push('/(tabs)/trade-history' as never)}>
           <Card>
@@ -72,8 +74,6 @@ export default function DashboardScreen() {
           </PixelText>
         </Card>
       </View>
-
-      <SkillPathCard />
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>

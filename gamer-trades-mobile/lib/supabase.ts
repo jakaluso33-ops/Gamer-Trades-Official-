@@ -27,6 +27,8 @@ export interface Profile {
   created_at: string;
   skill_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | null;
   completed_lessons: string[];
+  quiz_passed_levels: string[];
+  trade_passed_levels: string[];
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';
