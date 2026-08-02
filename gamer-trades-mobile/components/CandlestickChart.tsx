@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { View, Dimensions } from 'react-native';
+import { View, Dimensions, Animated, Easing } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { PixelButton, BodyText } from './ui';
 import { colors } from '../lib/theme';
@@ -19,6 +19,7 @@ export const TIMEFRAME_MS: Record<Timeframe, number> = {
 const MAX_HISTORY = 300;
 const MIN_ZOOM = 15;
 const MAX_ZOOM = 80;
+const MONEY_PARTICLES = 5;
 
 function generateCandles(count: number, basePrice: number, barMs: number): Candle[] {
   const candles: Candle[] = [];
@@ -82,6 +83,8 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
   const pinchStartDist = useRef<number | null>(null);
   const pinchStartZoom = useRef(zoom);
+  const moneyAnims = useRef(Array.from({ length: MONEY_PARTICLES }, () => new Animated.Value(0))).current;
+  const moneyX = useRef(Array.from({ length: MONEY_PARTICLES }, () => Math.random())).current;
 
   useEffect(() => {
     setCandles(generateCandles(60, basePrice, barMs));
@@ -143,6 +146,26 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
     const pnl = direction === 'long' ? (currentPrice - avgEntry) * g.qty : (avgEntry - currentPrice) * g.qty;
     return { direction, avgEntry, pnl };
   });
+  const hasPosition = positionLines.length > 0;
+  const positionsProfitable = positionLines.reduce((s, p) => s + p.pnl, 0) >= 0;
+
+  // Continuously drift money-sign emoji up the chart while a position is open on
+  // this symbol — green $ when in profit, red when in loss — for instant visual feedback.
+  useEffect(() => {
+    if (!hasPosition) return;
+    const animations = moneyAnims.map((av, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 550),
+          Animated.timing(av, { toValue: 1, duration: 3200 + i * 250, easing: Easing.linear, useNativeDriver: true }),
+          Animated.timing(av, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ])
+      )
+    );
+    animations.forEach(a => a.start());
+    return () => animations.forEach(a => a.stop());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPosition]);
 
   return (
     <View>
@@ -151,6 +174,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
         <PixelButton color={colors.muted} onPress={zoomIn} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>+</PixelButton>
       </View>
       <View
+        style={{ position: 'relative', width: W }}
         onStartShouldSetResponder={(e) => e.nativeEvent.touches.length === 2}
         onMoveShouldSetResponder={(e) => e.nativeEvent.touches.length === 2}
         onResponderGrant={(e) => {
@@ -287,6 +311,28 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
           );
         })}
       </Svg>
+      {hasPosition && (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: H }}>
+          {moneyAnims.map((av, i) => {
+            const translateY = av.interpolate({ inputRange: [0, 1], outputRange: [H, -10] });
+            const opacity = av.interpolate({ inputRange: [0, 0.15, 0.85, 1], outputRange: [0, 1, 1, 0] });
+            return (
+              <Animated.Text
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: `${moneyX[i] * 85}%`,
+                  transform: [{ translateY }],
+                  opacity,
+                  fontSize: 13 + (i % 3) * 3,
+                }}
+              >
+                {positionsProfitable ? '💰' : '💸'}
+              </Animated.Text>
+            );
+          })}
+        </View>
+      )}
       </View>
       <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 2 }}>
         Pinch to zoom, or use +/−

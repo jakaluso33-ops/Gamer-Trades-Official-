@@ -298,6 +298,15 @@ export default function TradeDeskScreen() {
         <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 4 }}>
           TAP CHART TO EXPAND ⤢
         </BodyText>
+        {orderError && (
+          <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
+            <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+          <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
+          <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
+        </View>
       </Card>
 
       <Modal visible={chartFullscreen} animationType="slide" onRequestClose={() => setChartFullscreen(false)}>
@@ -330,6 +339,15 @@ export default function TradeDeskScreen() {
               .filter(t => t.symbol === selected.symbol)
               .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
           />
+          {orderError && (
+            <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
+              <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
+            </View>
+          )}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+            <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
+            <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
+          </View>
         </View>
       </Modal>
 
@@ -410,20 +428,9 @@ export default function TradeDeskScreen() {
           ))}
         </View>
 
-        {orderError && (
-          <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
-            <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
-          </View>
-        )}
-
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
           <BodyText color={colors.muted} size={11}>CASH</BodyText>
           <BodyText color={colors.text} size={12}>${(portfolio?.cash_balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</BodyText>
-        </View>
-
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-          <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY</PixelButton>
-          <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL</PixelButton>
         </View>
       </Card>
 
