@@ -20,7 +20,7 @@ const MAX_HISTORY = 300;
 const MIN_ZOOM = 15;
 const MAX_ZOOM = 80;
 const MIN_PRICE_ZOOM = 0.4;
-const MAX_PRICE_ZOOM = 3;
+const MAX_PRICE_ZOOM = 5;
 const MONEY_PARTICLES = 5;
 
 function generateCandles(count: number, basePrice: number, barMs: number): Candle[] {
@@ -70,9 +70,11 @@ interface Props {
   positions?: ChartPosition[];
 }
 
-function touchDelta(touches: { pageX: number; pageY: number }[]): { dx: number; dy: number } {
+function touchDistance(touches: { pageX: number; pageY: number }[]): number {
   const [a, b] = touches;
-  return { dx: Math.max(1, Math.abs(a.pageX - b.pageX)), dy: Math.max(1, Math.abs(a.pageY - b.pageY)) };
+  const dx = a.pageX - b.pageX;
+  const dy = a.pageY - b.pageY;
+  return Math.max(1, Math.sqrt(dx * dx + dy * dy));
 }
 
 export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [] }: Props) {
@@ -82,10 +84,9 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const [priceZoom, setPriceZoom] = useState(1);
   const livePriceRef = useRef(livePrice);
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
-  const pinchStart = useRef<{ dx: number; dy: number } | null>(null);
+  const pinchStartDist = useRef<number | null>(null);
   const pinchStartZoom = useRef(zoom);
   const pinchStartPriceZoom = useRef(priceZoom);
-  const pinchAxis = useRef<'x' | 'y' | null>(null);
   const moneyAnims = useRef(Array.from({ length: MONEY_PARTICLES }, () => new Animated.Value(0))).current;
   const moneyX = useRef(Array.from({ length: MONEY_PARTICLES }, () => Math.random())).current;
 
@@ -197,37 +198,25 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
         onResponderGrant={(e) => {
           const touches = e.nativeEvent.touches;
           if (touches.length === 2) {
-            pinchStart.current = touchDelta(touches);
+            pinchStartDist.current = touchDistance(touches);
             pinchStartZoom.current = zoom;
             pinchStartPriceZoom.current = priceZoom;
-            pinchAxis.current = null;
           }
         }}
         onResponderMove={(e) => {
           const touches = e.nativeEvent.touches;
-          if (touches.length === 2 && pinchStart.current) {
-            const { dx, dy } = touchDelta(touches);
-            const deltaDx = dx - pinchStart.current.dx;
-            const deltaDy = dy - pinchStart.current.dy;
-
-            // Lock onto whichever axis the gesture moves on first, so a pinch that
-            // isn't perfectly horizontal or vertical doesn't zoom both at once.
-            if (pinchAxis.current === null) {
-              if (Math.abs(deltaDx) < 8 && Math.abs(deltaDy) < 8) return;
-              pinchAxis.current = Math.abs(deltaDx) >= Math.abs(deltaDy) ? 'x' : 'y';
-            }
-
-            if (pinchAxis.current === 'x') {
-              const newZoom = Math.round(pinchStartZoom.current - deltaDx * 0.25);
-              setZoom(Math.min(Math.max(newZoom, MIN_ZOOM), Math.min(MAX_ZOOM, candles.length)));
-            } else {
-              const newPriceZoom = pinchStartPriceZoom.current - deltaDy * 0.012;
-              setPriceZoom(Math.min(MAX_PRICE_ZOOM, Math.max(MIN_PRICE_ZOOM, newPriceZoom)));
-            }
+          if (touches.length === 2 && pinchStartDist.current) {
+            // A single pinch — in any direction — zooms time and price together,
+            // so spreading your fingers apart reveals the whole chart at once.
+            const scale = touchDistance(touches) / pinchStartDist.current;
+            const newZoom = Math.round(pinchStartZoom.current / scale);
+            setZoom(Math.min(Math.max(newZoom, MIN_ZOOM), Math.min(MAX_ZOOM, candles.length)));
+            const newPriceZoom = pinchStartPriceZoom.current / scale;
+            setPriceZoom(Math.min(MAX_PRICE_ZOOM, Math.max(MIN_PRICE_ZOOM, newPriceZoom)));
           }
         }}
-        onResponderRelease={() => { pinchStart.current = null; pinchAxis.current = null; }}
-        onResponderTerminate={() => { pinchStart.current = null; pinchAxis.current = null; }}
+        onResponderRelease={() => { pinchStartDist.current = null; }}
+        onResponderTerminate={() => { pinchStartDist.current = null; }}
       >
       <Svg width={W} height={height}>
         <Defs>
@@ -368,7 +357,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
       )}
       </View>
       <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 2 }}>
-        Pinch horizontally or vertically to zoom, or use +/−
+        Pinch to zoom time + price together, or use TIME/PRICE +/−
       </BodyText>
     </View>
   );
