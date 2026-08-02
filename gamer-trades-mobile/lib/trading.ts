@@ -153,6 +153,147 @@ export function computePnl(trade: Pick<DbTrade, 'direction' | 'quantity' | 'entr
   return diff * trade.quantity;
 }
 
+export interface PlaceOrderResult {
+  /** Existing open positions this order fully or partially netted against, now closed. */
+  closedTrades: DbTrade[];
+  /** Existing open positions that were only partially netted — same id, reduced quantity. */
+  updatedTrades: DbTrade[];
+  /** Any leftover quantity (after netting) opened as a new position in the new direction. */
+  openedTrade: DbTrade | null;
+  portfolio: Portfolio;
+}
+
+/**
+ * Places an order the way a real trading platform does: it nets against any existing
+ * opposite-direction open positions on the same symbol first, oldest position first
+ * (FIFO), before opening a new position with whatever quantity is left over. E.g. one
+ * open BUY 1 + a SELL 1 fully closes it out flat; a BUY 1 followed by a SELL 2 closes
+ * the long and leaves a fresh SHORT 1 open. Same-direction orders (adding to an existing
+ * long/short) are left alone and simply open as their own new position, same as before.
+ */
+export async function placeOrder(
+  userId: string,
+  portfolio: Portfolio,
+  currentOpenTrades: DbTrade[],
+  params: OpenTradeParams
+): Promise<PlaceOrderResult> {
+  const opposite: TradeDirection = params.direction === 'long' ? 'short' : 'long';
+  const matches = currentOpenTrades
+    .filter(t => t.symbol === params.symbol && t.direction === opposite)
+    .sort((a, b) => new Date(a.opened_at).getTime() - new Date(b.opened_at).getTime());
+
+  let remaining = params.quantity;
+  let cash = portfolio.cash_balance;
+  const closedTrades: DbTrade[] = [];
+  const updatedTrades: DbTrade[] = [];
+
+  for (const trade of matches) {
+    if (remaining <= 0) break;
+    const matchQty = Math.min(remaining, trade.quantity);
+    const pnl = computePnl({ ...trade, quantity: matchQty }, params.entryPrice);
+    const notionalReleased = matchQty * trade.entry_price;
+
+    if (matchQty === trade.quantity) {
+      const { data: closed, error } = await supabase
+        .from('trades')
+        .update({ status: 'closed', exit_price: params.entryPrice, closed_at: new Date().toISOString(), pnl })
+        .eq('id', trade.id)
+        .select()
+        .single();
+      if (error) throw error;
+      closedTrades.push(closed as DbTrade);
+    } else {
+      // Partial netting — record the matched slice as its own closed trade (preserving
+      // its real entry time for history) and shrink the original position by that amount.
+      const { data: closedSlice, error: insErr } = await supabase
+        .from('trades')
+        .insert({
+          portfolio_id: trade.portfolio_id,
+          user_id: userId,
+          symbol: trade.symbol,
+          direction: trade.direction,
+          order_type: trade.order_type,
+          quantity: matchQty,
+          entry_price: trade.entry_price,
+          exit_price: params.entryPrice,
+          status: 'closed',
+          pnl,
+          opened_at: trade.opened_at,
+          closed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (insErr) throw insErr;
+      closedTrades.push(closedSlice as DbTrade);
+
+      const { data: shrunk, error: updErr } = await supabase
+        .from('trades')
+        .update({ quantity: trade.quantity - matchQty })
+        .eq('id', trade.id)
+        .select()
+        .single();
+      if (updErr) throw updErr;
+      updatedTrades.push(shrunk as DbTrade);
+    }
+
+    cash += notionalReleased + pnl;
+    remaining -= matchQty;
+  }
+
+  if (closedTrades.length > 0) {
+    const { data: profile } = await supabase.from('profiles').select('total_wins, total_losses').eq('id', userId).single();
+    if (profile) {
+      const wins = closedTrades.filter(t => (t.pnl ?? 0) >= 0).length;
+      const losses = closedTrades.length - wins;
+      await supabase
+        .from('profiles')
+        .update({
+          total_wins: (profile as Record<string, number>).total_wins + wins,
+          total_losses: (profile as Record<string, number>).total_losses + losses,
+        })
+        .eq('id', userId);
+    }
+    for (const t of closedTrades) {
+      await logEvent(userId, 'trade_closed', { symbol: t.symbol, direction: t.direction, pnl: t.pnl });
+    }
+  }
+
+  let openedTrade: DbTrade | null = null;
+  if (remaining > 0) {
+    const notional = remaining * params.entryPrice;
+    if (notional > cash) throw new InsufficientFundsError();
+    const { data: trade, error } = await supabase
+      .from('trades')
+      .insert({
+        portfolio_id: portfolio.id,
+        user_id: userId,
+        symbol: params.symbol,
+        direction: params.direction,
+        order_type: params.orderType,
+        quantity: remaining,
+        entry_price: params.entryPrice,
+        stop_loss: params.stopLoss ?? null,
+        take_profit: params.takeProfit ?? null,
+        status: 'open',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    openedTrade = trade as DbTrade;
+    cash -= notional;
+  }
+
+  const { data: updatedPortfolio, error: portfolioErr } = await supabase
+    .from('portfolios')
+    .update({ cash_balance: cash })
+    .eq('id', portfolio.id)
+    .select()
+    .single();
+  if (portfolioErr) throw portfolioErr;
+
+  return { closedTrades, updatedTrades, openedTrade, portfolio: updatedPortfolio as Portfolio };
+}
+
 export async function closeTrade(userId: string, trade: DbTrade, exitPrice: number): Promise<{ trade: DbTrade; portfolio: Portfolio; pnl: number }> {
   const pnl = computePnl(trade, exitPrice);
 

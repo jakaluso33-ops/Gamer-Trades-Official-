@@ -85,6 +85,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const pinchStart = useRef<{ dx: number; dy: number } | null>(null);
   const pinchStartZoom = useRef(zoom);
   const pinchStartPriceZoom = useRef(priceZoom);
+  const pinchAxis = useRef<'x' | 'y' | null>(null);
   const moneyAnims = useRef(Array.from({ length: MONEY_PARTICLES }, () => new Animated.Value(0))).current;
   const moneyX = useRef(Array.from({ length: MONEY_PARTICLES }, () => Math.random())).current;
 
@@ -199,22 +200,34 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
             pinchStart.current = touchDelta(touches);
             pinchStartZoom.current = zoom;
             pinchStartPriceZoom.current = priceZoom;
+            pinchAxis.current = null;
           }
         }}
         onResponderMove={(e) => {
           const touches = e.nativeEvent.touches;
           if (touches.length === 2 && pinchStart.current) {
             const { dx, dy } = touchDelta(touches);
-            const scaleX = dx / pinchStart.current.dx;
-            const scaleY = dy / pinchStart.current.dy;
-            const newZoom = Math.round(pinchStartZoom.current / scaleX);
-            setZoom(Math.min(Math.max(newZoom, MIN_ZOOM), Math.min(MAX_ZOOM, candles.length)));
-            const newPriceZoom = pinchStartPriceZoom.current / scaleY;
-            setPriceZoom(Math.min(MAX_PRICE_ZOOM, Math.max(MIN_PRICE_ZOOM, newPriceZoom)));
+            const deltaDx = dx - pinchStart.current.dx;
+            const deltaDy = dy - pinchStart.current.dy;
+
+            // Lock onto whichever axis the gesture moves on first, so a pinch that
+            // isn't perfectly horizontal or vertical doesn't zoom both at once.
+            if (pinchAxis.current === null) {
+              if (Math.abs(deltaDx) < 8 && Math.abs(deltaDy) < 8) return;
+              pinchAxis.current = Math.abs(deltaDx) >= Math.abs(deltaDy) ? 'x' : 'y';
+            }
+
+            if (pinchAxis.current === 'x') {
+              const newZoom = Math.round(pinchStartZoom.current - deltaDx * 0.25);
+              setZoom(Math.min(Math.max(newZoom, MIN_ZOOM), Math.min(MAX_ZOOM, candles.length)));
+            } else {
+              const newPriceZoom = pinchStartPriceZoom.current - deltaDy * 0.012;
+              setPriceZoom(Math.min(MAX_PRICE_ZOOM, Math.max(MIN_PRICE_ZOOM, newPriceZoom)));
+            }
           }
         }}
-        onResponderRelease={() => { pinchStart.current = null; }}
-        onResponderTerminate={() => { pinchStart.current = null; }}
+        onResponderRelease={() => { pinchStart.current = null; pinchAxis.current = null; }}
+        onResponderTerminate={() => { pinchStart.current = null; pinchAxis.current = null; }}
       >
       <Svg width={W} height={height}>
         <Defs>

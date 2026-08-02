@@ -9,7 +9,7 @@ import { getStrategy } from '../../lib/strategyContent';
 import {
   getPortfolio,
   listOpenTrades,
-  openTrade,
+  placeOrder,
   closeTrade,
   computePnl,
   Portfolio,
@@ -188,16 +188,33 @@ export default function TradeDeskScreen() {
     if (!user || !portfolio) return;
     setOrderError(null);
     try {
-      const { trade, portfolio: updated } = await openTrade(user.id, portfolio, {
+      const direction = side === 'BUY' ? 'long' : 'short';
+      const result = await placeOrder(user.id, portfolio, openTrades, {
         symbol: selected.symbol,
-        direction: side === 'BUY' ? 'long' : 'short',
+        direction,
         orderType: 'market',
         quantity: qty,
         entryPrice: livePrice,
       });
-      setPortfolio(updated);
-      setOpenTrades(prev => [trade, ...prev]);
-      setLog(prev => [`${side} ${qty}x ${selected.symbol} @ $${trade.entry_price.toFixed(2)}`, ...prev.slice(0, 9)]);
+
+      setPortfolio(result.portfolio);
+      setOpenTrades(prev => {
+        const closedIds = new Set(result.closedTrades.map(t => t.id));
+        const updatedById = new Map(result.updatedTrades.map(t => [t.id, t]));
+        let next = prev.filter(t => !closedIds.has(t.id)).map(t => updatedById.get(t.id) ?? t);
+        if (result.openedTrade) next = [result.openedTrade, ...next];
+        return next;
+      });
+
+      const lines: string[] = [];
+      for (const t of result.closedTrades) {
+        const pnl = t.pnl ?? 0;
+        lines.push(`CLOSED ${t.quantity}x ${t.symbol} @ $${(t.exit_price ?? 0).toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`);
+      }
+      if (result.openedTrade) {
+        lines.push(`${side} ${result.openedTrade.quantity}x ${selected.symbol} @ $${result.openedTrade.entry_price.toFixed(2)}`);
+      }
+      setLog(prev => [...lines.reverse(), ...prev].slice(0, 10));
     } catch (err) {
       setOrderError(err instanceof InsufficientFundsError ? err.message : 'Could not place order.');
     }
@@ -322,49 +339,54 @@ export default function TradeDeskScreen() {
       </Card>
 
       <Modal visible={chartFullscreen} animationType="slide" onRequestClose={() => setChartFullscreen(false)}>
-        <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: 50, paddingHorizontal: 12 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <PixelText color={colors.cyan} size={13} glow>{selected.symbol}</PixelText>
-            <PixelButton color={colors.muted} onPress={() => setChartFullscreen(false)} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-              ✕ CLOSE
-            </PixelButton>
-          </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
-            {TIMEFRAMES.map(tf => (
-              <PixelButton
-                key={tf}
-                color={timeframe === tf ? colors.blue : colors.muted}
-                onPress={() => setTimeframe(tf)}
-                style={{ paddingHorizontal: 8, paddingVertical: 5 }}
-              >
-                {tf}
+        <View style={{ flex: 1, backgroundColor: colors.bg }}>
+          <ScrollView
+            contentContainerStyle={{ paddingTop: 50, paddingHorizontal: 12, paddingBottom: 24, flexGrow: 1 }}
+            style={{ flex: 1 }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <PixelText color={colors.cyan} size={13} glow>{selected.symbol}</PixelText>
+              <PixelButton color={colors.muted} onPress={() => setChartFullscreen(false)} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
+                ✕ CLOSE
               </PixelButton>
-            ))}
-          </View>
-          <CandlestickChart
-            symbol={selected.symbol}
-            basePrice={selected.basePrice}
-            livePrice={livePrice}
-            timeframe={timeframe}
-            height={Dimensions.get('window').height - 260}
-            positions={openTrades
-              .filter(t => t.symbol === selected.symbol)
-              .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
-          />
-          {orderError && (
-            <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
-              <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
             </View>
-          )}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}>
-            <PixelButton color={colors.muted} onPress={() => setQty(q => Math.max(1, q - stepFor(q)))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>−</PixelButton>
-            <BodyText color={colors.text} size={15} weight="semibold">QTY: {qty}</BodyText>
-            <PixelButton color={colors.muted} onPress={() => setQty(q => q + stepFor(q))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>+</PixelButton>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-            <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
-            <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
-          </View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+              {TIMEFRAMES.map(tf => (
+                <PixelButton
+                  key={tf}
+                  color={timeframe === tf ? colors.blue : colors.muted}
+                  onPress={() => setTimeframe(tf)}
+                  style={{ paddingHorizontal: 8, paddingVertical: 5 }}
+                >
+                  {tf}
+                </PixelButton>
+              ))}
+            </View>
+            <CandlestickChart
+              symbol={selected.symbol}
+              basePrice={selected.basePrice}
+              livePrice={livePrice}
+              timeframe={timeframe}
+              height={Dimensions.get('window').height - 380}
+              positions={openTrades
+                .filter(t => t.symbol === selected.symbol)
+                .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+            />
+            {orderError && (
+              <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
+                <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
+              </View>
+            )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}>
+              <PixelButton color={colors.muted} onPress={() => setQty(q => Math.max(1, q - stepFor(q)))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>−</PixelButton>
+              <BodyText color={colors.text} size={15} weight="semibold">QTY: {qty}</BodyText>
+              <PixelButton color={colors.muted} onPress={() => setQty(q => q + stepFor(q))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>+</PixelButton>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+              <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
+              <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
+            </View>
+          </ScrollView>
         </View>
       </Modal>
 
