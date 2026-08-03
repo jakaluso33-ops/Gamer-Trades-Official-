@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/AuthContext';
 import ConceptDiagram from '../../components/ConceptDiagram';
 import QuizPanel from '../../components/QuizPanel';
 import TradeWithAiChallenge from '../../components/TradeWithAiChallenge';
+import ChartClassroom from '../../components/ChartClassroom';
 import {
   SkillLevel,
   SKILL_LEVELS,
@@ -26,7 +27,7 @@ import {
   Lesson,
 } from '../../lib/curriculum';
 
-type SubTab = 'lessons' | 'quiz' | 'trade';
+type SubTab = 'lessons' | 'quiz' | 'trade' | 'classroom';
 
 function LessonDetail({ lesson, color, onComplete, done }: { lesson: Lesson; color: string; onComplete: () => void; done: boolean }) {
   const [answered, setAnswered] = useState<number | null>(null);
@@ -207,18 +208,20 @@ export default function CurriculumScreen() {
               <BodyText color={color} size={12} weight="semibold" glow>{SKILL_LEVEL_LABEL[level]} PROGRESS</BodyText>
               {mastered && <BodyText color={colors.green} size={11} weight="semibold">✓ MASTERED</BodyText>}
             </View>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {[
                 { key: 'lessons' as SubTab, label: 'LESSONS', sub: `${completedCount}/${lessons.length}`, done: lessonsDone },
                 { key: 'quiz' as SubTab, label: 'QUIZ', sub: quizDone ? 'PASSED' : 'LOCKED', done: quizDone, locked: !lessonsDone },
                 { key: 'trade' as SubTab, label: 'TRADE W/ AI', sub: tradeDone ? 'PASSED' : 'LOCKED', done: tradeDone, locked: !quizDone },
+                { key: 'classroom' as SubTab, label: 'CLASSROOM', sub: 'LIVE + FREE', done: false, locked: false },
               ].map(t => (
                 <Pressable
                   key={t.key}
                   disabled={t.locked}
                   onPress={() => { setSubTab(t.key); setOpenLessonId(null); }}
                   style={{
-                    flex: 1,
+                    flexBasis: '47%',
+                    flexGrow: 1,
                     alignItems: 'center',
                     paddingVertical: 8,
                     borderWidth: 2,
@@ -297,6 +300,15 @@ export default function CurriculumScreen() {
                 </BodyText>
               </Card>
             )
+          )}
+
+          {subTab === 'classroom' && (
+            <Card borderColor={color}>
+              <BodyText color={colors.muted} size={12} style={{ marginBottom: 10 }}>
+                Watch a live practice chart form real setups for {SKILL_LEVEL_LABEL[level]} — quiz questions pop up as patterns appear. Purely for reps: no gating, no wrong-answer penalty, just XP.
+              </BodyText>
+              <ChartClassroom userId={user.id} level={level} color={color} />
+            </Card>
           )}
         </>
       )}

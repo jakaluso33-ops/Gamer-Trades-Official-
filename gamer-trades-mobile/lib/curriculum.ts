@@ -443,6 +443,14 @@ export async function passTradeChallenge(userId: string, level: SkillLevel, curr
 }
 
 const LESSON_XP = 25;
+const CHART_CLASSROOM_XP = 8;
+
+/** Awards a small XP bump for a correct live Chart Classroom answer. No mastery/gating side effects — pure practice reps. */
+export async function awardChartClassroomXp(userId: string): Promise<void> {
+  const { data: profile } = await supabase.from('profiles').select('xp').eq('id', userId).single();
+  if (profile) await supabase.from('profiles').update({ xp: (profile as { xp: number }).xp + CHART_CLASSROOM_XP }).eq('id', userId);
+  await logEvent(userId, 'chart_classroom_correct');
+}
 
 export async function setSkillLevel(userId: string, level: SkillLevel): Promise<void> {
   const { error } = await supabase.from('profiles').update({ skill_level: level }).eq('id', userId);
