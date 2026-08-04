@@ -21,6 +21,7 @@ import { pollLiveQuotes } from '../../lib/marketData';
 import CandlestickChart, { Timeframe } from '../../components/CandlestickChart';
 import StrategyIcon from '../../components/StrategyIcon';
 import AiPatternInsight from '../../components/AiPatternInsight';
+import MarketReadCard from '../../components/MarketReadCard';
 import PnlIcon from '../../components/PnlIcon';
 
 const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
@@ -301,6 +302,8 @@ export default function TradeDeskScreen() {
           <AiPatternInsight symbol={selected.symbol} signal={latest ?? null} skillLevel={profile?.skill_level ?? null} />
         </View>
       </Card>
+
+      <MarketReadCard symbol={selected.symbol} candles={candlesRef.current} skillLevel={profile?.skill_level ?? null} />
 
       <Card borderColor={colors.cyan}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
