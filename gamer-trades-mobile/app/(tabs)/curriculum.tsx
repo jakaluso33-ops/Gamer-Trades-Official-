@@ -277,7 +277,15 @@ export default function CurriculumScreen() {
           {subTab === 'quiz' && (
             lessonsDone ? (
               <Card borderColor={color}>
-                <QuizPanel level={level} color={color} alreadyPassed={quizDone} onPass={handleQuizPass} />
+                <QuizPanel
+                  userId={user.id}
+                  level={level}
+                  color={color}
+                  alreadyPassed={quizDone}
+                  topicStats={profile.quiz_topic_stats}
+                  onPass={handleQuizPass}
+                  onTopicStatsChange={refreshProfile}
+                />
               </Card>
             ) : (
               <Card borderColor={colors.muted}>
@@ -307,7 +315,13 @@ export default function CurriculumScreen() {
               <BodyText color={colors.muted} size={12} style={{ marginBottom: 10 }}>
                 Watch a live practice chart form real setups for {SKILL_LEVEL_LABEL[level]} — quiz questions pop up as patterns appear. Purely for reps: no gating, no wrong-answer penalty, just XP.
               </BodyText>
-              <ChartClassroom userId={user.id} level={level} color={color} />
+              <ChartClassroom
+                userId={user.id}
+                level={level}
+                color={color}
+                topicStats={profile.quiz_topic_stats}
+                onTopicStatsChange={refreshProfile}
+              />
             </Card>
           )}
         </>
