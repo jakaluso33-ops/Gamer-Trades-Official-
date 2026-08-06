@@ -34,11 +34,21 @@ export const PRIVACY_POLICY: LegalSection[] = [
       'are also fetched from NewsAPI.org. No personal account information is included in these requests.',
   },
   {
+    heading: 'Subscriptions and payment',
+    body:
+      'GamerTrades offers optional paid subscription tiers (Pro / Legend) that unlock additional features. ' +
+      'Subscriptions are never virtual-currency purchases — they are billed by Stripe, our payment processor. ' +
+      'If you subscribe, Stripe collects and processes your payment details (such as card information) and your ' +
+      'email address directly; we never see or store your full card number. We receive only your subscription ' +
+      'status and Stripe customer/subscription IDs from Stripe so we can grant access to paid features. See ' +
+      'Stripe\'s own privacy policy at stripe.com/privacy for how they handle payment data.',
+  },
+  {
     heading: 'How we use your data',
     body:
       'Solely to operate the app: authenticate you, store your simulated portfolio and progress, power the ' +
-      'leaderboard and friends/battle features, and generate AI analyses you request. We do not sell your data ' +
-      'or use it for third-party advertising.',
+      'leaderboard and friends/battle features, generate AI analyses you request, and process subscription ' +
+      'billing. We do not sell your data or use it for third-party advertising.',
   },
   {
     heading: 'Where data is stored',
@@ -50,8 +60,9 @@ export const PRIVACY_POLICY: LegalSection[] = [
   {
     heading: 'Third parties',
     body:
-      'We use Supabase for authentication and data storage, Anthropic for AI-generated analysis, and NewsAPI.org ' +
-      'for news headlines. Each processes data only as needed to provide their service to this app.',
+      'We use Supabase for authentication and data storage, Anthropic for AI-generated analysis, NewsAPI.org for ' +
+      'news headlines, and Stripe for subscription payment processing. Each processes data only as needed to ' +
+      'provide their service to this app.',
   },
   {
     heading: 'Account deletion',
