@@ -32,7 +32,10 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { username: username.trim() || undefined } },
+          options: {
+            data: { username: username.trim() || undefined },
+            emailRedirectTo: `${window.location.origin}/login`,
+          },
         });
         if (error) throw error;
         router.push('/dashboard');

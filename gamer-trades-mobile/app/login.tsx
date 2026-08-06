@@ -25,7 +25,10 @@ export default function LoginScreen() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { username: username.trim() || undefined } },
+          options: {
+            data: { username: username.trim() || undefined },
+            emailRedirectTo: 'https://jakaluso33-ops.github.io/Gamer-Trades-Official-/login',
+          },
         });
         if (error) throw error;
       } else if (mode === 'forgot') {
