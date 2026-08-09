@@ -75,7 +75,15 @@ function formatAxisTime(ms: number, barMs: number): string {
 export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 320, enabledStrategies = ALL_DETECTORS, onSignal, positions = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const barMs = TIMEFRAME_MS[timeframe];
-  const [candles, setCandles] = useState<Candle[]>(() => generateCandles(80, basePrice, barMs));
+  // Caches generated history per symbol+timeframe so flipping between timeframes shows the
+  // same chart you already saw instead of re-randomizing it every time.
+  const historyRef = useRef<Map<string, Candle[]>>(new Map());
+  const [candles, setCandles] = useState<Candle[]>(() => {
+    const key = `${symbol}:${timeframe}`;
+    const initial = generateCandles(80, basePrice, barMs);
+    historyRef.current.set(key, initial);
+    return initial;
+  });
   const [hovered, setHovered] = useState<Candle | null>(null);
   const [mouseX, setMouseX] = useState<number | null>(null);
   const [signals, setSignals] = useState<StrategySignal[]>([]);
@@ -89,7 +97,13 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   // symbol/timeframe's candle history sticks around and the chart looks frozen
   // or mislabeled.
   useEffect(() => {
-    setCandles(generateCandles(80, basePrice, barMs));
+    const key = `${symbol}:${timeframe}`;
+    let existing = historyRef.current.get(key);
+    if (!existing) {
+      existing = generateCandles(80, basePrice, barMs);
+      historyRef.current.set(key, existing);
+    }
+    setCandles(existing);
     setHovered(null);
     setMouseX(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,6 +113,7 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   // by the selected timeframe's width — so a 1H chart shows bars an hour apart even
   // though we're not waiting a real hour between updates.
   useEffect(() => {
+    const key = `${symbol}:${timeframe}`;
     const id = setInterval(() => {
       setCandles(prev => {
         const last = prev[prev.length - 1];
@@ -117,11 +132,13 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
           close: parseFloat(close.toFixed(2)),
           volume: Math.floor(Math.random() * 500000 + 50000),
         };
-        return [...prev.slice(-(MAX_HISTORY - 1)), newCandle];
+        const next = [...prev.slice(-(MAX_HISTORY - 1)), newCandle];
+        historyRef.current.set(key, next);
+        return next;
       });
     }, 3000);
     return () => clearInterval(id);
-  }, [barMs]);
+  }, [symbol, timeframe, barMs]);
 
   const zoomIn = () => setZoom(z => Math.max(MIN_ZOOM, z - 15));
   const zoomOut = () => setZoom(z => Math.min(Math.min(MAX_ZOOM, candles.length), z + 15));

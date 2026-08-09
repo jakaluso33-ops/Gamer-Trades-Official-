@@ -82,7 +82,15 @@ function touchDistance(touches: { pageX: number; pageY: number }[]): number {
 
 export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [], signal = null }: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
-  const [candles, setCandles] = useState<Candle[]>(() => generateCandles(60, basePrice, barMs));
+  // Caches generated history per symbol+timeframe so flipping between timeframes shows the
+  // same chart you already saw instead of re-randomizing it every time.
+  const historyRef = useRef<Map<string, Candle[]>>(new Map());
+  const [candles, setCandles] = useState<Candle[]>(() => {
+    const key = `${symbol}:${timeframe}`;
+    const initial = generateCandles(60, basePrice, barMs);
+    historyRef.current.set(key, initial);
+    return initial;
+  });
   const [zoom, setZoom] = useState(50);
   const [priceZoom, setPriceZoom] = useState(1);
   const livePriceRef = useRef(livePrice);
@@ -94,12 +102,19 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const moneyX = useRef(Array.from({ length: MONEY_PARTICLES }, () => Math.random())).current;
 
   useEffect(() => {
-    setCandles(generateCandles(60, basePrice, barMs));
+    const key = `${symbol}:${timeframe}`;
+    let existing = historyRef.current.get(key);
+    if (!existing) {
+      existing = generateCandles(60, basePrice, barMs);
+      historyRef.current.set(key, existing);
+    }
+    setCandles(existing);
     setPriceZoom(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol, timeframe]);
 
   useEffect(() => {
+    const key = `${symbol}:${timeframe}`;
     const id = setInterval(() => {
       setCandles(prev => {
         const last = prev[prev.length - 1];
@@ -117,11 +132,13 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
           close: parseFloat(close.toFixed(2)),
           volume: Math.floor(Math.random() * 500000 + 50000),
         };
-        return [...prev.slice(-(MAX_HISTORY - 1)), newCandle];
+        const next = [...prev.slice(-(MAX_HISTORY - 1)), newCandle];
+        historyRef.current.set(key, next);
+        return next;
       });
     }, 3000);
     return () => clearInterval(id);
-  }, [barMs]);
+  }, [symbol, timeframe, barMs]);
 
   const zoomIn = () => setZoom(z => Math.max(MIN_ZOOM, z - 10));
   const zoomOut = () => setZoom(z => Math.min(Math.min(MAX_ZOOM, candles.length), z + 10));
