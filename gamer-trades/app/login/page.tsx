@@ -7,6 +7,32 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { DISCLAIMER_TEXT } from '@/lib/legalContent';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Turns raw Supabase/Postgres error text into copy a tester can actually act on. */
+function friendlyAuthError(raw: string, mode: 'signup' | 'signin' | 'forgot'): string {
+  const msg = raw.toLowerCase();
+  if (msg.includes('profiles_username_key') || (msg.includes('username') && msg.includes('duplicate'))) {
+    return 'That username is already taken — try a different one.';
+  }
+  if (msg.includes('user already registered') || msg.includes('already registered')) {
+    return 'An account with this email already exists — try signing in instead.';
+  }
+  if (msg.includes('email not confirmed')) {
+    return "Almost there — confirm your email first. Check your inbox (and spam folder) for the link, or resend it below.";
+  }
+  if (msg.includes('invalid login credentials')) {
+    return mode === 'signin' ? 'Incorrect email or password.' : raw;
+  }
+  if (msg.includes('for security purposes') || msg.includes('rate limit')) {
+    return 'Too many attempts — please wait a few seconds and try again.';
+  }
+  if (msg.includes('password') && msg.includes('at least')) {
+    return 'Password must be at least 6 characters.';
+  }
+  return raw;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { session } = useAuth();
@@ -17,20 +43,70 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     if (session) router.replace('/dashboard');
   }, [session, router]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const resetMessages = () => {
     setError('');
     setInfo('');
+    setNeedsConfirmation(false);
+  };
+
+  const switchMode = (next: 'signin' | 'signup' | 'forgot') => {
+    setMode(next);
+    resetMessages();
+  };
+
+  const resendConfirmation = async () => {
+    if (!email.trim()) {
+      setError('Enter your email above first, then click resend.');
+      return;
+    }
+    setResending(true);
+    setError('');
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: { emailRedirectTo: `${window.location.origin}/login` },
+      });
+      if (error) throw error;
+      setInfo(`Confirmation email resent to ${email.trim()} — check your inbox (and spam folder).`);
+      setNeedsConfirmation(false);
+    } catch (err) {
+      setError(friendlyAuthError(err instanceof Error ? err.message : 'Could not resend the email', 'signin'));
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    resetMessages();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !EMAIL_RE.test(trimmedEmail)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    if (mode !== 'forgot' && password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (mode === 'signup' && username.trim() && !/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())) {
+      setError('Username must be 3-20 characters — letters, numbers, and underscores only.');
+      return;
+    }
+
     setBusy(true);
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email,
+        const { data, error } = await supabase.auth.signUp({
+          email: trimmedEmail,
           password,
           options: {
             data: { username: username.trim() || undefined },
@@ -38,20 +114,32 @@ export default function LoginPage() {
           },
         });
         if (error) throw error;
-        router.push('/dashboard');
+
+        if (data.session) {
+          // Email confirmation is off for this project — session is already active.
+          router.push('/dashboard');
+        } else {
+          setInfo(`Account created! We sent a confirmation link to ${trimmedEmail} — check your inbox (and spam folder), click the link, then sign in below.`);
+          setMode('signin');
+          setPassword('');
+        }
       } else if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        setInfo(`If an account exists for ${email}, a password reset link has been sent.`);
+        setInfo(`If an account exists for ${trimmedEmail}, a password reset link has been sent.`);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
         if (error) throw error;
         router.push('/dashboard');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      const raw = err instanceof Error ? err.message : 'Something went wrong';
+      setError(friendlyAuthError(raw, mode));
+      if (mode === 'signin' && raw.toLowerCase().includes('email not confirmed')) {
+        setNeedsConfirmation(true);
+      }
     } finally {
       setBusy(false);
     }
@@ -80,7 +168,7 @@ export default function LoginPage() {
         {mode !== 'forgot' && (
           <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
             <button
-              onClick={() => { setMode('signin'); setError(''); setInfo(''); }}
+              onClick={() => switchMode('signin')}
               className="pixel-btn"
               style={{
                 flex: 1, fontSize: '11px', padding: '9px',
@@ -92,7 +180,7 @@ export default function LoginPage() {
               SIGN IN
             </button>
             <button
-              onClick={() => { setMode('signup'); setError(''); setInfo(''); }}
+              onClick={() => switchMode('signup')}
               className="pixel-btn"
               style={{
                 flex: 1, fontSize: '11px', padding: '9px',
@@ -115,7 +203,7 @@ export default function LoginPage() {
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {mode === 'signup' && (
             <div>
-              <label style={{ fontSize: '10px', color: '#64748b', display: 'block', marginBottom: '4px' }}>USERNAME</label>
+              <label style={{ fontSize: '10px', color: '#64748b', display: 'block', marginBottom: '4px' }}>USERNAME (OPTIONAL)</label>
               <input
                 value={username}
                 onChange={e => setUsername(e.target.value)}
@@ -154,7 +242,7 @@ export default function LoginPage() {
           {mode === 'signin' && (
             <button
               type="button"
-              onClick={() => { setMode('forgot'); setError(''); setInfo(''); }}
+              onClick={() => switchMode('forgot')}
               style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '10px', cursor: 'pointer', textAlign: 'right', padding: 0 }}
             >
               Forgot password?
@@ -173,6 +261,22 @@ export default function LoginPage() {
             </div>
           )}
 
+          {needsConfirmation && (
+            <button
+              type="button"
+              onClick={resendConfirmation}
+              disabled={resending}
+              className="pixel-btn"
+              style={{
+                fontSize: '9px', padding: '10px',
+                background: '#ffd70022', color: '#ffd700', borderColor: '#ffd700',
+                opacity: resending ? 0.6 : 1,
+              }}
+            >
+              {resending ? '...' : '✉ RESEND CONFIRMATION EMAIL'}
+            </button>
+          )}
+
           <button
             type="submit"
             disabled={busy}
@@ -185,7 +289,7 @@ export default function LoginPage() {
           {mode === 'forgot' && (
             <button
               type="button"
-              onClick={() => { setMode('signin'); setError(''); setInfo(''); }}
+              onClick={() => switchMode('signin')}
               style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '10px', cursor: 'pointer', textAlign: 'center' }}
             >
               ◀ BACK TO SIGN IN

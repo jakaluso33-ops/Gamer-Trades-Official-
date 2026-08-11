@@ -6,6 +6,33 @@ import { colors } from '../lib/theme';
 import { supabase } from '../lib/supabase';
 import { DISCLAIMER_TEXT } from '../lib/legalContent';
 
+const EMAIL_REDIRECT_TO = 'https://jakaluso33-ops.github.io/Gamer-Trades-Official-/login';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Turns raw Supabase/Postgres error text into copy a tester can actually act on. */
+function friendlyAuthError(raw: string, mode: 'signup' | 'signin' | 'forgot'): string {
+  const msg = raw.toLowerCase();
+  if (msg.includes('profiles_username_key') || (msg.includes('username') && msg.includes('duplicate'))) {
+    return 'That username is already taken — try a different one.';
+  }
+  if (msg.includes('user already registered') || msg.includes('already registered')) {
+    return 'An account with this email already exists — try signing in instead.';
+  }
+  if (msg.includes('email not confirmed')) {
+    return "Almost there — confirm your email first. Check your inbox (and spam folder) for the link, or resend it below.";
+  }
+  if (msg.includes('invalid login credentials')) {
+    return mode === 'signin' ? "Incorrect email or password." : raw;
+  }
+  if (msg.includes('for security purposes') || msg.includes('rate limit')) {
+    return 'Too many attempts — please wait a few seconds and try again.';
+  }
+  if (msg.includes('password') && msg.includes('at least')) {
+    return 'Password must be at least 6 characters.';
+  }
+  return raw;
+}
+
 export default function LoginScreen() {
   const router = useRouter();
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
@@ -15,34 +42,97 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
 
-  const submit = async () => {
+  const resetMessages = () => {
     setError('');
     setInfo('');
+    setNeedsConfirmation(false);
+  };
+
+  const switchMode = (next: 'signin' | 'signup' | 'forgot') => {
+    setMode(next);
+    resetMessages();
+  };
+
+  const resendConfirmation = async () => {
+    if (!email.trim()) {
+      setError('Enter your email above first, then tap resend.');
+      return;
+    }
+    setResending(true);
+    setError('');
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: { emailRedirectTo: EMAIL_REDIRECT_TO },
+      });
+      if (error) throw error;
+      setInfo(`Confirmation email resent to ${email.trim()} — check your inbox (and spam folder).`);
+      setNeedsConfirmation(false);
+    } catch (err) {
+      setError(friendlyAuthError(err instanceof Error ? err.message : 'Could not resend the email', 'signin'));
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const submit = async () => {
+    resetMessages();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !EMAIL_RE.test(trimmedEmail)) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    if (mode !== 'forgot' && password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (mode === 'signup' && username.trim() && !/^[a-zA-Z0-9_]{3,20}$/.test(username.trim())) {
+      setError('Username must be 3-20 characters — letters, numbers, and underscores only.');
+      return;
+    }
+
     setBusy(true);
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email,
+        const { data, error } = await supabase.auth.signUp({
+          email: trimmedEmail,
           password,
           options: {
             data: { username: username.trim() || undefined },
-            emailRedirectTo: 'https://jakaluso33-ops.github.io/Gamer-Trades-Official-/login',
+            emailRedirectTo: EMAIL_REDIRECT_TO,
           },
         });
         if (error) throw error;
+
+        if (data.session) {
+          // Email confirmation is off for this project — the session is already active
+          // and the root layout will redirect automatically. Nothing else to do here.
+        } else {
+          setInfo(`Account created! We sent a confirmation link to ${trimmedEmail} — check your inbox (and spam folder), tap the link, then sign in below.`);
+          setMode('signin');
+          setPassword('');
+        }
       } else if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
           redirectTo: 'gamertrades://reset-password',
         });
         if (error) throw error;
-        setInfo(`If an account exists for ${email}, a password reset link has been sent.`);
+        setInfo(`If an account exists for ${trimmedEmail}, a password reset link has been sent.`);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
         if (error) throw error;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      const raw = err instanceof Error ? err.message : 'Something went wrong';
+      setError(friendlyAuthError(raw, mode));
+      if (mode === 'signin' && raw.toLowerCase().includes('email not confirmed')) {
+        setNeedsConfirmation(true);
+      }
     } finally {
       setBusy(false);
     }
@@ -61,10 +151,10 @@ export default function LoginScreen() {
 
             {mode !== 'forgot' && (
               <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20 }}>
-                <PixelButton color={mode === 'signin' ? colors.cyan : colors.muted} onPress={() => { setMode('signin'); setError(''); setInfo(''); }} style={{ flex: 1 }}>
+                <PixelButton color={mode === 'signin' ? colors.cyan : colors.muted} onPress={() => switchMode('signin')} style={{ flex: 1 }}>
                   SIGN IN
                 </PixelButton>
-                <PixelButton color={mode === 'signup' ? colors.green : colors.muted} onPress={() => { setMode('signup'); setError(''); setInfo(''); }} style={{ flex: 1 }}>
+                <PixelButton color={mode === 'signup' ? colors.green : colors.muted} onPress={() => switchMode('signup')} style={{ flex: 1 }}>
                   SIGN UP
                 </PixelButton>
               </View>
@@ -76,7 +166,7 @@ export default function LoginScreen() {
 
             {mode === 'signup' && (
               <View style={{ marginBottom: 12 }}>
-                <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>USERNAME</BodyText>
+                <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>USERNAME (OPTIONAL)</BodyText>
                 <TextInput
                   value={username}
                   onChangeText={setUsername}
@@ -120,7 +210,7 @@ export default function LoginScreen() {
                 color={colors.muted}
                 size={11}
                 style={{ textAlign: 'right', marginBottom: 12 }}
-                onPress={() => { setMode('forgot'); setError(''); setInfo(''); }}
+                onPress={() => switchMode('forgot')}
               >
                 Forgot password?
               </BodyText>
@@ -138,6 +228,12 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
+            {needsConfirmation && (
+              <PixelButton color={colors.gold} onPress={resendConfirmation} disabled={resending} style={{ marginBottom: 12 }}>
+                {resending ? '...' : '✉ RESEND CONFIRMATION EMAIL'}
+              </PixelButton>
+            )}
+
             <PixelButton color={colors.green} onPress={submit} disabled={busy}>
               {busy ? '...' : mode === 'signup' ? '▶ CREATE ACCOUNT' : mode === 'forgot' ? '▶ SEND RESET LINK' : '▶ ENTER'}
             </PixelButton>
@@ -147,7 +243,7 @@ export default function LoginScreen() {
                 color={colors.muted}
                 size={11}
                 style={{ textAlign: 'center', marginTop: 12 }}
-                onPress={() => { setMode('signin'); setError(''); setInfo(''); }}
+                onPress={() => switchMode('signin')}
               >
                 ◀ BACK TO SIGN IN
               </BodyText>
