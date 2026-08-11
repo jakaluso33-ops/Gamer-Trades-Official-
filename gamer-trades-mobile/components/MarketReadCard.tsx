@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Card, PixelText, BodyText } from './ui';
+import { Card, PixelText, BodyText, PixelButton } from './ui';
 import { colors } from '../lib/theme';
 import { Candle } from '../lib/strategyEngine';
 import { summarizeMarket } from '../lib/marketRead';
@@ -40,6 +40,7 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
   const inFlightRef = useRef(false);
   const candlesRef = useRef(candles);
   const symbolRef = useRef(symbol);
+  const tickRef = useRef<() => void>(() => {});
 
   useEffect(() => { candlesRef.current = candles; }, [candles]);
   useEffect(() => { symbolRef.current = symbol; }, [symbol]);
@@ -49,12 +50,12 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
 
     const tick = async () => {
       if (inFlightRef.current) return;
-      const snapshot = summarizeMarket(candlesRef.current);
-      if (!snapshot) return;
       inFlightRef.current = true;
       setLoading(true);
       setErrored(false);
       try {
+        const snapshot = summarizeMarket(candlesRef.current);
+        if (!snapshot) return;
         const result = await runMarketReadAgent(symbolRef.current, snapshot, skillLevel);
         if (!cancelled) setRead(result);
       } catch (err) {
@@ -66,6 +67,7 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
       }
     };
 
+    tickRef.current = () => { tick(); };
     setRead(null);
     tick();
     const id = setInterval(tick, REFRESH_MS);
@@ -80,11 +82,20 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
       </View>
 
       {!read && !errored && (
-        <BodyText color={colors.muted} size={12}>Reading the tape on {symbol}...</BodyText>
+        <BodyText color={colors.muted} size={12}>
+          {loading ? `Reading the tape on ${symbol}...` : `Watching ${symbol} for the next read...`}
+        </BodyText>
       )}
 
       {errored && !read && (
-        <BodyText color={colors.muted} size={12}>Couldn't reach the market-read agent just now.</BodyText>
+        <View>
+          <BodyText color={colors.muted} size={12} style={{ marginBottom: 8 }}>
+            Couldn't reach the market-read agent just now.
+          </BodyText>
+          <PixelButton color={colors.blue} onPress={() => tickRef.current()} style={{ alignSelf: 'flex-start', paddingHorizontal: 16 }}>
+            ↻ RETRY
+          </PixelButton>
+        </View>
       )}
 
       {read && (
