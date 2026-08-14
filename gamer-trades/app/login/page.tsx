@@ -72,7 +72,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/login` },
+        options: { emailRedirectTo: `${window.location.origin}/confirm` },
       });
       if (error) throw error;
       setInfo(`Confirmation email resent to ${email.trim()} — check your inbox (and spam folder).`);
@@ -110,7 +110,7 @@ export default function LoginPage() {
           password,
           options: {
             data: { username: username.trim() || undefined },
-            emailRedirectTo: `${window.location.origin}/login`,
+            emailRedirectTo: `${window.location.origin}/confirm`,
           },
         });
         if (error) throw error;

@@ -6,7 +6,7 @@ import { colors } from '../lib/theme';
 import { supabase } from '../lib/supabase';
 import { DISCLAIMER_TEXT } from '../lib/legalContent';
 
-const EMAIL_REDIRECT_TO = 'https://jakaluso33-ops.github.io/Gamer-Trades-Official-/login';
+const EMAIL_REDIRECT_TO = 'https://jakaluso33-ops.github.io/Gamer-Trades-Official-/confirm';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Turns raw Supabase/Postgres error text into copy a tester can actually act on. */
