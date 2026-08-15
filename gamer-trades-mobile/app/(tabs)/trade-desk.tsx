@@ -22,6 +22,7 @@ import CandlestickChart, { Timeframe } from '../../components/CandlestickChart';
 import StrategyIcon from '../../components/StrategyIcon';
 import AiPatternInsight from '../../components/AiPatternInsight';
 import MarketReadCard from '../../components/MarketReadCard';
+import CryptoHistoryCard from '../../components/CryptoHistoryCard';
 import PnlIcon from '../../components/PnlIcon';
 
 const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
@@ -355,6 +356,8 @@ export default function TradeDeskScreen() {
           <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
         </View>
       </Card>
+
+      <CryptoHistoryCard symbol={selected.symbol} />
 
       <Modal visible={chartFullscreen} animationType="slide" onRequestClose={() => setChartFullscreen(false)}>
         <View style={{ flex: 1, backgroundColor: colors.bg }}>
