@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Card, PixelText, BodyText } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { STRATEGIES, StrategyDifficulty } from '../../lib/strategyContent';
@@ -14,6 +15,7 @@ const DIFF_COLOR: Record<StrategyDifficulty, string> = {
 };
 
 export default function AcademyScreen() {
+  const router = useRouter();
   const [selected, setSelected] = useState(STRATEGIES[0]);
 
   return (
@@ -25,6 +27,17 @@ export default function AcademyScreen() {
           Learn these strategies here, then check the LIVE SIGNALS panel on the Trade screen — the scanner flags these exact setups as they form.
         </BodyText>
       </View>
+
+      <Pressable onPress={() => router.push('/(tabs)/crypto-history' as never)}>
+        <Card borderColor={colors.gold} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <PixelText size={22}>🪙</PixelText>
+          <View style={{ flex: 1 }}>
+            <BodyText color={colors.gold} size={13} weight="semibold" glow>CRYPTO HISTORY</BodyText>
+            <BodyText color={colors.muted} size={12} style={{ marginTop: 2 }}>Who built each coin, and why — in plain English.</BodyText>
+          </View>
+          <PixelText color={colors.gold} size={12}>▶</PixelText>
+        </Card>
+      </Pressable>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {STRATEGIES.map(s => (
