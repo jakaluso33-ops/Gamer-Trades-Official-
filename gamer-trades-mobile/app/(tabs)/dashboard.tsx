@@ -6,9 +6,10 @@ import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
-import { getPortfolio, listOpenTrades, computePnl, Portfolio, DbTrade } from '../../lib/trading';
+import { listOpenTrades, computePnl, DbTrade } from '../../lib/trading';
 import { getBasePrice } from '../../lib/symbols';
 import SkillPathCard from '../../components/SkillPathCard';
+import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 
 const QUICK_LINKS = [
   { label: 'PORTFOLIO', icon: '◉', href: '/(tabs)/portfolio', color: colors.blue },
@@ -18,16 +19,14 @@ const QUICK_LINKS = [
 ];
 
 export default function DashboardScreen() {
-  const { user, profile } = useAuth();
+  const { user, profile, activePortfolio } = useAuth();
   const router = useRouter();
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
 
   useEffect(() => {
-    if (!user) return;
-    getPortfolio(user.id).then(setPortfolio).catch(console.error);
-    listOpenTrades(user.id).then(setOpenTrades).catch(console.error);
-  }, [user]);
+    if (!user || !activePortfolio) return;
+    listOpenTrades(user.id, activePortfolio.id).then(setOpenTrades).catch(console.error);
+  }, [user, activePortfolio]);
 
   const totalPnl = openTrades.reduce((s, t) => s + computePnl(t, getBasePrice(t.symbol) || t.entry_price), 0);
   const winRate = profile && profile.total_wins + profile.total_losses > 0
@@ -49,10 +48,13 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
-      <View>
-        <BodyText color={colors.muted} size={12}>▶ WELCOME BACK, {profile?.username ?? '...'}</BodyText>
-        <PixelText color={colors.cyan} size={14} glow style={{ marginTop: 6 }}>TRADING ARENA</PixelText>
-        <BodyText color={colors.gold} size={12} weight="semibold" style={{ marginTop: 6 }}>🎮 GAME ON, TRADE ON</BodyText>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View>
+          <BodyText color={colors.muted} size={12}>▶ WELCOME BACK, {profile?.username ?? '...'}</BodyText>
+          <PixelText color={colors.cyan} size={14} glow style={{ marginTop: 6 }}>TRADING ARENA</PixelText>
+          <BodyText color={colors.gold} size={12} weight="semibold" style={{ marginTop: 6 }}>🎮 GAME ON, TRADE ON</BodyText>
+        </View>
+        <PortfolioSwitcher />
       </View>
 
       <SkillPathCard />

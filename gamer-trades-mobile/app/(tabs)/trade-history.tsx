@@ -37,22 +37,22 @@ function TradeRow({ t, pnl }: { t: DbTrade; pnl: number }) {
 }
 
 export default function TradeHistoryScreen() {
-  const { user } = useAuth();
+  const { user, activePortfolio } = useAuth();
   const router = useRouter();
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [closedTrades, setClosedTrades] = useState<DbTrade[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
-    Promise.all([listOpenTrades(user.id), listClosedTrades(user.id, 100)])
+    if (!user || !activePortfolio) return;
+    Promise.all([listOpenTrades(user.id, activePortfolio.id), listClosedTrades(user.id, activePortfolio.id, 100)])
       .then(([open, closed]) => {
         setOpenTrades(open);
         setClosedTrades(closed);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, activePortfolio]);
 
   const realizedTotal = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0);
 

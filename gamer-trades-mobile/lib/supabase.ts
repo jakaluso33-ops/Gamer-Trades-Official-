@@ -30,6 +30,7 @@ export interface Profile {
   quiz_passed_levels: string[];
   trade_passed_levels: string[];
   quiz_topic_stats: Record<string, { correct: number; attempts: number }>;
+  active_portfolio_id: string | null;
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';

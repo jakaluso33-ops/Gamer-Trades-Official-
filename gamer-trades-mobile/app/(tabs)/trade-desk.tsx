@@ -7,7 +7,6 @@ import { useAuth } from '../../lib/AuthContext';
 import { Candle, DetectorId, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
 import { getStrategy } from '../../lib/strategyContent';
 import {
-  getPortfolio,
   listOpenTrades,
   listPendingOrders,
   placeOrder,
@@ -18,7 +17,6 @@ import {
   checkStopTakeProfit,
   closeTrade,
   computePnl,
-  Portfolio,
   DbTrade,
   TradeOrderType,
   InsufficientFundsError,
@@ -31,6 +29,7 @@ import AiPatternInsight from '../../components/AiPatternInsight';
 import MarketReadCard from '../../components/MarketReadCard';
 import CryptoHistoryCard from '../../components/CryptoHistoryCard';
 import PnlIcon from '../../components/PnlIcon';
+import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 
 const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
 const TIMEFRAMES: Timeframe[] = ['1m', '5m', '15m', '1H', '4H', '1D'];
@@ -83,7 +82,7 @@ function generateCandles(count: number, basePrice: number): Candle[] {
 }
 
 export default function TradeDeskScreen() {
-  const { user, profile } = useAuth();
+  const { user, profile, activePortfolio: portfolio, applyPortfolioPatch } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; focusStrategy?: string }>();
   const initialSymbol = ALL_SYMBOLS.find(s => s.symbol === params.symbol) ?? ALL_SYMBOLS[0];
@@ -92,7 +91,6 @@ export default function TradeDeskScreen() {
   const [selected, setSelected] = useState<SymbolInfo>(initialSymbol);
   const [qty, setQty] = useState(10);
   const [livePrice, setLivePrice] = useState(initialSymbol.basePrice);
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [log, setLog] = useState<string[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -156,11 +154,11 @@ export default function TradeDeskScreen() {
   }, [classTab]);
 
   useEffect(() => {
-    if (!user) return;
-    getPortfolio(user.id).then(setPortfolio).catch(console.error);
-    listOpenTrades(user.id).then(setOpenTrades).catch(console.error);
-    listPendingOrders(user.id).then(setPendingOrders).catch(console.error);
-  }, [user]);
+    if (!user || !portfolio) return;
+    listOpenTrades(user.id, portfolio.id).then(setOpenTrades).catch(console.error);
+    listPendingOrders(user.id, portfolio.id).then(setPendingOrders).catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, portfolio?.id]);
 
   useEffect(() => {
     setLivePrice(selected.basePrice);
@@ -254,7 +252,7 @@ export default function TradeDeskScreen() {
         try {
           const result = await fillPendingOrder(user.id, { ...portfolio, cash_balance: cash }, order, livePrice);
           cash = result.portfolio.cash_balance;
-          setPortfolio(result.portfolio);
+          applyPortfolioPatch(result.portfolio);
           setPendingOrders(prev => prev.filter(o => o.id !== order.id));
           if (result.filled) {
             setOpenTrades(prev => [result.trade, ...prev]);
@@ -272,7 +270,8 @@ export default function TradeDeskScreen() {
         try {
           const { pnl } = await closeTrade(user.id, trade, hit.price);
           setOpenTrades(prev => prev.filter(t => t.id !== trade.id));
-          setPortfolio(prev => (prev ? { ...prev, cash_balance: prev.cash_balance + trade.quantity * trade.entry_price + pnl } : prev));
+          cash = cash + trade.quantity * trade.entry_price + pnl;
+          applyPortfolioPatch({ ...portfolio, cash_balance: cash });
           setLog(prev => [
             `${hit.reason === 'stop_loss' ? '⛔ STOP LOSS' : '✓ TAKE PROFIT'} HIT: ${trade.symbol} @ $${hit.price.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`,
             ...prev.slice(0, 9),
@@ -326,7 +325,7 @@ export default function TradeDeskScreen() {
         takeProfit: takeProfitPrice,
       });
 
-      setPortfolio(result.portfolio);
+      applyPortfolioPatch(result.portfolio);
       setOpenTrades(prev => {
         const closedIds = new Set(result.closedTrades.map(t => t.id));
         const updatedById = new Map(result.updatedTrades.map(t => [t.id, t]));
@@ -360,12 +359,12 @@ export default function TradeDeskScreen() {
   };
 
   const closePosition = async (t: DbTrade) => {
-    if (!user) return;
+    if (!user || !portfolio) return;
     try {
       const exitPrice = priceForSymbol(t.symbol);
       const { pnl } = await closeTrade(user.id, t, exitPrice);
       setOpenTrades(prev => prev.filter(x => x.id !== t.id));
-      setPortfolio(prev => (prev ? { ...prev, cash_balance: prev.cash_balance + t.quantity * t.entry_price + pnl } : prev));
+      applyPortfolioPatch({ ...portfolio, cash_balance: portfolio.cash_balance + t.quantity * t.entry_price + pnl });
       setLog(prev => [`CLOSED ${t.symbol} @ $${exitPrice.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`, ...prev.slice(0, 9)]);
     } catch (err) {
       console.error(err);
@@ -379,7 +378,10 @@ export default function TradeDeskScreen() {
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText color={colors.blue} size={13} glow>◈ TRADE DESK</PixelText>
-        <BodyText color={colors.muted} size={11} onPress={() => router.push('/(tabs)/trade' as never)}>◀ ARENA</BodyText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <PortfolioSwitcher />
+          <BodyText color={colors.muted} size={11} onPress={() => router.push('/(tabs)/trade' as never)}>◀ ARENA</BodyText>
+        </View>
       </View>
 
       <Card borderColor={colors.purple}>

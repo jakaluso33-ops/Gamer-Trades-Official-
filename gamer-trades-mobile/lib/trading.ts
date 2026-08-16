@@ -38,28 +38,75 @@ export class InsufficientFundsError extends Error {
   }
 }
 
-export async function getPortfolio(userId: string): Promise<Portfolio> {
-  const { data, error } = await supabase.from('portfolios').select('*').eq('user_id', userId).single();
+export async function listPortfolios(userId: string): Promise<Portfolio[]> {
+  const { data, error } = await supabase
+    .from('portfolios')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Portfolio[];
+}
+
+export async function createPortfolio(userId: string, name: string, startingBalance = 100000): Promise<Portfolio> {
+  const { data, error } = await supabase
+    .from('portfolios')
+    .insert({ user_id: userId, name, cash_balance: startingBalance, starting_balance: startingBalance })
+    .select()
+    .single();
   if (error) throw error;
   return data as Portfolio;
 }
 
-export async function listOpenTrades(userId: string): Promise<DbTrade[]> {
+export async function renamePortfolio(portfolioId: string, name: string): Promise<Portfolio> {
+  const { data, error } = await supabase.from('portfolios').update({ name }).eq('id', portfolioId).select().single();
+  if (error) throw error;
+  return data as Portfolio;
+}
+
+export class LastPortfolioError extends Error {
+  constructor() {
+    super('You need at least one trading account — create another before deleting this one.');
+    this.name = 'LastPortfolioError';
+  }
+}
+
+/** Deletes an account and everything traded under it (trades cascade via FK). Refuses to delete your only account. */
+export async function deletePortfolio(userId: string, portfolioId: string): Promise<void> {
+  const { count, error: countErr } = await supabase
+    .from('portfolios')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId);
+  if (countErr) throw countErr;
+  if ((count ?? 0) <= 1) throw new LastPortfolioError();
+
+  const { error } = await supabase.from('portfolios').delete().eq('id', portfolioId).eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function setActivePortfolioId(userId: string, portfolioId: string): Promise<void> {
+  const { error } = await supabase.from('profiles').update({ active_portfolio_id: portfolioId }).eq('id', userId);
+  if (error) throw error;
+}
+
+export async function listOpenTrades(userId: string, portfolioId: string): Promise<DbTrade[]> {
   const { data, error } = await supabase
     .from('trades')
     .select('*')
     .eq('user_id', userId)
+    .eq('portfolio_id', portfolioId)
     .eq('status', 'open')
     .order('opened_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as DbTrade[];
 }
 
-export async function listClosedTrades(userId: string, limit = 50): Promise<DbTrade[]> {
+export async function listClosedTrades(userId: string, portfolioId: string, limit = 50): Promise<DbTrade[]> {
   const { data, error } = await supabase
     .from('trades')
     .select('*')
     .eq('user_id', userId)
+    .eq('portfolio_id', portfolioId)
     .eq('status', 'closed')
     .order('closed_at', { ascending: false })
     .limit(limit);
@@ -67,11 +114,12 @@ export async function listClosedTrades(userId: string, limit = 50): Promise<DbTr
   return (data ?? []) as DbTrade[];
 }
 
-export async function listPendingOrders(userId: string): Promise<DbTrade[]> {
+export async function listPendingOrders(userId: string, portfolioId: string): Promise<DbTrade[]> {
   const { data, error } = await supabase
     .from('trades')
     .select('*')
     .eq('user_id', userId)
+    .eq('portfolio_id', portfolioId)
     .eq('status', 'pending')
     .order('opened_at', { ascending: false });
   if (error) throw error;
