@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { View, Dimensions, Animated, Easing } from 'react-native';
+import { View, Dimensions, Animated, Easing, Text } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { PixelButton, BodyText } from './ui';
 import { colors } from '../lib/theme';
 import { Candle, StrategySignal } from '../lib/strategyEngine';
 import { getStrategy } from '../lib/strategyContent';
+import LossCoin from './LossCoin';
 
 export type Timeframe = '1m' | '5m' | '15m' | '1H' | '4H' | '1D';
 
@@ -19,7 +20,7 @@ export const TIMEFRAME_MS: Record<Timeframe, number> = {
 
 const MAX_HISTORY = 300;
 const MIN_ZOOM = 15;
-const MAX_ZOOM = 80;
+const MAX_ZOOM = MAX_HISTORY;
 const MIN_PRICE_ZOOM = 0.4;
 const MAX_PRICE_ZOOM = 5;
 const MONEY_PARTICLES = 5;
@@ -73,6 +74,13 @@ interface Props {
   signal?: StrategySignal | null;
   /** Interval between new candles, ms. Defaults to 3000; scripted demos use a faster cadence. */
   tickMs?: number;
+  /** Current stop-loss / take-profit levels for the position being sized — drawn as horizontal lines when set. */
+  stopLoss?: number | null;
+  takeProfit?: number | null;
+  /** When set, a single-finger tap/drag on the chart moves this level; two-finger pinch-zoom still always works. */
+  editingLevel?: 'stop' | 'profit' | null;
+  onChangeStopLoss?: (price: number) => void;
+  onChangeTakeProfit?: (price: number) => void;
 }
 
 function touchDistance(touches: { pageX: number; pageY: number }[]): number {
@@ -82,7 +90,21 @@ function touchDistance(touches: { pageX: number; pageY: number }[]): number {
   return Math.max(1, Math.sqrt(dx * dx + dy * dy));
 }
 
-export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [], signal = null, tickMs = 3000 }: Props) {
+export default function CandlestickChart({
+  symbol,
+  basePrice,
+  livePrice,
+  timeframe = '1m',
+  height = 220,
+  positions = [],
+  signal = null,
+  tickMs = 3000,
+  stopLoss = null,
+  takeProfit = null,
+  editingLevel = null,
+  onChangeStopLoss,
+  onChangeTakeProfit,
+}: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
   // Caches generated history per symbol+timeframe so flipping between timeframes shows the
   // same chart you already saw instead of re-randomizing it every time.
@@ -153,7 +175,8 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const padL = 4, padR = 44;
   const visible = candles.slice(-zoom);
   const signalLevels = signal ? [signal.level, signal.level2].filter((n): n is number => n != null) : [];
-  const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice), signalLevels);
+  const sltpLevels = [stopLoss, takeProfit].filter((n): n is number => n != null);
+  const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice), signalLevels, sltpLevels);
   const rawMinP = Math.min(...prices);
   const rawMaxP = Math.max(...prices);
   const priceMid = (rawMinP + rawMaxP) / 2;
@@ -161,6 +184,13 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
   const minP = priceMid - range / 2;
   const maxP = priceMid + range / 2;
   const toY = (p: number) => ((maxP - p) / range) * H;
+  const fromY = (y: number) => maxP - (y / H) * range;
+  const updateLevelFromY = (y: number) => {
+    if (!editingLevel) return;
+    const price = parseFloat(Math.max(0.01, fromY(y)).toFixed(2));
+    if (editingLevel === 'stop') onChangeStopLoss?.(price);
+    else onChangeTakeProfit?.(price);
+  };
   const cW = (W - padL - padR) / visible.length;
   const maxVol = Math.max(...visible.map(c => c.volume));
   const currentPrice = livePriceRef.current ?? visible[visible.length - 1]?.close ?? basePrice;
@@ -216,14 +246,16 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
       </View>
       <View
         style={{ position: 'relative', width: W }}
-        onStartShouldSetResponder={(e) => e.nativeEvent.touches.length === 2}
-        onMoveShouldSetResponder={(e) => e.nativeEvent.touches.length === 2}
+        onStartShouldSetResponder={(e) => e.nativeEvent.touches.length === 2 || (!!editingLevel && e.nativeEvent.touches.length === 1)}
+        onMoveShouldSetResponder={(e) => e.nativeEvent.touches.length === 2 || (!!editingLevel && e.nativeEvent.touches.length === 1)}
         onResponderGrant={(e) => {
           const touches = e.nativeEvent.touches;
           if (touches.length === 2) {
             pinchStartDist.current = touchDistance(touches);
             pinchStartZoom.current = zoom;
             pinchStartPriceZoom.current = priceZoom;
+          } else if (touches.length === 1 && editingLevel) {
+            updateLevelFromY(e.nativeEvent.locationY);
           }
         }}
         onResponderMove={(e) => {
@@ -236,6 +268,8 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
             setZoom(Math.min(Math.max(newZoom, MIN_ZOOM), Math.min(MAX_ZOOM, candles.length)));
             const newPriceZoom = pinchStartPriceZoom.current / scale;
             setPriceZoom(Math.min(MAX_PRICE_ZOOM, Math.max(MIN_PRICE_ZOOM, newPriceZoom)));
+          } else if (touches.length === 1 && editingLevel) {
+            updateLevelFromY(e.nativeEvent.locationY);
           }
         }}
         onResponderRelease={() => { pinchStartDist.current = null; }}
@@ -277,15 +311,34 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
             </Fragment>
           );
         })}
-        {/* Price labels */}
-        {[0, 1, 2, 3].map(i => {
-          const p = minP + (range * i) / 3;
+        {/* Price gridlines + labels, TradingView-style — evenly spaced across the visible range */}
+        {[0, 1, 2, 3, 4, 5].map(i => {
+          const p = minP + (range * i) / 5;
+          const y = toY(p);
           return (
-            <SvgText key={i} x={W - padR + 4} y={toY(p) + 3} fontSize="8" fill={colors.muted}>
-              {p.toFixed(2)}
-            </SvgText>
+            <Fragment key={'grid' + i}>
+              <Line x1={padL} y1={y} x2={W - padR} y2={y} stroke={colors.border} strokeWidth={0.5} strokeOpacity={0.35} />
+              <SvgText x={W - padR + 4} y={y + 3} fontSize="8" fill={colors.muted}>
+                {p.toFixed(2)}
+              </SvgText>
+            </Fragment>
           );
         })}
+        {/* Stop-loss / take-profit lines — draggable when editingLevel is set */}
+        {stopLoss != null && (
+          <Fragment>
+            <Line x1={padL} y1={toY(stopLoss)} x2={W - padR} y2={toY(stopLoss)} stroke={colors.red} strokeWidth={editingLevel === 'stop' ? 2.5 : 1.5} strokeDasharray="4,3" />
+            <Rect x={W - padR} y={toY(stopLoss) - 8} width={48} height={16} fill={colors.red} />
+            <SvgText x={W - padR + 4} y={toY(stopLoss) + 3} fontSize="7.5" fill={colors.bg} fontWeight="bold">{`SL $${stopLoss.toFixed(2)}`}</SvgText>
+          </Fragment>
+        )}
+        {takeProfit != null && (
+          <Fragment>
+            <Line x1={padL} y1={toY(takeProfit)} x2={W - padR} y2={toY(takeProfit)} stroke={colors.green} strokeWidth={editingLevel === 'profit' ? 2.5 : 1.5} strokeDasharray="4,3" />
+            <Rect x={W - padR} y={toY(takeProfit) - 8} width={48} height={16} fill={colors.green} />
+            <SvgText x={W - padR + 4} y={toY(takeProfit) + 3} fontSize="7.5" fill={colors.bg} fontWeight="bold">{`TP $${takeProfit.toFixed(2)}`}</SvgText>
+          </Fragment>
+        )}
         {/* Open position markers — combined per direction, with a money-emoji P&L pill */}
         {positionLines.map((pos, i) => {
           const inProfit = pos.pnl >= 0;
@@ -391,26 +444,28 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
           {moneyAnims.map((av, i) => {
             const translateY = av.interpolate({ inputRange: [0, 1], outputRange: [H, -10] });
             const opacity = av.interpolate({ inputRange: [0, 0.15, 0.85, 1], outputRange: [0, 1, 1, 0] });
+            const particleSize = 13 + (i % 3) * 3;
             return (
-              <Animated.Text
+              <Animated.View
                 key={i}
                 style={{
                   position: 'absolute',
                   left: `${moneyX[i] * 85}%`,
                   transform: [{ translateY }],
                   opacity,
-                  fontSize: 13 + (i % 3) * 3,
                 }}
               >
-                {positionsProfitable ? '💰' : '💸'}
-              </Animated.Text>
+                {positionsProfitable ? <Text style={{ fontSize: particleSize }}>💰</Text> : <LossCoin size={particleSize} />}
+              </Animated.View>
             );
           })}
         </View>
       )}
       </View>
-      <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 2 }}>
-        Pinch to zoom time + price together, or use TIME/PRICE +/−
+      <BodyText color={editingLevel ? (editingLevel === 'stop' ? colors.red : colors.green) : colors.border} size={10} style={{ textAlign: 'center', marginTop: 2 }}>
+        {editingLevel
+          ? `Tap or drag the chart to place your ${editingLevel === 'stop' ? 'STOP LOSS' : 'TAKE PROFIT'} level`
+          : 'Pinch to zoom time + price together, or use TIME/PRICE +/−'}
       </BodyText>
     </View>
   );

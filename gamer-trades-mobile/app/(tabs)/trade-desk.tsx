@@ -9,11 +9,18 @@ import { getStrategy } from '../../lib/strategyContent';
 import {
   getPortfolio,
   listOpenTrades,
+  listPendingOrders,
   placeOrder,
+  placePendingOrder,
+  cancelPendingOrder,
+  shouldFillPendingOrder,
+  fillPendingOrder,
+  checkStopTakeProfit,
   closeTrade,
   computePnl,
   Portfolio,
   DbTrade,
+  TradeOrderType,
   InsufficientFundsError,
 } from '../../lib/trading';
 import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, ASSET_CLASS_ICON, SYMBOL_ICON, AssetClass, SymbolInfo } from '../../lib/symbols';
@@ -43,6 +50,14 @@ function stepFor(qty: number): number {
   if (qty >= 10) return 5;
   return 1;
 }
+
+/** A price nudge sized to the instrument's own price level and decimal precision. */
+function priceStepFor(price: number, decimals: number): number {
+  const raw = price * 0.002;
+  return parseFloat(Math.max(raw, Math.pow(10, -decimals)).toFixed(decimals + 2));
+}
+
+const ORDER_TYPES: TradeOrderType[] = ['market', 'limit', 'stop'];
 
 function generateCandles(count: number, basePrice: number): Candle[] {
   const candles: Candle[] = [];
@@ -89,6 +104,12 @@ export default function TradeDeskScreen() {
   const [signals, setSignals] = useState<StrategySignal[]>([]);
   const [changes, setChanges] = useState<Record<string, number>>({});
   const [chartFullscreen, setChartFullscreen] = useState(false);
+  const [orderType, setOrderType] = useState<TradeOrderType>('market');
+  const [triggerPrice, setTriggerPrice] = useState<number | null>(null);
+  const [stopLossPrice, setStopLossPrice] = useState<number | null>(null);
+  const [takeProfitPrice, setTakeProfitPrice] = useState<number | null>(null);
+  const [editingLevel, setEditingLevel] = useState<'stop' | 'profit' | null>(null);
+  const [pendingOrders, setPendingOrders] = useState<DbTrade[]>([]);
   const livePriceRef = useRef(livePrice);
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
 
@@ -138,6 +159,7 @@ export default function TradeDeskScreen() {
     if (!user) return;
     getPortfolio(user.id).then(setPortfolio).catch(console.error);
     listOpenTrades(user.id).then(setOpenTrades).catch(console.error);
+    listPendingOrders(user.id).then(setPendingOrders).catch(console.error);
   }, [user]);
 
   useEffect(() => {
@@ -150,6 +172,27 @@ export default function TradeDeskScreen() {
     candlesRef.current = generateCandles(60, selected.basePrice);
     setSignals([]);
   }, [selected]);
+
+  // Order builder state is per-instrument — switching symbols clears it rather than
+  // carrying a trigger price or SL/TP level over to a market it doesn't apply to.
+  useEffect(() => {
+    setOrderType('market');
+    setTriggerPrice(null);
+    setStopLossPrice(null);
+    setTakeProfitPrice(null);
+    setEditingLevel(null);
+  }, [selected.symbol]);
+
+  // Default the trigger price to the current live price the moment the user switches
+  // into a limit/stop order, so they're nudging from a sensible starting point.
+  useEffect(() => {
+    if (orderType === 'market') {
+      setTriggerPrice(null);
+    } else {
+      setTriggerPrice(p => p ?? livePrice);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderType]);
 
   // Anchor the live-ticking price to real Polygon.io quotes when available (stocks,
   // crypto, forex, indices). Futures/options aren't directly quotable in the
@@ -192,6 +235,56 @@ export default function TradeDeskScreen() {
     return () => clearInterval(id);
   }, [activeStrategies, selected]);
 
+  // Watches the currently-selected symbol's live price for two things a real trading
+  // platform automates: filling a resting limit/stop order once price crosses its trigger,
+  // and closing an open position the moment its stop-loss or take-profit is touched.
+  // Deliberately keyed only on [livePrice, selected.symbol] — portfolio/openTrades/pendingOrders
+  // are read fresh from the closure each time this fires, which is fine since livePrice ticks
+  // every few seconds regardless of whether those other values just changed.
+  useEffect(() => {
+    if (!user || !portfolio) return;
+    const pendingForSymbol = pendingOrders.filter(o => o.symbol === selected.symbol);
+    const openWithLevels = openTrades.filter(t => t.symbol === selected.symbol && (t.stop_loss != null || t.take_profit != null));
+    if (pendingForSymbol.length === 0 && openWithLevels.length === 0) return;
+
+    let cash = portfolio.cash_balance;
+    (async () => {
+      for (const order of pendingForSymbol) {
+        if (!shouldFillPendingOrder(order, livePrice)) continue;
+        try {
+          const result = await fillPendingOrder(user.id, { ...portfolio, cash_balance: cash }, order, livePrice);
+          cash = result.portfolio.cash_balance;
+          setPortfolio(result.portfolio);
+          setPendingOrders(prev => prev.filter(o => o.id !== order.id));
+          if (result.filled) {
+            setOpenTrades(prev => [result.trade, ...prev]);
+            setLog(prev => [`${order.order_type.toUpperCase()} FILLED: ${order.direction === 'long' ? 'BUY' : 'SELL'} ${order.quantity}x ${order.symbol} @ $${livePrice.toFixed(2)}`, ...prev.slice(0, 9)]);
+          } else {
+            setLog(prev => [`ORDER CANCELLED (insufficient funds): ${order.symbol}`, ...prev.slice(0, 9)]);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      for (const trade of openWithLevels) {
+        const hit = checkStopTakeProfit(trade, livePrice);
+        if (!hit) continue;
+        try {
+          const { pnl } = await closeTrade(user.id, trade, hit.price);
+          setOpenTrades(prev => prev.filter(t => t.id !== trade.id));
+          setPortfolio(prev => (prev ? { ...prev, cash_balance: prev.cash_balance + trade.quantity * trade.entry_price + pnl } : prev));
+          setLog(prev => [
+            `${hit.reason === 'stop_loss' ? '⛔ STOP LOSS' : '✓ TAKE PROFIT'} HIT: ${trade.symbol} @ $${hit.price.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`,
+            ...prev.slice(0, 9),
+          ]);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [livePrice, selected.symbol]);
+
   const priceForSymbol = useCallback(
     (sym: string) => (sym === selected.symbol ? livePrice : ALL_SYMBOLS.find(s => s.symbol === sym)?.basePrice ?? livePrice),
     [selected.symbol, livePrice]
@@ -200,14 +293,37 @@ export default function TradeDeskScreen() {
   const place = async (side: 'BUY' | 'SELL') => {
     if (!user || !portfolio) return;
     setOrderError(null);
+    const direction = side === 'BUY' ? 'long' : 'short';
+
+    if (orderType !== 'market') {
+      if (triggerPrice == null) return;
+      try {
+        const order = await placePendingOrder(user.id, portfolio, {
+          symbol: selected.symbol,
+          direction,
+          orderType,
+          quantity: qty,
+          triggerPrice,
+          stopLoss: stopLossPrice,
+          takeProfit: takeProfitPrice,
+        });
+        setPendingOrders(prev => [order, ...prev]);
+        setLog(prev => [`${orderType.toUpperCase()} ${side} ${qty}x ${selected.symbol} @ $${triggerPrice.toFixed(selected.decimals)} (pending)`, ...prev.slice(0, 9)]);
+      } catch (err) {
+        setOrderError('Could not place order.');
+      }
+      return;
+    }
+
     try {
-      const direction = side === 'BUY' ? 'long' : 'short';
       const result = await placeOrder(user.id, portfolio, openTrades, {
         symbol: selected.symbol,
         direction,
         orderType: 'market',
         quantity: qty,
         entryPrice: livePrice,
+        stopLoss: stopLossPrice,
+        takeProfit: takeProfitPrice,
       });
 
       setPortfolio(result.portfolio);
@@ -230,6 +346,16 @@ export default function TradeDeskScreen() {
       setLog(prev => [...lines.reverse(), ...prev].slice(0, 10));
     } catch (err) {
       setOrderError(err instanceof InsufficientFundsError ? err.message : 'Could not place order.');
+    }
+  };
+
+  const cancelPending = async (order: DbTrade) => {
+    try {
+      await cancelPendingOrder(order.id);
+      setPendingOrders(prev => prev.filter(o => o.id !== order.id));
+      setLog(prev => [`CANCELLED ${order.order_type.toUpperCase()} ${order.direction === 'long' ? 'BUY' : 'SELL'} ${order.quantity}x ${order.symbol}`, ...prev.slice(0, 9)]);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -325,37 +451,143 @@ export default function TradeDeskScreen() {
             </PixelButton>
           ))}
         </View>
-        <Pressable onPress={() => setChartFullscreen(true)}>
-          <CandlestickChart
-            symbol={selected.symbol}
-            basePrice={selected.basePrice}
-            livePrice={livePrice}
-            timeframe={timeframe}
-            height={200}
-            positions={openTrades
-              .filter(t => t.symbol === selected.symbol)
-              .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
-            signal={latest}
-          />
-        </Pressable>
+        <View style={{ position: 'relative' }}>
+          <Pressable onPress={() => { if (!editingLevel) setChartFullscreen(true); }}>
+            <CandlestickChart
+              symbol={selected.symbol}
+              basePrice={selected.basePrice}
+              livePrice={livePrice}
+              timeframe={timeframe}
+              height={200}
+              positions={openTrades
+                .filter(t => t.symbol === selected.symbol)
+                .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+              signal={latest}
+              stopLoss={stopLossPrice}
+              takeProfit={takeProfitPrice}
+              editingLevel={editingLevel}
+              onChangeStopLoss={setStopLossPrice}
+              onChangeTakeProfit={setTakeProfitPrice}
+            />
+          </Pressable>
+          {/* Quick buy/sell right on the chart itself — uses whatever order type/qty/SL-TP is currently set below */}
+          <View style={{ position: 'absolute', right: 6, top: 30, flexDirection: 'row', gap: 6 }}>
+            <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>▲ BUY</PixelButton>
+            <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>▼ SELL</PixelButton>
+          </View>
+        </View>
         <BodyText color={colors.border} size={10} style={{ textAlign: 'center', marginTop: 4 }}>
-          TAP CHART TO EXPAND ⤢
+          {editingLevel ? 'TAP DONE BELOW WHEN FINISHED PLACING YOUR LEVEL' : 'TAP CHART TO EXPAND ⤢'}
         </BodyText>
         {orderError && (
           <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
             <BodyText color={colors.red} size={12}>⚠ {orderError}</BodyText>
           </View>
         )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}>
+
+        <BodyText color={colors.muted} size={11} style={{ marginTop: 12, marginBottom: 6 }}>ORDER TYPE</BodyText>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          {ORDER_TYPES.map(ot => (
+            <PixelButton key={ot} color={orderType === ot ? colors.gold : colors.muted} onPress={() => setOrderType(ot)} style={{ flex: 1, paddingVertical: 8 }}>
+              {ot.toUpperCase()}
+            </PixelButton>
+          ))}
+        </View>
+        {orderType !== 'market' && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}>
+            <BodyText color={colors.muted} size={11}>{orderType.toUpperCase()} PRICE</BodyText>
+            <PixelButton
+              color={colors.muted}
+              onPress={() => setTriggerPrice(p => Math.max(0.01, (p ?? livePrice) - priceStepFor(livePrice, selected.decimals)))}
+              style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+            >
+              −
+            </PixelButton>
+            <BodyText color={colors.text} size={13} weight="semibold">${(triggerPrice ?? livePrice).toFixed(selected.decimals)}</BodyText>
+            <PixelButton
+              color={colors.muted}
+              onPress={() => setTriggerPrice(p => (p ?? livePrice) + priceStepFor(livePrice, selected.decimals))}
+              style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+            >
+              +
+            </PixelButton>
+          </View>
+        )}
+
+        <BodyText color={colors.muted} size={11} style={{ marginTop: 12, marginBottom: 6 }}>STOP LOSS / TAKE PROFIT — tap to set on the chart</BodyText>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <PixelButton
+            color={editingLevel === 'stop' ? colors.red : colors.muted}
+            onPress={() => setEditingLevel(prev => (prev === 'stop' ? null : 'stop'))}
+            style={{ flex: 1, paddingVertical: 8 }}
+          >
+            {stopLossPrice != null ? `SL $${stopLossPrice.toFixed(selected.decimals)}` : editingLevel === 'stop' ? 'TAP CHART...' : '+ STOP LOSS'}
+          </PixelButton>
+          {stopLossPrice != null && (
+            <PixelButton
+              color={colors.red}
+              onPress={() => { setStopLossPrice(null); if (editingLevel === 'stop') setEditingLevel(null); }}
+              style={{ paddingHorizontal: 10, paddingVertical: 8 }}
+            >
+              ✕
+            </PixelButton>
+          )}
+        </View>
+        <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+          <PixelButton
+            color={editingLevel === 'profit' ? colors.green : colors.muted}
+            onPress={() => setEditingLevel(prev => (prev === 'profit' ? null : 'profit'))}
+            style={{ flex: 1, paddingVertical: 8 }}
+          >
+            {takeProfitPrice != null ? `TP $${takeProfitPrice.toFixed(selected.decimals)}` : editingLevel === 'profit' ? 'TAP CHART...' : '+ TAKE PROFIT'}
+          </PixelButton>
+          {takeProfitPrice != null && (
+            <PixelButton
+              color={colors.green}
+              onPress={() => { setTakeProfitPrice(null); if (editingLevel === 'profit') setEditingLevel(null); }}
+              style={{ paddingHorizontal: 10, paddingVertical: 8 }}
+            >
+              ✕
+            </PixelButton>
+          )}
+        </View>
+        {editingLevel && (
+          <PixelButton color={colors.blue} onPress={() => setEditingLevel(null)} style={{ marginTop: 8, paddingVertical: 10 }}>
+            ✓ DONE PLACING LEVEL
+          </PixelButton>
+        )}
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 12 }}>
           <PixelButton color={colors.muted} onPress={() => setQty(q => Math.max(1, q - stepFor(q)))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>−</PixelButton>
           <BodyText color={colors.text} size={15} weight="semibold">QTY: {qty}</BodyText>
           <PixelButton color={colors.muted} onPress={() => setQty(q => q + stepFor(q))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>+</PixelButton>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-          <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
-          <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
+          <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>
+            {orderType === 'market' ? `▲ BUY ${qty}` : `▲ ${orderType.toUpperCase()} BUY ${qty}`}
+          </PixelButton>
+          <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>
+            {orderType === 'market' ? `▼ SELL ${qty}` : `▼ ${orderType.toUpperCase()} SELL ${qty}`}
+          </PixelButton>
         </View>
       </Card>
+
+      {pendingOrders.length > 0 && (
+        <Card borderColor={colors.gold}>
+          <BodyText color={colors.gold} size={12} weight="semibold" glow style={{ marginBottom: 8 }}>◷ PENDING ORDERS</BodyText>
+          {pendingOrders.map(o => (
+            <View key={o.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <View style={{ flex: 1 }}>
+                <BodyText color={colors.gold} size={13} weight="medium">{o.symbol}</BodyText>
+                <BodyText color={o.direction === 'long' ? colors.green : colors.red} size={11} style={{ marginTop: 2 }}>
+                  {o.order_type.toUpperCase()} {o.direction === 'long' ? 'BUY' : 'SELL'} {o.quantity}x @ ${o.entry_price.toFixed(2)}
+                </BodyText>
+              </View>
+              <PixelButton color={colors.muted} onPress={() => cancelPending(o)} style={{ paddingHorizontal: 8, paddingVertical: 6 }}>CANCEL</PixelButton>
+            </View>
+          ))}
+        </Card>
+      )}
 
       <CryptoHistoryCard symbol={selected.symbol} />
 
@@ -392,6 +624,12 @@ export default function TradeDeskScreen() {
               positions={openTrades
                 .filter(t => t.symbol === selected.symbol)
                 .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+              signal={latest}
+              stopLoss={stopLossPrice}
+              takeProfit={takeProfitPrice}
+              editingLevel={editingLevel}
+              onChangeStopLoss={setStopLossPrice}
+              onChangeTakeProfit={setTakeProfitPrice}
             />
             {orderError && (
               <View style={{ marginTop: 10, padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
@@ -404,8 +642,12 @@ export default function TradeDeskScreen() {
               <PixelButton color={colors.muted} onPress={() => setQty(q => q + stepFor(q))} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>+</PixelButton>
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-              <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>▲ BUY {qty}</PixelButton>
-              <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>▼ SELL {qty}</PixelButton>
+              <PixelButton color={colors.green} onPress={() => place('BUY')} style={{ flex: 1, paddingVertical: 16 }}>
+                {orderType === 'market' ? `▲ BUY ${qty}` : `▲ ${orderType.toUpperCase()} BUY ${qty}`}
+              </PixelButton>
+              <PixelButton color={colors.red} onPress={() => place('SELL')} style={{ flex: 1, paddingVertical: 16 }}>
+                {orderType === 'market' ? `▼ SELL ${qty}` : `▼ ${orderType.toUpperCase()} SELL ${qty}`}
+              </PixelButton>
             </View>
           </ScrollView>
         </View>

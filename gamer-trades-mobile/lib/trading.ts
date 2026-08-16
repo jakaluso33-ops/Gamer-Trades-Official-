@@ -11,7 +11,7 @@ export interface Portfolio {
 
 export type TradeDirection = 'long' | 'short';
 export type TradeOrderType = 'market' | 'limit' | 'stop';
-export type TradeStatus = 'open' | 'closed' | 'cancelled';
+export type TradeStatus = 'open' | 'closed' | 'cancelled' | 'pending';
 
 export interface DbTrade {
   id: string;
@@ -63,6 +63,17 @@ export async function listClosedTrades(userId: string, limit = 50): Promise<DbTr
     .eq('status', 'closed')
     .order('closed_at', { ascending: false })
     .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as DbTrade[];
+}
+
+export async function listPendingOrders(userId: string): Promise<DbTrade[]> {
+  const { data, error } = await supabase
+    .from('trades')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'pending')
+    .order('opened_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as DbTrade[];
 }
@@ -151,6 +162,107 @@ export async function depositFunds(userId: string, portfolio: Portfolio, amount:
 export function computePnl(trade: Pick<DbTrade, 'direction' | 'quantity' | 'entry_price'>, exitPrice: number): number {
   const diff = trade.direction === 'long' ? exitPrice - trade.entry_price : trade.entry_price - exitPrice;
   return diff * trade.quantity;
+}
+
+export interface PendingOrderParams {
+  symbol: string;
+  direction: TradeDirection;
+  orderType: 'limit' | 'stop';
+  quantity: number;
+  triggerPrice: number;
+  stopLoss?: number | null;
+  takeProfit?: number | null;
+}
+
+/**
+ * Places a resting limit/stop order — no cash is reserved until it actually fills, unlike
+ * a market order. `entry_price` doubles as the trigger price while status is 'pending'.
+ */
+export async function placePendingOrder(userId: string, portfolio: Portfolio, params: PendingOrderParams): Promise<DbTrade> {
+  const { data, error } = await supabase
+    .from('trades')
+    .insert({
+      portfolio_id: portfolio.id,
+      user_id: userId,
+      symbol: params.symbol,
+      direction: params.direction,
+      order_type: params.orderType,
+      quantity: params.quantity,
+      entry_price: params.triggerPrice,
+      stop_loss: params.stopLoss ?? null,
+      take_profit: params.takeProfit ?? null,
+      status: 'pending',
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as DbTrade;
+}
+
+export async function cancelPendingOrder(orderId: string): Promise<void> {
+  const { error } = await supabase.from('trades').update({ status: 'cancelled' }).eq('id', orderId);
+  if (error) throw error;
+}
+
+/** Standard limit/stop trigger semantics: limit fills when price reaches a better level, stop fills when price breaks through. */
+export function shouldFillPendingOrder(order: DbTrade, price: number): boolean {
+  if (order.order_type === 'limit') {
+    return order.direction === 'long' ? price <= order.entry_price : price >= order.entry_price;
+  }
+  if (order.order_type === 'stop') {
+    return order.direction === 'long' ? price >= order.entry_price : price <= order.entry_price;
+  }
+  return false;
+}
+
+/**
+ * Fills a resting order at the price that triggered it, reserving cash the same way a market
+ * order does. If the account can no longer cover it by the time it triggers, the order is
+ * cancelled instead of silently overdrawing the account.
+ */
+export async function fillPendingOrder(userId: string, portfolio: Portfolio, order: DbTrade, fillPrice: number): Promise<{ trade: DbTrade; portfolio: Portfolio; filled: boolean }> {
+  const notional = order.quantity * fillPrice;
+  if (notional > portfolio.cash_balance) {
+    const { data: cancelled, error } = await supabase.from('trades').update({ status: 'cancelled' }).eq('id', order.id).select().single();
+    if (error) throw error;
+    return { trade: cancelled as DbTrade, portfolio, filled: false };
+  }
+
+  const { data: filled, error: tradeErr } = await supabase
+    .from('trades')
+    .update({ status: 'open', entry_price: fillPrice, opened_at: new Date().toISOString() })
+    .eq('id', order.id)
+    .select()
+    .single();
+  if (tradeErr) throw tradeErr;
+
+  const { data: updatedPortfolio, error: portfolioErr } = await supabase
+    .from('portfolios')
+    .update({ cash_balance: portfolio.cash_balance - notional })
+    .eq('id', portfolio.id)
+    .select()
+    .single();
+  if (portfolioErr) throw portfolioErr;
+
+  return { trade: filled as DbTrade, portfolio: updatedPortfolio as Portfolio, filled: true };
+}
+
+export interface SlTpHit {
+  price: number;
+  reason: 'stop_loss' | 'take_profit';
+}
+
+/** Checks whether an open position's stop-loss or take-profit level has been touched by the live price. */
+export function checkStopTakeProfit(trade: DbTrade, price: number): SlTpHit | null {
+  if (trade.stop_loss != null) {
+    const hit = trade.direction === 'long' ? price <= trade.stop_loss : price >= trade.stop_loss;
+    if (hit) return { price: trade.stop_loss, reason: 'stop_loss' };
+  }
+  if (trade.take_profit != null) {
+    const hit = trade.direction === 'long' ? price >= trade.take_profit : price <= trade.take_profit;
+    if (hit) return { price: trade.take_profit, reason: 'take_profit' };
+  }
+  return null;
 }
 
 export interface PlaceOrderResult {
