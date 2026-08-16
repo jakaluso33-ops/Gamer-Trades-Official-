@@ -71,6 +71,8 @@ interface Props {
   positions?: ChartPosition[];
   /** The latest detected strategy signal, if any — annotated live on the chart itself. */
   signal?: StrategySignal | null;
+  /** Interval between new candles, ms. Defaults to 3000; scripted demos use a faster cadence. */
+  tickMs?: number;
 }
 
 function touchDistance(touches: { pageX: number; pageY: number }[]): number {
@@ -80,7 +82,7 @@ function touchDistance(touches: { pageX: number; pageY: number }[]): number {
   return Math.max(1, Math.sqrt(dx * dx + dy * dy));
 }
 
-export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [], signal = null }: Props) {
+export default function CandlestickChart({ symbol, basePrice, livePrice, timeframe = '1m', height = 220, positions = [], signal = null, tickMs = 3000 }: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
   // Caches generated history per symbol+timeframe so flipping between timeframes shows the
   // same chart you already saw instead of re-randomizing it every time.
@@ -136,9 +138,9 @@ export default function CandlestickChart({ symbol, basePrice, livePrice, timefra
         historyRef.current.set(key, next);
         return next;
       });
-    }, 3000);
+    }, tickMs);
     return () => clearInterval(id);
-  }, [symbol, timeframe, barMs]);
+  }, [symbol, timeframe, barMs, tickMs]);
 
   const zoomIn = () => setZoom(z => Math.max(MIN_ZOOM, z - 10));
   const zoomOut = () => setZoom(z => Math.min(Math.min(MAX_ZOOM, candles.length), z + 10));
