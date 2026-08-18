@@ -31,6 +31,9 @@ export interface Profile {
   trade_passed_levels: string[];
   quiz_topic_stats: Record<string, { correct: number; attempts: number }>;
   active_portfolio_id: string | null;
+  subscription_status: string | null;
+  onboarded_at: string | null;
+  trial_ends_at: string | null;
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';

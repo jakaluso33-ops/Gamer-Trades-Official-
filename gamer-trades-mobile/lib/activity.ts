@@ -13,7 +13,10 @@ export type ActivityEventType =
   | 'lesson_completed'
   | 'skill_quiz_passed'
   | 'skill_trade_challenge_passed'
-  | 'chart_classroom_correct';
+  | 'chart_classroom_correct'
+  | 'onboarding_trial_started'
+  | 'onboarding_subscribed'
+  | 'onboarding_continued_free';
 
 export async function logEvent(userId: string, eventType: ActivityEventType, metadata: Record<string, unknown> = {}) {
   await supabase.from('activity_events').insert({ user_id: userId, event_type: eventType, metadata });
