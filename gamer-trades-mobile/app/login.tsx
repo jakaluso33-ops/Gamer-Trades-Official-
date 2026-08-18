@@ -1,13 +1,29 @@
-import { useState } from 'react';
-import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, Card, PixelText, BodyText, PixelButton } from '../components/ui';
 import { colors } from '../lib/theme';
 import { supabase } from '../lib/supabase';
 import { DISCLAIMER_TEXT } from '../lib/legalContent';
 
-const EMAIL_REDIRECT_TO = 'https://jakaluso33-ops.github.io/Gamer-Trades-Official-/login';
+// A real https:// page was here before, but nothing was ever deployed at that URL — every
+// confirmation link 303'd users to a dead GitHub Pages 404. Confirmation now opens the app
+// itself (same gamertrades:// deep-link pattern reset-password.tsx already uses) and signs
+// the user straight in, instead of stranding them in a browser.
+const EMAIL_REDIRECT_TO = 'gamertrades://login';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Pulls access_token/refresh_token out of a Supabase confirmation deep link, which
+ * puts them in the URL fragment (#...) rather than the query string. */
+function parseTokensFromUrl(url: string): { access_token: string; refresh_token: string } | null {
+  const fragment = url.split('#')[1] ?? url.split('?')[1];
+  if (!fragment) return null;
+  const params = new URLSearchParams(fragment);
+  const access_token = params.get('access_token');
+  const refresh_token = params.get('refresh_token');
+  if (!access_token || !refresh_token) return null;
+  return { access_token, refresh_token };
+}
 
 /** Turns raw Supabase/Postgres error text into copy a tester can actually act on. */
 function friendlyAuthError(raw: string, mode: 'signup' | 'signin' | 'forgot'): string {
@@ -44,6 +60,29 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [resending, setResending] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  // If this screen was opened via a confirmation-email deep link, pick up the session it
+  // carries directly instead of making the user re-enter their password.
+  const handleIncomingUrl = useCallback(async (url: string | null) => {
+    if (!url) return;
+    const tokens = parseTokensFromUrl(url);
+    if (!tokens) return;
+    setConfirming(true);
+    const { error } = await supabase.auth.setSession(tokens);
+    if (error) {
+      setConfirming(false);
+      setError(friendlyAuthError(error.message, 'signin'));
+    }
+    // On success, AuthContext's session updates and the root layout redirects away —
+    // nothing else to do here.
+  }, []);
+
+  useEffect(() => {
+    Linking.getInitialURL().then(handleIncomingUrl);
+    const sub = Linking.addEventListener('url', ({ url }) => handleIncomingUrl(url));
+    return () => sub.remove();
+  }, [handleIncomingUrl]);
 
   const resetMessages = () => {
     setError('');
@@ -113,7 +152,7 @@ export default function LoginScreen() {
           // Email confirmation is off for this project — the session is already active
           // and the root layout will redirect automatically. Nothing else to do here.
         } else {
-          setInfo(`Account created! We sent a confirmation link to ${trimmedEmail} — check your inbox (and spam folder), tap the link, then sign in below.`);
+          setInfo(`Account created! We sent a confirmation link to ${trimmedEmail} — check your inbox (and spam folder) and tap it to finish signing in.`);
           setMode('signin');
           setPassword('');
         }
@@ -149,7 +188,13 @@ export default function LoginScreen() {
               <BodyText color={colors.gold} size={12} weight="semibold" style={{ marginTop: 8 }}>GAME ON, TRADE ON</BodyText>
             </View>
 
-            {mode !== 'forgot' && (
+            {confirming && (
+              <BodyText color={colors.green} size={13} style={{ textAlign: 'center', marginBottom: 16 }}>
+                Confirming your email...
+              </BodyText>
+            )}
+
+            {!confirming && mode !== 'forgot' && (
               <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20 }}>
                 <PixelButton color={mode === 'signin' ? colors.cyan : colors.muted} onPress={() => switchMode('signin')} style={{ flex: 1 }}>
                   SIGN IN
@@ -164,7 +209,7 @@ export default function LoginScreen() {
               <PixelText color={colors.gold} size={10} glow style={{ marginBottom: 16 }}>✉ RESET PASSWORD</PixelText>
             )}
 
-            {mode === 'signup' && (
+            {!confirming && mode === 'signup' && (
               <View style={{ marginBottom: 12 }}>
                 <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>USERNAME (OPTIONAL)</BodyText>
                 <TextInput
@@ -178,20 +223,22 @@ export default function LoginScreen() {
               </View>
             )}
 
-            <View style={{ marginBottom: 12 }}>
-              <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>EMAIL</BodyText>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                placeholderTextColor={colors.muted}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={styles.input}
-              />
-            </View>
+            {!confirming && (
+              <View style={{ marginBottom: 12 }}>
+                <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>EMAIL</BodyText>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.muted}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  style={styles.input}
+                />
+              </View>
+            )}
 
-            {mode !== 'forgot' && (
+            {!confirming && mode !== 'forgot' && (
               <View style={{ marginBottom: 16 }}>
                 <BodyText color={colors.muted} size={11} style={{ marginBottom: 4 }}>PASSWORD</BodyText>
                 <TextInput
@@ -205,7 +252,7 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {mode === 'signin' && (
+            {!confirming && mode === 'signin' && (
               <BodyText
                 color={colors.muted}
                 size={11}
@@ -228,17 +275,19 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            {needsConfirmation && (
+            {!confirming && needsConfirmation && (
               <PixelButton color={colors.gold} onPress={resendConfirmation} disabled={resending} style={{ marginBottom: 12 }}>
                 {resending ? '...' : '✉ RESEND CONFIRMATION EMAIL'}
               </PixelButton>
             )}
 
-            <PixelButton color={colors.green} onPress={submit} disabled={busy}>
-              {busy ? '...' : mode === 'signup' ? '▶ CREATE ACCOUNT' : mode === 'forgot' ? '▶ SEND RESET LINK' : '▶ ENTER'}
-            </PixelButton>
+            {!confirming && (
+              <PixelButton color={colors.green} onPress={submit} disabled={busy}>
+                {busy ? '...' : mode === 'signup' ? '▶ CREATE ACCOUNT' : mode === 'forgot' ? '▶ SEND RESET LINK' : '▶ ENTER'}
+              </PixelButton>
+            )}
 
-            {mode === 'forgot' && (
+            {!confirming && mode === 'forgot' && (
               <BodyText
                 color={colors.muted}
                 size={11}
