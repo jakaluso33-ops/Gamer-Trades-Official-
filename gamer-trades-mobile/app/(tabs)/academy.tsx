@@ -5,6 +5,7 @@ import { colors } from '../../lib/theme';
 import { STRATEGIES, StrategyDifficulty } from '../../lib/strategyContent';
 import StrategyIcon from '../../components/StrategyIcon';
 import StrategyDiagram from '../../components/StrategyDiagram';
+import StrategyLiveDemo from '../../components/StrategyLiveDemo';
 import { DetectorId } from '../../lib/strategyEngine';
 
 const DIFF_COLOR: Record<StrategyDifficulty, string> = {
@@ -77,6 +78,10 @@ export default function AcademyScreen() {
           <BodyText color={colors.red} size={11} weight="medium" style={{ marginBottom: 6 }}>RISK NOTE</BodyText>
           <BodyText color={colors.muted} size={13}>{selected.riskNote}</BodyText>
         </View>
+      </Card>
+
+      <Card borderColor={selected.color}>
+        <StrategyLiveDemo key={selected.id} id={selected.id as DetectorId} color={selected.color} />
       </Card>
     </ScrollView>
   );

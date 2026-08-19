@@ -9,21 +9,34 @@ import DisclaimerGate from '../components/DisclaimerGate';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 function RootNavigation() {
-  const { session, loading } = useAuth();
+  const { session, profile, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === '(tabs)';
+    const inOnboarding = segments[0] === 'onboarding';
     const isPublicRoute = segments[0] === 'privacy' || segments[0] === 'terms' || segments[0] === 'reset-password';
     if (isPublicRoute) return;
-    if (!session && inAuthGroup) {
+    if (!session && (inAuthGroup || inOnboarding)) {
       router.replace('/login');
-    } else if (session && !inAuthGroup && segments[0] !== undefined) {
+      return;
+    }
+    if (!session) return;
+
+    // Wait for the profile to actually load before deciding — otherwise the brief
+    // window where session exists but profile is still null would bounce everyone
+    // to onboarding on every launch.
+    const needsOnboarding = !!profile && !profile.onboarded_at;
+    if (needsOnboarding && !inOnboarding) {
+      router.replace('/onboarding');
+    } else if (!needsOnboarding && inOnboarding) {
+      router.replace('/(tabs)/dashboard');
+    } else if (!inAuthGroup && !inOnboarding && segments[0] !== undefined) {
       router.replace('/(tabs)/dashboard');
     }
-  }, [session, loading, segments, router]);
+  }, [session, profile, loading, segments, router]);
 
   if (loading) {
     return (
@@ -37,6 +50,7 @@ function RootNavigation() {
     <>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="login" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="terms" />
         <Stack.Screen name="reset-password" />
