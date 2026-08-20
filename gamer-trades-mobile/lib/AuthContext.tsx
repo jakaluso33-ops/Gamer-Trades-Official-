@@ -10,6 +10,7 @@ import {
   deletePortfolio as deletePortfolioApi,
   setActivePortfolioId,
 } from './trading';
+import { registerForPushNotificationsAsync } from './notifications';
 
 interface AuthContextValue {
   session: Session | null;
@@ -76,7 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session?.user) loadProfile(session.user.id);
+      if (session?.user) {
+        loadProfile(session.user.id);
+        registerForPushNotificationsAsync(session.user.id).catch(console.error);
+      }
       setLoading(false);
     });
 
@@ -84,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       if (session?.user) {
         loadProfile(session.user.id);
+        registerForPushNotificationsAsync(session.user.id).catch(console.error);
       } else {
         setProfile(null);
         setPortfolios([]);
