@@ -1,11 +1,17 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { View, Dimensions, Animated, Easing, Text } from 'react-native';
+import { View, Dimensions, Animated, Easing, Text, Pressable } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import * as Speech from 'expo-speech';
 import { PixelButton, BodyText } from './ui';
 import { colors } from '../lib/theme';
 import { Candle, StrategySignal, TradePlan } from '../lib/strategyEngine';
 import { getStrategy } from '../lib/strategyContent';
 import LossCoin from './LossCoin';
+
+export interface CoachInsight {
+  headline: string;
+  explanation: string;
+}
 
 export type Timeframe = '1m' | '5m' | '15m' | '1H' | '4H' | '1D';
 
@@ -75,6 +81,9 @@ interface Props {
   /** Suggested entry/stop/target for the current signal, computed from strategy math — distinct
    * from the user's own order stopLoss/takeProfit below. */
   tradePlan?: TradePlan | null;
+  /** The live AI Coach narration for the current signal, if any — shown as a speech bubble
+   * directly on the chart and spoken aloud via on-device text-to-speech. */
+  coachInsight?: CoachInsight | null;
   /** Interval between new candles, ms. Defaults to 3000; scripted demos use a faster cadence. */
   tickMs?: number;
   /** Current stop-loss / take-profit levels for the position being sized — drawn as horizontal lines when set. */
@@ -102,6 +111,7 @@ export default function CandlestickChart({
   positions = [],
   signal = null,
   tradePlan = null,
+  coachInsight = null,
   tickMs = 3000,
   stopLoss = null,
   takeProfit = null,
@@ -126,6 +136,29 @@ export default function CandlestickChart({
   const pinchStartDist = useRef<number | null>(null);
   const pinchStartZoom = useRef(zoom);
   const pinchStartPriceZoom = useRef(priceZoom);
+  const [speechMuted, setSpeechMuted] = useState(false);
+  const spokenKeyRef = useRef<string | null>(null);
+
+  // Speak each new coach insight once via on-device text-to-speech, and stop talking if
+  // the setup disappears, the symbol changes, or the chart unmounts mid-sentence.
+  useEffect(() => {
+    if (!coachInsight) return;
+    const key = `${coachInsight.headline}:${coachInsight.explanation}`;
+    if (spokenKeyRef.current === key) return;
+    spokenKeyRef.current = key;
+    if (!speechMuted) {
+      Speech.stop();
+      Speech.speak(`${coachInsight.headline}. ${coachInsight.explanation}`, { rate: 0.98 });
+    }
+    return () => { Speech.stop(); };
+  }, [coachInsight, speechMuted]);
+
+  useEffect(() => {
+    if (speechMuted) Speech.stop();
+  }, [speechMuted]);
+
+  useEffect(() => () => { Speech.stop(); }, []);
+
   const moneyAnims = useRef(Array.from({ length: MONEY_PARTICLES }, () => new Animated.Value(0))).current;
   const moneyX = useRef(Array.from({ length: MONEY_PARTICLES }, () => Math.random())).current;
 
@@ -489,6 +522,52 @@ export default function CandlestickChart({
               </Animated.View>
             );
           })}
+        </View>
+      )}
+      {coachInsight && (
+        <View
+          pointerEvents="box-none"
+          style={{ position: 'absolute', left: 8, right: 8, top: 8, alignItems: 'flex-start' }}
+        >
+          <View
+            style={{
+              maxWidth: W - 16,
+              backgroundColor: colors.card,
+              borderWidth: 2,
+              borderColor: colors.purple,
+              borderRadius: 10,
+              borderBottomLeftRadius: 2,
+              paddingVertical: 8,
+              paddingHorizontal: 10,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 1 }}>
+                <Text style={{ fontSize: 13 }}>🤖</Text>
+                <BodyText color={colors.purple} size={12} weight="semibold" style={{ flexShrink: 1 }}>
+                  {coachInsight.headline}
+                </BodyText>
+              </View>
+              <Pressable onPress={() => setSpeechMuted(m => !m)} hitSlop={8}>
+                <Text style={{ fontSize: 14 }}>{speechMuted ? '🔇' : '🔊'}</Text>
+              </Pressable>
+            </View>
+            <BodyText color={colors.text} size={11}>{coachInsight.explanation}</BodyText>
+          </View>
+          {/* Speech-bubble tail */}
+          <View
+            style={{
+              width: 0,
+              height: 0,
+              marginLeft: 14,
+              borderLeftWidth: 8,
+              borderRightWidth: 8,
+              borderTopWidth: 10,
+              borderLeftColor: 'transparent',
+              borderRightColor: 'transparent',
+              borderTopColor: colors.purple,
+            }}
+          />
         </View>
       )}
       </View>

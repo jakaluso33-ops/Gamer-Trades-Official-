@@ -19,9 +19,12 @@ interface Props {
   signal: StrategySignal | null;
   tradePlan?: TradePlan | null;
   skillLevel: SkillLevel | null;
+  /** Fires whenever the live insight changes (including to null), so a parent can mirror
+   * it onto the chart itself as a speech bubble / spoken narration. */
+  onInsight?: (insight: PatternInsight | null) => void;
 }
 
-export default function AiPatternInsight({ symbol, signal, tradePlan = null, skillLevel }: Props) {
+export default function AiPatternInsight({ symbol, signal, tradePlan = null, skillLevel, onInsight }: Props) {
   const [insight, setInsight] = useState<PatternInsight | null>(null);
   const [loading, setLoading] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -34,6 +37,7 @@ export default function AiPatternInsight({ symbol, signal, tradePlan = null, ski
     if (!signal || !key) {
       setInsight(null);
       setErrored(false);
+      onInsight?.(null);
       return;
     }
 
@@ -41,6 +45,7 @@ export default function AiPatternInsight({ symbol, signal, tradePlan = null, ski
     if (cached && Date.now() - cached.fetchedAt < CACHE_MS) {
       setInsight(cached.insight);
       setErrored(false);
+      onInsight?.(cached.insight);
       return;
     }
 
@@ -53,6 +58,7 @@ export default function AiPatternInsight({ symbol, signal, tradePlan = null, ski
       .then(result => {
         cacheRef.current.set(key, { insight: result, fetchedAt: Date.now() });
         setInsight(result);
+        onInsight?.(result);
       })
       .catch(err => {
         console.error('pattern-agent failed', err);

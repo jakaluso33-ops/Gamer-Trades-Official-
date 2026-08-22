@@ -23,7 +23,7 @@ import {
 } from '../../lib/trading';
 import { ALL_SYMBOLS, SYMBOLS_BY_CLASS, ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, ASSET_CLASS_ICON, SYMBOL_ICON, AssetClass, SymbolInfo } from '../../lib/symbols';
 import { pollLiveQuotes } from '../../lib/marketData';
-import CandlestickChart, { Timeframe } from '../../components/CandlestickChart';
+import CandlestickChart, { Timeframe, CoachInsight } from '../../components/CandlestickChart';
 import StrategyIcon from '../../components/StrategyIcon';
 import AiPatternInsight from '../../components/AiPatternInsight';
 import MarketReadCard from '../../components/MarketReadCard';
@@ -373,6 +373,7 @@ export default function TradeDeskScreen() {
 
   const latest = signals[0];
   const tradePlan = useMemo(() => (latest ? computeTradePlan(latest, candlesRef.current) : null), [latest]);
+  const [coachInsight, setCoachInsight] = useState<CoachInsight | null>(null);
   const totalPnl = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
   return (
@@ -429,7 +430,7 @@ export default function TradeDeskScreen() {
           <BodyText color={colors.muted} size={13}>Scanning the market for setups...</BodyText>
         )}
         <View style={{ marginTop: 10 }}>
-          <AiPatternInsight symbol={selected.symbol} signal={latest ?? null} tradePlan={tradePlan} skillLevel={profile?.skill_level ?? null} />
+          <AiPatternInsight symbol={selected.symbol} signal={latest ?? null} tradePlan={tradePlan} skillLevel={profile?.skill_level ?? null} onInsight={setCoachInsight} />
         </View>
       </Card>
 
@@ -467,6 +468,7 @@ export default function TradeDeskScreen() {
                 .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
               signal={latest}
               tradePlan={tradePlan}
+              coachInsight={coachInsight}
               stopLoss={stopLossPrice}
               takeProfit={takeProfitPrice}
               editingLevel={editingLevel}
@@ -630,6 +632,7 @@ export default function TradeDeskScreen() {
                 .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
               signal={latest}
               tradePlan={tradePlan}
+              coachInsight={coachInsight}
               stopLoss={stopLossPrice}
               takeProfit={takeProfitPrice}
               editingLevel={editingLevel}
