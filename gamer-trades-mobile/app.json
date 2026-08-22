@@ -12,6 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gamertrades.app",
+      "buildNumber": "10",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
