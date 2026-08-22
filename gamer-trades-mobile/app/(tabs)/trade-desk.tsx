@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ScrollView, View, Modal, Pressable, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
-import { Candle, DetectorId, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
+import { Candle, DetectorId, StrategySignal, scanStrategies, computeTradePlan } from '../../lib/strategyEngine';
 import { getStrategy } from '../../lib/strategyContent';
 import {
   listOpenTrades,
@@ -372,6 +372,7 @@ export default function TradeDeskScreen() {
   };
 
   const latest = signals[0];
+  const tradePlan = useMemo(() => (latest ? computeTradePlan(latest, candlesRef.current) : null), [latest]);
   const totalPnl = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
   return (
@@ -428,7 +429,7 @@ export default function TradeDeskScreen() {
           <BodyText color={colors.muted} size={13}>Scanning the market for setups...</BodyText>
         )}
         <View style={{ marginTop: 10 }}>
-          <AiPatternInsight symbol={selected.symbol} signal={latest ?? null} skillLevel={profile?.skill_level ?? null} />
+          <AiPatternInsight symbol={selected.symbol} signal={latest ?? null} tradePlan={tradePlan} skillLevel={profile?.skill_level ?? null} />
         </View>
       </Card>
 
@@ -465,6 +466,7 @@ export default function TradeDeskScreen() {
                 .filter(t => t.symbol === selected.symbol)
                 .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
               signal={latest}
+              tradePlan={tradePlan}
               stopLoss={stopLossPrice}
               takeProfit={takeProfitPrice}
               editingLevel={editingLevel}
@@ -627,6 +629,7 @@ export default function TradeDeskScreen() {
                 .filter(t => t.symbol === selected.symbol)
                 .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
               signal={latest}
+              tradePlan={tradePlan}
               stopLoss={stopLossPrice}
               takeProfit={takeProfitPrice}
               editingLevel={editingLevel}

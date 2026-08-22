@@ -251,6 +251,65 @@ export function detectRSIReversal(candles: Candle[], period = 14, overbought = 7
   return null;
 }
 
+export interface TradePlan {
+  entry: number;
+  stopLoss: number;
+  takeProfit: number;
+  /** |takeProfit - entry| / |entry - stopLoss| — how many dollars of reward per dollar risked. */
+  riskRewardRatio: number;
+}
+
+/**
+ * Turns a detected StrategySignal into a concrete entry/stop/target trade plan, using
+ * plain technical-analysis math (no AI) so the numbers are deterministic and reproducible
+ * for the same setup. A small buffer (0.15% of price) is added past trigger levels rather
+ * than sitting exactly on them, matching how a real trader would enter/stop out.
+ *
+ * Stop placement is strategy-agnostic: it prefers the signal's level2 (e.g. the opposite
+ * side of an ORB range, or a fib swing anchor) but only when that level actually sits on
+ * the correct side of entry for the signal's direction — otherwise it falls back to the
+ * most recent swing extreme from the candles themselves, which is always well-formed.
+ */
+export function computeTradePlan(signal: StrategySignal, candles: Candle[]): TradePlan {
+  const bullish = signal.direction === 'bullish';
+  const price = signal.price;
+  const buffer = price * 0.0015;
+  const entry = (signal.level ?? price) + (bullish ? buffer : -buffer);
+
+  const recent = candles.slice(-10);
+  const swingStop = bullish
+    ? Math.min(...recent.map(c => c.low))
+    : Math.max(...recent.map(c => c.high));
+
+  const level2Valid = signal.level2 != null && (bullish ? signal.level2 < entry : signal.level2 > entry);
+  const stopAnchor = level2Valid ? signal.level2! : swingStop;
+  const stopLoss = stopAnchor + (bullish ? -buffer : buffer);
+
+  const riskDist = Math.max(0.01, Math.abs(entry - stopLoss));
+
+  let takeProfit: number;
+  if ((signal.strategyId === 'breakout' || signal.strategyId === 'orb') && signal.level != null && signal.level2 != null) {
+    const rangeHeight = Math.abs(signal.level - signal.level2);
+    const multiple = signal.strategyId === 'orb' ? 2 : 1;
+    takeProfit = entry + (bullish ? 1 : -1) * rangeHeight * multiple;
+  } else if (signal.strategyId === 'fibonacci') {
+    // Target the swing's opposite origin — the classic full-retracement/continuation target.
+    const window = candles.slice(-30);
+    takeProfit = bullish ? Math.max(...window.map(c => c.high)) : Math.min(...window.map(c => c.low));
+  } else if (signal.strategyId === 'support_resistance') {
+    const window = candles.slice(-40);
+    const opposing = bullish ? Math.max(...window.map(c => c.high)) : Math.min(...window.map(c => c.low));
+    const opposingValid = bullish ? opposing > entry : opposing < entry;
+    takeProfit = opposingValid ? opposing : entry + (bullish ? 1 : -1) * riskDist * 2;
+  } else {
+    // ma_crossover / rsi_reversal have no natural price target — use a 2:1 reward:risk projection.
+    takeProfit = entry + (bullish ? 1 : -1) * riskDist * 2;
+  }
+
+  const riskRewardRatio = Math.abs(takeProfit - entry) / riskDist;
+  return { entry, stopLoss, takeProfit, riskRewardRatio };
+}
+
 export type DetectorId = 'breakout' | 'orb' | 'fibonacci' | 'support_resistance' | 'ma_crossover' | 'rsi_reversal';
 
 const DETECTORS: Record<DetectorId, (candles: Candle[]) => StrategySignal | null> = {

@@ -3,7 +3,7 @@ import { View, Dimensions, Animated, Easing, Text } from 'react-native';
 import Svg, { Rect, Line, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { PixelButton, BodyText } from './ui';
 import { colors } from '../lib/theme';
-import { Candle, StrategySignal } from '../lib/strategyEngine';
+import { Candle, StrategySignal, TradePlan } from '../lib/strategyEngine';
 import { getStrategy } from '../lib/strategyContent';
 import LossCoin from './LossCoin';
 
@@ -72,6 +72,9 @@ interface Props {
   positions?: ChartPosition[];
   /** The latest detected strategy signal, if any — annotated live on the chart itself. */
   signal?: StrategySignal | null;
+  /** Suggested entry/stop/target for the current signal, computed from strategy math — distinct
+   * from the user's own order stopLoss/takeProfit below. */
+  tradePlan?: TradePlan | null;
   /** Interval between new candles, ms. Defaults to 3000; scripted demos use a faster cadence. */
   tickMs?: number;
   /** Current stop-loss / take-profit levels for the position being sized — drawn as horizontal lines when set. */
@@ -98,6 +101,7 @@ export default function CandlestickChart({
   height = 220,
   positions = [],
   signal = null,
+  tradePlan = null,
   tickMs = 3000,
   stopLoss = null,
   takeProfit = null,
@@ -176,7 +180,8 @@ export default function CandlestickChart({
   const visible = candles.slice(-zoom);
   const signalLevels = signal ? [signal.level, signal.level2].filter((n): n is number => n != null) : [];
   const sltpLevels = [stopLoss, takeProfit].filter((n): n is number => n != null);
-  const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice), signalLevels, sltpLevels);
+  const tradePlanLevels = tradePlan ? [tradePlan.entry, tradePlan.stopLoss, tradePlan.takeProfit] : [];
+  const prices = visible.flatMap(c => [c.high, c.low]).concat(positions.map(p => p.entryPrice), signalLevels, sltpLevels, tradePlanLevels);
   const rawMinP = Math.min(...prices);
   const rawMaxP = Math.max(...prices);
   const priceMid = (rawMinP + rawMaxP) / 2;
@@ -339,6 +344,31 @@ export default function CandlestickChart({
             <SvgText x={W - padR + 4} y={toY(takeProfit) + 3} fontSize="7.5" fill={colors.bg} fontWeight="bold">{`TP $${takeProfit.toFixed(2)}`}</SvgText>
           </Fragment>
         )}
+        {/* Suggested entry/stop/target from the detected strategy's own math — dotted and in
+            a distinct color set from the user's own SL/TP order lines above, so the two never
+            read as the same thing. */}
+        {tradePlan && (() => {
+          const rows: { key: string; label: string; price: number; color: string }[] = [
+            { key: 'entry', label: `ENTRY $${tradePlan.entry.toFixed(2)}`, price: tradePlan.entry, color: colors.gold },
+            { key: 'stop', label: `PLAN STOP $${tradePlan.stopLoss.toFixed(2)}`, price: tradePlan.stopLoss, color: colors.red },
+            { key: 'target', label: `PLAN TARGET $${tradePlan.takeProfit.toFixed(2)}`, price: tradePlan.takeProfit, color: colors.green },
+          ];
+          return (
+            <Fragment>
+              {rows.map(row => {
+                const y = toY(row.price);
+                const labelW = 14 + row.label.length * 5;
+                return (
+                  <Fragment key={row.key}>
+                    <Line x1={padL} y1={y} x2={W - padR} y2={y} stroke={row.color} strokeWidth={1} strokeOpacity={0.6} strokeDasharray="1,3" />
+                    <Rect x={padL} y={y - 8} width={labelW} height={16} rx={2} fill={colors.bg} stroke={row.color} strokeWidth={1} />
+                    <SvgText x={padL + 5} y={y + 3} fontSize="7" fill={row.color}>{row.label}</SvgText>
+                  </Fragment>
+                );
+              })}
+            </Fragment>
+          );
+        })()}
         {/* Open position markers — combined per direction, with a money-emoji P&L pill */}
         {positionLines.map((pos, i) => {
           const inProfit = pos.pnl >= 0;
