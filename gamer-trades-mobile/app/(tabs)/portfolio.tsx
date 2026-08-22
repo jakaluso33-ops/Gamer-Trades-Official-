@@ -3,9 +3,10 @@ import { ScrollView, View, Modal, TextInput, Pressable } from 'react-native';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
-import { getPortfolio, listOpenTrades, computePnl, depositFunds, Portfolio, DbTrade } from '../../lib/trading';
+import { listOpenTrades, computePnl, depositFunds, DbTrade } from '../../lib/trading';
 import { getBasePrice } from '../../lib/symbols';
 import PnlIcon from '../../components/PnlIcon';
+import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 
 interface Holding {
   symbol: string;
@@ -31,25 +32,24 @@ function aggregateHoldings(openTrades: DbTrade[]): Holding[] {
 }
 
 export default function PortfolioScreen() {
-  const { user } = useAuth();
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+  const { user, activePortfolio: portfolio, portfoliosLoading, applyPortfolioPatch } = useAuth();
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tradesLoading, setTradesLoading] = useState(true);
   const [showDeposit, setShowDeposit] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositBusy, setDepositBusy] = useState(false);
   const [depositError, setDepositError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    Promise.all([getPortfolio(user.id), listOpenTrades(user.id)])
-      .then(([p, open]) => {
-        setPortfolio(p);
-        setOpenTrades(open);
-      })
+    if (!user || !portfolio) return;
+    setTradesLoading(true);
+    listOpenTrades(user.id, portfolio.id)
+      .then(setOpenTrades)
       .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [user]);
+      .finally(() => setTradesLoading(false));
+  }, [user, portfolio]);
+
+  const loading = portfoliosLoading || tradesLoading;
 
   const handleDeposit = async () => {
     if (!user || !portfolio) return;
@@ -62,7 +62,7 @@ export default function PortfolioScreen() {
     setDepositError(null);
     try {
       const updated = await depositFunds(user.id, portfolio, amount);
-      setPortfolio(updated);
+      applyPortfolioPatch(updated);
       setShowDeposit(false);
       setDepositAmount('');
     } catch (err) {
@@ -88,7 +88,10 @@ export default function PortfolioScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
-      <PixelText color={colors.blue} size={13} glow>◉ PORTFOLIO</PixelText>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <PixelText color={colors.blue} size={13} glow>◉ PORTFOLIO</PixelText>
+        <PortfolioSwitcher />
+      </View>
 
       <Card borderColor={colors.green}>
         <BodyText color={colors.muted} size={11}>TOTAL VALUE</BodyText>

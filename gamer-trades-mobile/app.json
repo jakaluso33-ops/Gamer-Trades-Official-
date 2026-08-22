@@ -4,14 +4,15 @@
     "slug": "gamer-trades-mobile",
     "owner": "jmoneytradess-team",
     "scheme": "gamertrades",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "description": "Gamified paper trading — practice stocks, crypto, and forex with zero real-money risk. Educational simulation only.",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.gamertrades.app",
+      "buildNumber": "10",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

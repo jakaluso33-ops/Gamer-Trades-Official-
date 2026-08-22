@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { BodyText, PixelText } from './ui';
 import { colors } from '../lib/theme';
-import { StrategySignal } from '../lib/strategyEngine';
+import { StrategySignal, TradePlan } from '../lib/strategyEngine';
 import { getStrategy } from '../lib/strategyContent';
 import { SkillLevel } from '../lib/curriculum';
 import { runPatternAgent, PatternInsight } from '../lib/patternAgent';
@@ -17,10 +17,11 @@ interface CacheEntry {
 interface Props {
   symbol: string;
   signal: StrategySignal | null;
+  tradePlan?: TradePlan | null;
   skillLevel: SkillLevel | null;
 }
 
-export default function AiPatternInsight({ symbol, signal, skillLevel }: Props) {
+export default function AiPatternInsight({ symbol, signal, tradePlan = null, skillLevel }: Props) {
   const [insight, setInsight] = useState<PatternInsight | null>(null);
   const [loading, setLoading] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -92,6 +93,26 @@ export default function AiPatternInsight({ symbol, signal, skillLevel }: Props) 
           <BodyText color={colors.text} size={12} style={{ marginBottom: 8 }}>{insight.explanation}</BodyText>
           <BodyText color={colors.gold} size={11} weight="medium">👀 {insight.whatToWatch}</BodyText>
         </>
+      )}
+
+      {signal && tradePlan && (
+        <View style={{ marginTop: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {[
+              { k: 'ENTRY', v: tradePlan.entry, c: colors.gold },
+              { k: 'STOP', v: tradePlan.stopLoss, c: colors.red },
+              { k: 'TARGET', v: tradePlan.takeProfit, c: colors.green },
+            ].map(({ k, v, c }) => (
+              <View key={k} style={{ flex: 1, padding: 8, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}>
+                <BodyText color={colors.muted} size={11}>{k}</BodyText>
+                <BodyText color={c} size={13} weight="medium" style={{ marginTop: 4 }}>{`$${v.toFixed(2)}`}</BodyText>
+              </View>
+            ))}
+          </View>
+          <BodyText color={colors.muted} size={11} style={{ marginTop: 6, textAlign: 'center' }}>
+            {tradePlan.riskRewardRatio.toFixed(1)}R reward:risk — calculated from the {strat?.name ?? signal.strategyId} setup, not financial advice
+          </BodyText>
+        </View>
       )}
     </View>
   );

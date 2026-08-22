@@ -14,8 +14,11 @@ export default function UpgradeGate({ title, description }: { title: string; des
   const [error, setError] = useState<string | null>(null);
 
   const handleUpgrade = async () => {
-    if (!PRO_PRICE_ID) return;
     setError(null);
+    if (!PRO_PRICE_ID) {
+      setError('Upgrade is temporarily unavailable (missing plan configuration). Please try again shortly.');
+      return;
+    }
     setBusy(true);
     try {
       await startCheckout(PRO_PRICE_ID);
