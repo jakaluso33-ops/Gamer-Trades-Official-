@@ -7,13 +7,31 @@ import { useAuth } from '../../lib/AuthContext';
 import { deleteAccount } from '../../lib/account';
 import { PLANS } from '../../lib/plans';
 import { startCheckout } from '../../lib/checkout';
+import { requestNotificationPermission, setNotificationsEnabled } from '../../lib/notifications';
 
 export default function ProfileScreen() {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, refreshProfile } = useAuth();
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [notifBusy, setNotifBusy] = useState(false);
+
+  const toggleNotifications = async () => {
+    if (!user) return;
+    setNotifBusy(true);
+    try {
+      const next = !profile?.notifications_enabled;
+      const granted = next ? await requestNotificationPermission() : false;
+      await setNotificationsEnabled(user.id, next && granted, profile?.streak_count ?? 0);
+      await refreshProfile();
+      if (next && !granted) {
+        Alert.alert('Notifications blocked', 'Enable notifications for GamerTrades in your device Settings, then try again here.');
+      }
+    } finally {
+      setNotifBusy(false);
+    }
+  };
 
   const handleUpgrade = async (priceId: string) => {
     setCheckoutError(null);
@@ -125,6 +143,25 @@ export default function ProfileScreen() {
           </View>
         )}
       </View>
+
+      <Card borderColor={colors.gold}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <BodyText color={colors.gold} size={13} weight="semibold" glow>🔔 STREAK &amp; COACH ALERTS</BodyText>
+            <BodyText color={colors.muted} size={12} style={{ marginTop: 4 }}>
+              {profile?.notifications_enabled ? "You're set — we'll ping you before your streak breaks." : "Get a nudge before your streak lapses."}
+            </BodyText>
+          </View>
+          <PixelButton
+            color={profile?.notifications_enabled ? colors.green : colors.muted}
+            onPress={toggleNotifications}
+            disabled={notifBusy}
+            style={{ paddingHorizontal: 12, paddingVertical: 10 }}
+          >
+            {notifBusy ? '...' : profile?.notifications_enabled ? 'ON' : 'OFF'}
+          </PixelButton>
+        </View>
+      </Card>
 
       <PixelButton color={colors.red} onPress={signOut}>✕ SIGN OUT</PixelButton>
 

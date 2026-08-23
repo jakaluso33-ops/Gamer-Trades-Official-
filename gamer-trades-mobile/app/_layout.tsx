@@ -17,6 +17,9 @@ function RootNavigation() {
     if (loading) return;
     const inAuthGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[0] === 'onboarding';
+    // Its own step, navigated to explicitly right after onboarding finishes — not gated by
+    // profile.onboarded_at, so it must be exempt from the fallback redirect below too.
+    const inNotificationPrompt = segments[0] === 'notification-permission';
     const isPublicRoute = segments[0] === 'privacy' || segments[0] === 'terms' || segments[0] === 'reset-password';
     if (isPublicRoute) return;
     if (!session && (inAuthGroup || inOnboarding)) {
@@ -33,7 +36,7 @@ function RootNavigation() {
       router.replace('/onboarding');
     } else if (!needsOnboarding && inOnboarding) {
       router.replace('/(tabs)/dashboard');
-    } else if (!inAuthGroup && !inOnboarding && segments[0] !== undefined) {
+    } else if (!inAuthGroup && !inOnboarding && !inNotificationPrompt && segments[0] !== undefined) {
       router.replace('/(tabs)/dashboard');
     }
   }, [session, profile, loading, segments, router]);
@@ -51,6 +54,7 @@ function RootNavigation() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="login" />
         <Stack.Screen name="onboarding" />
+        <Stack.Screen name="notification-permission" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="terms" />
         <Stack.Screen name="reset-password" />

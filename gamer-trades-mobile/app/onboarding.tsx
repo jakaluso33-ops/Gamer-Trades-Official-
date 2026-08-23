@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
   const finish = async () => {
     if (!user) return;
     await markOnboarded(user.id);
-    router.replace('/(tabs)/dashboard');
+    router.replace('/notification-permission');
   };
 
   const startTrial = async (tier: 'pro' | 'legend') => {

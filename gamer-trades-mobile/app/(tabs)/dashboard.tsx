@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
-import { logEvent } from '../../lib/activity';
 import { listOpenTrades, computePnl, DbTrade } from '../../lib/trading';
 import { getBasePrice } from '../../lib/symbols';
+import { recordDailyCheckin } from '../../lib/streak';
+import { scheduleStreakSaverReminder } from '../../lib/notifications';
 import SkillPathCard from '../../components/SkillPathCard';
 import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 
@@ -22,6 +22,7 @@ export default function DashboardScreen() {
   const { user, profile, activePortfolio } = useAuth();
   const router = useRouter();
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
+  const [streak, setStreak] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user || !activePortfolio) return;
@@ -33,17 +34,17 @@ export default function DashboardScreen() {
     ? Math.round((profile.total_wins / (profile.total_wins + profile.total_losses)) * 100)
     : 0;
 
-  // Log at most one check-in per day toward the "trade with discipline" goal
+  // Records at most one check-in per day and keeps the streak counter current; also
+  // re-arms the "streak at risk" local reminder so it reflects today's fresh count.
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const key = `gt_checkin_${user.id}_${today}`;
-      const already = await AsyncStorage.getItem(key);
-      if (already) return;
-      await AsyncStorage.setItem(key, '1');
-      logEvent(user.id, 'daily_checkin');
-    })();
+    recordDailyCheckin(user.id)
+      .then(({ streakCount }) => {
+        setStreak(streakCount);
+        if (profile?.notifications_enabled) scheduleStreakSaverReminder(streakCount);
+      })
+      .catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return (
@@ -56,6 +57,16 @@ export default function DashboardScreen() {
         </View>
         <PortfolioSwitcher />
       </View>
+
+      {!!streak && streak > 1 && (
+        <Card borderColor={colors.gold} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 }}>
+          <PixelText size={20}>🔥</PixelText>
+          <View style={{ flex: 1 }}>
+            <BodyText color={colors.gold} size={13} weight="semibold" glow>{streak}-DAY STREAK</BodyText>
+            <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }}>Trade today to keep it going</BodyText>
+          </View>
+        </Card>
+      )}
 
       <SkillPathCard />
 

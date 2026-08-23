@@ -34,6 +34,9 @@ export interface Profile {
   subscription_status: string | null;
   onboarded_at: string | null;
   trial_ends_at: string | null;
+  notifications_enabled: boolean;
+  streak_count: number;
+  last_checkin_date: string | null;
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';
