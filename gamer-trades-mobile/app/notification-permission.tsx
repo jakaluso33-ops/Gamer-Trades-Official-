@@ -5,6 +5,7 @@ import { Card, PixelText, BodyText, PixelButton } from '../components/ui';
 import { colors } from '../lib/theme';
 import { useAuth } from '../lib/AuthContext';
 import { requestNotificationPermission, setNotificationsEnabled } from '../lib/notifications';
+import { markNotificationPromptSeen } from '../lib/onboarding';
 
 const PERKS = [
   { icon: '🔥', label: 'Streak alerts', desc: "A heads-up before your daily streak breaks." },
@@ -14,11 +15,17 @@ const PERKS = [
 ];
 
 export default function NotificationPermissionScreen() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
-  const finish = () => router.replace('/(tabs)/dashboard');
+  const finish = async () => {
+    if (user) {
+      await markNotificationPromptSeen(user.id);
+      await refreshProfile();
+    }
+    router.replace('/(tabs)/dashboard');
+  };
 
   const enable = async () => {
     if (!user) return finish();
@@ -28,13 +35,13 @@ export default function NotificationPermissionScreen() {
       await setNotificationsEnabled(user.id, granted, profile?.streak_count ?? 0);
     } finally {
       setBusy(false);
-      finish();
+      await finish();
     }
   };
 
   const skip = async () => {
     if (user) await setNotificationsEnabled(user.id, false);
-    finish();
+    await finish();
   };
 
   return (

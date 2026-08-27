@@ -37,6 +37,7 @@ export interface Profile {
   notifications_enabled: boolean;
   streak_count: number;
   last_checkin_date: string | null;
+  notification_prompt_seen_at: string | null;
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';

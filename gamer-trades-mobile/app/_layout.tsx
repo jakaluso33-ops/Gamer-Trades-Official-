@@ -17,8 +17,6 @@ function RootNavigation() {
     if (loading) return;
     const inAuthGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[0] === 'onboarding';
-    // Its own step, navigated to explicitly right after onboarding finishes — not gated by
-    // profile.onboarded_at, so it must be exempt from the fallback redirect below too.
     const inNotificationPrompt = segments[0] === 'notification-permission';
     const isPublicRoute = segments[0] === 'privacy' || segments[0] === 'terms' || segments[0] === 'reset-password';
     if (isPublicRoute) return;
@@ -32,9 +30,17 @@ function RootNavigation() {
     // window where session exists but profile is still null would bounce everyone
     // to onboarding on every launch.
     const needsOnboarding = !!profile && !profile.onboarded_at;
+    // Every user gets this once — new signups land here right after onboarding (via its own
+    // explicit navigation), and anyone who onboarded before this prompt existed gets caught
+    // here too, since notification_prompt_seen_at defaults to null for everyone until they act.
+    const needsNotificationPrompt = !!profile && !needsOnboarding && !profile.notification_prompt_seen_at;
     if (needsOnboarding && !inOnboarding) {
       router.replace('/onboarding');
     } else if (!needsOnboarding && inOnboarding) {
+      router.replace('/(tabs)/dashboard');
+    } else if (needsNotificationPrompt && !inNotificationPrompt) {
+      router.replace('/notification-permission');
+    } else if (!needsNotificationPrompt && inNotificationPrompt) {
       router.replace('/(tabs)/dashboard');
     } else if (!inAuthGroup && !inOnboarding && !inNotificationPrompt && segments[0] !== undefined) {
       router.replace('/(tabs)/dashboard');
