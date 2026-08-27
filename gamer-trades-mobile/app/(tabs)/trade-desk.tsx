@@ -30,6 +30,7 @@ import MarketReadCard from '../../components/MarketReadCard';
 import CryptoHistoryCard from '../../components/CryptoHistoryCard';
 import PnlIcon from '../../components/PnlIcon';
 import PortfolioSwitcher from '../../components/PortfolioSwitcher';
+import TradeScreenshotAnalyzer from '../../components/TradeScreenshotAnalyzer';
 
 const ASSET_CLASSES = Object.keys(SYMBOLS_BY_CLASS) as AssetClass[];
 const TIMEFRAMES: Timeframe[] = ['1m', '5m', '15m', '1H', '4H', '1D'];
@@ -102,6 +103,7 @@ export default function TradeDeskScreen() {
   const [signals, setSignals] = useState<StrategySignal[]>([]);
   const [changes, setChanges] = useState<Record<string, number>>({});
   const [chartFullscreen, setChartFullscreen] = useState(false);
+  const chartCaptureRef = useRef<View>(null);
   const [orderType, setOrderType] = useState<TradeOrderType>('market');
   const [triggerPrice, setTriggerPrice] = useState<number | null>(null);
   const [stopLossPrice, setStopLossPrice] = useState<number | null>(null);
@@ -457,24 +459,26 @@ export default function TradeDeskScreen() {
         </View>
         <View style={{ position: 'relative' }}>
           <Pressable onPress={() => { if (!editingLevel) setChartFullscreen(true); }}>
-            <CandlestickChart
-              symbol={selected.symbol}
-              basePrice={selected.basePrice}
-              livePrice={livePrice}
-              timeframe={timeframe}
-              height={200}
-              positions={openTrades
-                .filter(t => t.symbol === selected.symbol)
-                .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
-              signal={latest}
-              tradePlan={tradePlan}
-              coachInsight={coachInsight}
-              stopLoss={stopLossPrice}
-              takeProfit={takeProfitPrice}
-              editingLevel={editingLevel}
-              onChangeStopLoss={setStopLossPrice}
-              onChangeTakeProfit={setTakeProfitPrice}
-            />
+            <View ref={chartCaptureRef} collapsable={false}>
+              <CandlestickChart
+                symbol={selected.symbol}
+                basePrice={selected.basePrice}
+                livePrice={livePrice}
+                timeframe={timeframe}
+                height={200}
+                positions={openTrades
+                  .filter(t => t.symbol === selected.symbol)
+                  .map(t => ({ entryPrice: t.entry_price, direction: t.direction, quantity: t.quantity }))}
+                signal={latest}
+                tradePlan={tradePlan}
+                coachInsight={coachInsight}
+                stopLoss={stopLossPrice}
+                takeProfit={takeProfitPrice}
+                editingLevel={editingLevel}
+                onChangeStopLoss={setStopLossPrice}
+                onChangeTakeProfit={setTakeProfitPrice}
+              />
+            </View>
           </Pressable>
           {/* Quick buy/sell right on the chart itself — uses whatever order type/qty/SL-TP is currently set below */}
           <View style={{ position: 'absolute', right: 6, top: 30, flexDirection: 'row', gap: 6 }}>
@@ -577,6 +581,8 @@ export default function TradeDeskScreen() {
           </PixelButton>
         </View>
       </Card>
+
+      <TradeScreenshotAnalyzer chartRef={chartCaptureRef} symbol={selected.symbol} livePrice={livePrice} />
 
       {pendingOrders.length > 0 && (
         <Card borderColor={colors.gold}>
