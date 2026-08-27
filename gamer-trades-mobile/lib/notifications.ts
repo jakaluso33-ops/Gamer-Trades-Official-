@@ -1,14 +1,16 @@
 import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { logEvent } from './activity';
 
-// Everything here is LOCAL, on-device scheduling only — no device token, no remote push. The
-// Push Notifications capability is now enabled on developer.apple.com (com.gamertrades.app),
-// which is what makes it safe to have expo-notifications installed at all — EAS regenerates
-// the provisioning profile with the capability instead of Xcode rejecting the build. Remote
-// engagement pushes (market alerts) can layer on top of this later without touching the
-// permission/preference plumbing below.
+// Local, on-device scheduling (streak-saver reminders) plus real remote push token
+// registration — the Push Notifications capability is enabled on developer.apple.com
+// (com.gamertrades.app), so EAS now regenerates the provisioning profile with the
+// capability instead of Xcode rejecting the build. Token registration only ever runs
+// after the user has explicitly opted in via requestNotificationPermission() — it never
+// prompts on its own.
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -37,15 +39,52 @@ export async function hasNotificationPermission(): Promise<boolean> {
   return status === 'granted';
 }
 
-/** Persists the user's opt-in choice and (de)schedules the streak reminder to match. */
+/** Persists the user's opt-in choice, (de)schedules the streak reminder, and registers/
+ * clears the remote push token to match. Permission must already be granted (call
+ * requestNotificationPermission() first) — this never prompts on its own. */
 export async function setNotificationsEnabled(userId: string, enabled: boolean, streakCount = 0): Promise<void> {
   await supabase.from('profiles').update({ notifications_enabled: enabled }).eq('id', userId);
-  await logEvent(userId, 'push_token_registered', { type: 'local', enabled });
 
   if (enabled) {
     await scheduleStreakSaverReminder(streakCount);
+    await registerPushToken(userId);
   } else {
     await cancelStreakSaverReminder();
+  }
+}
+
+/**
+ * Fetches this device's Expo push token and upserts it against the user. Assumes
+ * notification permission is already granted — safe to call repeatedly (idempotent by
+ * token), including on every app open for an already-opted-in user to keep the token
+ * fresh after reinstalls or token rotation. No-ops on simulators/emulators.
+ */
+export async function registerPushToken(userId: string): Promise<void> {
+  try {
+    if (!Device.isDevice) return;
+    const granted = await hasNotificationPermission();
+    if (!granted) return;
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+    }
+
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const { data: token } = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+    if (!token) return;
+
+    const { error } = await supabase.from('push_tokens').upsert(
+      { user_id: userId, expo_push_token: token, platform: Platform.OS, updated_at: new Date().toISOString() },
+      { onConflict: 'expo_push_token' }
+    );
+    if (error) throw error;
+
+    await logEvent(userId, 'push_token_registered', { platform: Platform.OS }).catch(() => {});
+  } catch (err) {
+    console.error('registerPushToken failed', err);
   }
 }
 

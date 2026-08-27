@@ -10,6 +10,7 @@ import {
   deletePortfolio as deletePortfolioApi,
   setActivePortfolioId,
 } from './trading';
+import { registerPushToken } from './notifications';
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
@@ -69,7 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     setProfile(data as Profile | null);
-    if (data) await loadPortfolios(userId, (data as Profile).active_portfolio_id);
+    if (data) {
+      await loadPortfolios(userId, (data as Profile).active_portfolio_id);
+      // Keeps an already-opted-in user's token fresh across reinstalls/token rotation.
+      // No permission prompt — registerPushToken no-ops if permission isn't already granted.
+      if ((data as Profile).notifications_enabled) registerPushToken(userId).catch(console.error);
+    }
   }, [loadPortfolios]);
 
   useEffect(() => {
