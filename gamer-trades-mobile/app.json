@@ -32,14 +32,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-status-bar",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#00ffff"
-        }
-      ]
+      "expo-status-bar"
     ],
     "extra": {
       "supabaseUrl": "https://gtpgaarroytjaseuqvbf.supabase.co",
