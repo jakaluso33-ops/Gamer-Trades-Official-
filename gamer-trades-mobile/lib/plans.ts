@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type Plan = 'free' | 'pro' | 'legend';
+export type Plan = 'free' | 'pro';
 
 /** Free users get every market, just capped/gated on the social + premium-intel features. */
 export const FREE_AI_ANALYST_DAILY_LIMIT = 2;
@@ -56,8 +56,10 @@ export const PLANS: {
   },
   {
     name: 'pro',
-    price: '$9.99/mo',
-    priceId: 'price_1TyPNg2L13T2P1hwBpKLA24J',
+    price: '$6.99/mo',
+    priceId: 'price_1TlN8r2OMSlqCc2ouKr7BR73',
+    annualPrice: '$69.99/yr',
+    annualPriceId: 'price_1TlN942OMSlqCc2oPeVfdiIk',
     color: '#00aaff',
     features: [
       'Everything in Free',
@@ -66,22 +68,6 @@ export const PLANS: {
       'Play vs friends (PvP)',
       '3 daily challenges',
       'Tournament access',
-    ],
-  },
-  {
-    name: 'legend',
-    price: '$24.99/mo',
-    priceId: 'price_1TyPOM2L13T2P1hw9tGtlMU9',
-    annualPrice: '$120/yr',
-    annualPriceId: 'price_1TyPOP2L13T2P1hwLwvXyBdS',
-    color: '#ffd700',
-    features: [
-      'Everything in PRO',
-      'Exclusive AI personalities',
-      'Custom avatar skins',
-      'Priority leaderboard badge',
-      'Early access features',
-      'Tournament seeding',
     ],
   },
 ];

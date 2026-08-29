@@ -36,7 +36,7 @@ export const PRIVACY_POLICY: LegalSection[] = [
   {
     heading: 'Subscriptions and payment',
     body:
-      'GamerTrades offers optional paid subscription tiers (Pro / Legend) that unlock additional features. ' +
+      'GamerTrades offers an optional paid subscription (Pro) that unlocks additional features. ' +
       'Subscriptions are never virtual-currency purchases — they are billed by Stripe, our payment processor. ' +
       'If you subscribe, Stripe collects and processes your payment details (such as card information) and your ' +
       'email address directly; we never see or store your full card number. We receive only your subscription ' +

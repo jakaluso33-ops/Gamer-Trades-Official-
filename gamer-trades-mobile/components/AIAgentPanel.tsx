@@ -23,7 +23,7 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
   const [runsToday, setRunsToday] = useState(0);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
-  const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
+  const plan = (profile?.plan ?? 'free') as 'free' | 'pro';
   const dailyLimit = aiAnalystDailyLimit(plan);
   const limitReached = dailyLimit != null && runsToday >= dailyLimit;
 

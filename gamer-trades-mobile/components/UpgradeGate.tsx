@@ -6,7 +6,8 @@ import { colors } from '../lib/theme';
 import { startCheckout } from '../lib/checkout';
 import { PLANS } from '../lib/plans';
 
-const PRO_PRICE_ID = PLANS.find(p => p.name === 'pro')?.priceId;
+const PRO_PLAN = PLANS.find(p => p.name === 'pro');
+const PRO_PRICE_ID = PRO_PLAN?.priceId;
 
 export default function UpgradeGate({ title, description }: { title: string; description: string }) {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function UpgradeGate({ title, description }: { title: string; des
       <BodyText color={colors.muted} size={12} style={{ textAlign: 'center', marginBottom: 18 }}>{description}</BodyText>
       <View style={{ width: '100%' }}>
         <PixelButton color={colors.green} onPress={handleUpgrade} disabled={busy}>
-          {busy ? '...' : '★ UPGRADE TO PRO — $9.99/mo'}
+          {busy ? '...' : `★ UPGRADE TO PRO — ${PRO_PLAN?.price ?? ''}`}
         </PixelButton>
         {error ? (
           <BodyText color={colors.red} size={11} style={{ textAlign: 'center', marginTop: 8 }}>⚠ {error}</BodyText>
@@ -47,7 +48,7 @@ export default function UpgradeGate({ title, description }: { title: string; des
           style={{ textAlign: 'center', marginTop: 10 }}
           onPress={() => router.push('/(tabs)/profile' as never)}
         >
-          See all plans (incl. Legend annual) ▶
+          See all plans (incl. annual) ▶
         </BodyText>
       </View>
     </Card>

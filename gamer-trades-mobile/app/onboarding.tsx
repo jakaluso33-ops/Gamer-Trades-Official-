@@ -11,9 +11,8 @@ import { assignOnboardingVariants, OnboardingVariants } from '../lib/experiments
 import { PLANS } from '../lib/plans';
 
 const PRO_FEATURES = PLANS.find(p => p.name === 'pro')?.features ?? [];
-const LEGEND_FEATURES = PLANS.find(p => p.name === 'legend')?.features ?? [];
 
-/** Polls the profile for a few seconds after checkout so Pro/Legend features unlock
+/** Polls the profile for a few seconds after checkout so Pro features unlock
  * before we navigate, instead of waiting for the next unrelated profile refresh. */
 async function waitForPlanUpgrade(refreshProfile: () => Promise<void>, getPlan: () => string) {
   for (let i = 0; i < 5; i++) {
@@ -41,19 +40,19 @@ export default function OnboardingScreen() {
     router.replace('/notification-permission');
   };
 
-  const startTrial = async (tier: 'pro' | 'legend') => {
+  const startTrial = async () => {
     if (!user || !variants) return;
     setError(null);
-    setBusy(tier + '_trial');
+    setBusy('pro_trial');
     try {
-      const priceId = variants.pricingSet[tier].priceId;
+      const priceId = variants.pricingSet.pro.priceId;
       await startCheckout(priceId, {
         trial: true,
         trialDays: variants.trialLength.days,
         successUrl: 'gamertrades://onboarding?checkout=success',
         cancelUrl: 'gamertrades://onboarding?checkout=cancel',
       });
-      await logEvent(user.id, 'onboarding_trial_started', { tier, ...variantMetadata(variants) });
+      await logEvent(user.id, 'onboarding_trial_started', variantMetadata(variants));
       await waitForPlanUpgrade(refreshProfile, () => profile?.plan ?? 'free');
       await finish();
     } catch (err) {
@@ -63,18 +62,18 @@ export default function OnboardingScreen() {
     }
   };
 
-  const subscribeNow = async (tier: 'pro' | 'legend') => {
+  const subscribeNow = async () => {
     if (!user || !variants) return;
     setError(null);
-    setBusy(tier + '_subscribe');
+    setBusy('pro_subscribe');
     try {
-      const priceId = variants.pricingSet[tier].priceId;
+      const priceId = variants.pricingSet.pro.priceId;
       await startCheckout(priceId, {
         trial: false,
         successUrl: 'gamertrades://onboarding?checkout=success',
         cancelUrl: 'gamertrades://onboarding?checkout=cancel',
       });
-      await logEvent(user.id, 'onboarding_subscribed', { tier, ...variantMetadata(variants) });
+      await logEvent(user.id, 'onboarding_subscribed', variantMetadata(variants));
       await waitForPlanUpgrade(refreshProfile, () => profile?.plan ?? 'free');
       await finish();
     } catch (err) {
@@ -117,33 +116,17 @@ export default function OnboardingScreen() {
       <Card borderColor={colors.blue}>
         <BodyText color={colors.blue} size={14} weight="semibold" glow>★ PRO</BodyText>
         <PixelText color={colors.text} size={13} glow style={{ marginTop: 6 }}>{pricingSet.pro.price}</PixelText>
+        <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }}>or {pricingSet.pro.annualPrice}</BodyText>
         <View style={{ marginTop: 10, gap: 5 }}>
           {PRO_FEATURES.map(f => (
             <BodyText key={f} color={colors.muted} size={12}>• {f}</BodyText>
           ))}
         </View>
-        <PixelButton color={colors.green} disabled={busy != null} onPress={() => startTrial('pro')} style={{ marginTop: 14, paddingVertical: 14 }}>
+        <PixelButton color={colors.green} disabled={busy != null} onPress={startTrial} style={{ marginTop: 14, paddingVertical: 14 }}>
           {busy === 'pro_trial' ? '...' : `▶ START ${trialLength.label.toUpperCase()}`}
         </PixelButton>
-        <PixelButton color={colors.blue} disabled={busy != null} onPress={() => subscribeNow('pro')} style={{ marginTop: 8, paddingVertical: 10 }}>
+        <PixelButton color={colors.blue} disabled={busy != null} onPress={subscribeNow} style={{ marginTop: 8, paddingVertical: 10 }}>
           {busy === 'pro_subscribe' ? '...' : `SUBSCRIBE NOW — ${pricingSet.pro.price}`}
-        </PixelButton>
-      </Card>
-
-      <Card borderColor={colors.gold}>
-        <BodyText color={colors.gold} size={14} weight="semibold" glow>♛ LEGEND</BodyText>
-        <PixelText color={colors.text} size={13} glow style={{ marginTop: 6 }}>{pricingSet.legend.price}</PixelText>
-        <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }}>or {pricingSet.legend.annualPrice}</BodyText>
-        <View style={{ marginTop: 10, gap: 5 }}>
-          {LEGEND_FEATURES.map(f => (
-            <BodyText key={f} color={colors.muted} size={12}>• {f}</BodyText>
-          ))}
-        </View>
-        <PixelButton color={colors.green} disabled={busy != null} onPress={() => startTrial('legend')} style={{ marginTop: 14, paddingVertical: 14 }}>
-          {busy === 'legend_trial' ? '...' : `▶ START ${trialLength.label.toUpperCase()}`}
-        </PixelButton>
-        <PixelButton color={colors.gold} disabled={busy != null} onPress={() => subscribeNow('legend')} style={{ marginTop: 8, paddingVertical: 10 }}>
-          {busy === 'legend_subscribe' ? '...' : `SUBSCRIBE NOW — ${pricingSet.legend.price}`}
         </PixelButton>
       </Card>
 

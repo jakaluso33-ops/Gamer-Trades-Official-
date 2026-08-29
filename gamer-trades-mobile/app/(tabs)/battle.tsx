@@ -315,7 +315,7 @@ export default function BattleScreen() {
   const params = useLocalSearchParams<{ challenge?: string }>();
   const [mode, setMode] = useState<'ai' | 'friend'>(params.challenge ? 'friend' : 'ai');
   const { profile } = useAuth();
-  const plan = (profile?.plan ?? 'free') as 'free' | 'pro' | 'legend';
+  const plan = (profile?.plan ?? 'free') as 'free' | 'pro';
   const locked = mode === 'ai' ? !canPlayAiBattle(plan) : !canPlayPvp(plan);
 
   return (
@@ -333,8 +333,8 @@ export default function BattleScreen() {
             title={mode === 'ai' ? '★ AI BATTLES ARE A PRO FEATURE' : '⚔ PVP BATTLES ARE A PRO FEATURE'}
             description={
               mode === 'ai'
-                ? 'Free accounts get the full 6-market trading experience, but battling AI opponents is reserved for Pro and Legend traders.'
-                : 'Free accounts get the full 6-market trading experience, but live PvP battles against friends are reserved for Pro and Legend traders.'
+                ? 'Free accounts get the full 6-market trading experience, but battling AI opponents is reserved for Pro traders.'
+                : 'Free accounts get the full 6-market trading experience, but live PvP battles against friends are reserved for Pro traders.'
             }
           />
         </View>

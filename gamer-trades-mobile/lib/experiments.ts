@@ -37,43 +37,33 @@ async function getOrAssignVariant(userId: string, experimentKey: ExperimentKey, 
 }
 
 // ---------------------------------------------------------------------------
-// Pricing set — the whole Pro + Legend price table shown in onboarding. Testing
-// the table as a unit (not each price independently) is how real pricing tests
-// are run: a user should see one internally-consistent set of numbers.
-//
-// Benchmarked against comparable gamified/social trading-education apps (Aug 2026):
-// Invstr Pro $3.99/mo, Invstr+ $9.99/mo, "Alpha Chart" trading simulator $20/mo.
-// GamerTrades' control price already sits at the top of that comp set (Invstr+
-// parity) — the "value" variant tests whether undercutting converts better overall
-// (lower price, more signups) vs. the "premium" variant testing whether GamerTrades'
-// AI-battle/PvP mechanic (which none of those comps have) supports a higher price.
+// Pricing set — the Pro price shown in onboarding. There is only one real paid
+// tier (Pro) — a "Legend" tier was referenced in this code for a while but never
+// actually existed as a Stripe product, which meant checkout was broken for
+// anyone hitting that path. Fixed by dropping it entirely; this experiment now
+// just tests three real Pro price points against each other.
 // ---------------------------------------------------------------------------
 export interface PricingSetVariant {
   key: 'value' | 'control' | 'premium';
   active: boolean;
-  pro: { price: string; priceId: string };
-  legend: { price: string; annualPrice: string; priceId: string; annualPriceId: string };
+  pro: { price: string; priceId: string; annualPrice: string; annualPriceId: string };
 }
 
 export const PRICING_SETS: PricingSetVariant[] = [
   {
     key: 'value',
-    // Needs real Stripe Price objects before this can go live — see README note in onboarding.tsx.
-    active: false,
-    pro: { price: '$7.99/mo', priceId: 'price_TODO_VALUE_PRO' },
-    legend: { price: '$19.99/mo', annualPrice: '$96/yr', priceId: 'price_TODO_VALUE_LEGEND', annualPriceId: 'price_TODO_VALUE_LEGEND_ANNUAL' },
+    active: true,
+    pro: { price: '$4.99/mo', priceId: 'price_1U9pYs2OMSlqCc2ooftAb46b', annualPrice: '$47.99/yr', annualPriceId: 'price_1U9pZ22OMSlqCc2oI3QWSKTo' },
   },
   {
     key: 'control',
     active: true,
-    pro: { price: '$9.99/mo', priceId: 'price_1TyPNg2L13T2P1hwBpKLA24J' },
-    legend: { price: '$24.99/mo', annualPrice: '$120/yr', priceId: 'price_1TyPOM2L13T2P1hw9tGtlMU9', annualPriceId: 'price_1TyPOP2L13T2P1hwLwvXyBdS' },
+    pro: { price: '$6.99/mo', priceId: 'price_1TlN8r2OMSlqCc2ouKr7BR73', annualPrice: '$69.99/yr', annualPriceId: 'price_1TlN942OMSlqCc2oPeVfdiIk' },
   },
   {
     key: 'premium',
-    active: false,
-    pro: { price: '$12.99/mo', priceId: 'price_TODO_PREMIUM_PRO' },
-    legend: { price: '$29.99/mo', annualPrice: '$144/yr', priceId: 'price_TODO_PREMIUM_LEGEND', annualPriceId: 'price_TODO_PREMIUM_LEGEND_ANNUAL' },
+    active: true,
+    pro: { price: '$9.99/mo', priceId: 'price_1U9pZE2OMSlqCc2ojrI8gZgs', annualPrice: '$99.99/yr', annualPriceId: 'price_1U9pZN2OMSlqCc2odlXcPoMZ' },
   },
 ];
 
@@ -141,7 +131,7 @@ export const ONBOARDING_COPY: OnboardingCopyVariant[] = [
     key: 'simple_direct',
     active: true,
     headline: 'Choose Your Plan',
-    subhead: 'Start free, try Pro risk-free, or go straight to Legend.',
+    subhead: 'Start free, or try Pro risk-free.',
   },
 ];
 
