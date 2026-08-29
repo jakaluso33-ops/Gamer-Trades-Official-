@@ -7,6 +7,7 @@ import StrategyIcon from '../../components/StrategyIcon';
 import StrategyDiagram from '../../components/StrategyDiagram';
 import StrategyLiveDemo from '../../components/StrategyLiveDemo';
 import { DetectorId } from '../../lib/strategyEngine';
+import SkillPathCard from '../../components/SkillPathCard';
 
 const DIFF_COLOR: Record<StrategyDifficulty, string> = {
   BEGINNER: colors.green,
@@ -26,6 +27,8 @@ export default function AcademyScreen() {
           Learn these strategies here, then check the LIVE SIGNALS panel on the Trade screen — the scanner flags these exact setups as they form.
         </BodyText>
       </View>
+
+      <SkillPathCard />
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {STRATEGIES.map(s => (
