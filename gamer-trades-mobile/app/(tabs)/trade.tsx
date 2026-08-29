@@ -5,6 +5,7 @@ import { Card, PixelText, BodyText } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, ASSET_CLASS_ICON, SYMBOL_ICON, SYMBOLS_BY_CLASS, AssetClass } from '../../lib/symbols';
 import { isMarketOpen } from '../../lib/marketHours';
+import MasterTraderFeed from '../../components/MasterTraderFeed';
 
 const ASSET_CLASSES: AssetClass[] = ['CRYPTO', 'STOCK', 'FOREX', 'INDEX', 'FUTURES', 'OPTIONS'];
 
@@ -29,6 +30,8 @@ export default function TradingArenaScreen() {
           ? `OPEN NOW: ${openMarkets.map(c => ASSET_CLASS_LABEL[c]).join(', ')}`
           : 'ALL MARKETS CLOSED RIGHT NOW'}
       </BodyText>
+
+      <MasterTraderFeed />
 
       <Card>
         <BodyText color={colors.muted} size={11} style={{ marginBottom: 10 }}>MARKETS</BodyText>
