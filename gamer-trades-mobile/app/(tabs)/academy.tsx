@@ -73,6 +73,32 @@ export default function AcademyScreen() {
           </View>
         ))}
 
+        <View style={{ marginTop: 14, padding: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.green }}>
+          <BodyText color={colors.green} size={11} weight="medium" style={{ marginBottom: 6 }}>✓ ENTRY RULES</BodyText>
+          {selected.entryRules.map((r, i) => (
+            <BodyText key={i} color={colors.text} size={12.5} style={{ marginBottom: 5 }}>• {r}</BodyText>
+          ))}
+        </View>
+
+        <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.blue }}>
+          <BodyText color={colors.blue} size={11} weight="medium" style={{ marginBottom: 6 }}>◀ EXIT RULES</BodyText>
+          {selected.exitRules.map((r, i) => (
+            <BodyText key={i} color={colors.text} size={12.5} style={{ marginBottom: 5 }}>• {r}</BodyText>
+          ))}
+        </View>
+
+        <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.gold }}>
+          <BodyText color={colors.gold} size={11} weight="medium" style={{ marginBottom: 6 }}>💡 WORKED EXAMPLE</BodyText>
+          <BodyText color={colors.text} size={12.5}>{selected.example}</BodyText>
+        </View>
+
+        <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.red }}>
+          <BodyText color={colors.red} size={11} weight="medium" style={{ marginBottom: 6 }}>✕ COMMON MISTAKES</BodyText>
+          {selected.commonMistakes.map((m, i) => (
+            <BodyText key={i} color={colors.text} size={12.5} style={{ marginBottom: 5 }}>• {m}</BodyText>
+          ))}
+        </View>
+
         <View style={{ marginTop: 8, padding: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }}>
           <BodyText color={colors.blue} size={11} weight="medium" style={{ marginBottom: 6 }}>WHEN TO USE</BodyText>
           <BodyText color={colors.muted} size={13}>{selected.whenToUse}</BodyText>

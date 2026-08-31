@@ -8,6 +8,10 @@ export interface StrategyInfo {
   difficulty: StrategyDifficulty;
   summary: string;
   howItWorks: string[];
+  entryRules: string[];
+  exitRules: string[];
+  commonMistakes: string[];
+  example: string;
   whenToUse: string;
   riskNote: string;
 }
@@ -26,6 +30,23 @@ export const STRATEGIES: StrategyInfo[] = [
       'Confirm with above-average volume — a breakout on low volume is more likely to fail.',
       'Enter in the direction of the break; the old resistance often becomes new support (and vice versa).',
     ],
+    entryRules: [
+      'Mark the level after at least 2-3 clean prior tests (touches that reversed without breaking).',
+      'Wait for a full candle CLOSE beyond the level — a wick alone is not confirmation.',
+      'Check volume on the breakout candle: it should be visibly higher than the recent average.',
+      'Enter on the close of the breakout candle, or on a retest of the broken level holding as new support/resistance.',
+    ],
+    exitRules: [
+      'Initial stop-loss just inside the old range, beyond the broken level — if price falls back through, the breakout has likely failed.',
+      'A common target is the height of the prior range projected from the breakout point (a "measured move").',
+      'Trail the stop as the move extends, to lock in gains rather than giving back the whole move on a reversal.',
+    ],
+    commonMistakes: [
+      'Entering on the first wick through the level instead of waiting for a confirmed close.',
+      'Ignoring volume — a breakout on thin volume fails far more often than it succeeds.',
+      'Chasing price too far after the breakout candle has already closed, leaving a poor risk/reward on the stop.',
+    ],
+    example: 'A stock coils under $50 resistance for two weeks, testing it three times without breaking. On the fourth test, it closes at $50.80 on volume 2x the daily average. A trader enters at the close, with a stop at $49.50 (back inside the old range) and a first target near $53 — the approximate height of the prior consolidation projected upward.',
     whenToUse: 'Best in trending or consolidating markets that are coiling near a clear range boundary.',
     riskNote: 'Watch for "fakeouts" — a quick break that reverses. A stop just back inside the old range limits the damage.',
   },
@@ -42,6 +63,23 @@ export const STRATEGIES: StrategyInfo[] = [
       'A break above the range high signals bullish momentum; a break below the range low signals bearish momentum.',
       'The size of the opening range often predicts the size of the move — a tight range can lead to an explosive breakout.',
     ],
+    entryRules: [
+      'Define the opening range window in advance (commonly the first 5, 15, or 30 minutes) and stay consistent with it.',
+      'Wait for a candle close beyond the range high or low, not just an intra-candle poke through it.',
+      'Many traders wait specifically for a retest of the broken range edge to hold, rather than entering on the initial break.',
+      'Favor ORB setups where the opening range itself is relatively tight — a wide, chaotic opening range gives a lower-quality signal.',
+    ],
+    exitRules: [
+      'Initial stop typically goes at the opposite side of the opening range.',
+      'A common first target equals the height of the opening range, measured from the breakout point.',
+      'Because ORB trades often happen early in high-volatility hours, tightening stops or taking partial profits sooner than usual is common.',
+    ],
+    commonMistakes: [
+      'Trading every single ORB signal regardless of the broader daily trend or context from the prior session.',
+      'Using an opening range window that\'s too short (like 1 minute), which produces mostly noise.',
+      'Holding through the inevitable early-session chop instead of respecting the initial stop.',
+    ],
+    example: 'A crypto pair opens a new 4-hour session and trades between $1,980 and $2,000 in the first 15 minutes — that\'s the opening range. Price then closes at $2,006, breaking the range high. A trader enters near that close, stops just under $2,000 (the range low), and targets roughly $2,026 — the $20 range height projected above the breakout.',
     whenToUse: 'Popular for the first hour of a trading session when volatility and volume are highest.',
     riskNote: 'Early session moves can be choppy. Many traders wait for a retest of the range edge before entering.',
   },
@@ -58,6 +96,23 @@ export const STRATEGIES: StrategyInfo[] = [
       'Watch for price to pull back to one of the key levels (38.2%, 50%, or 61.8% are the most-watched).',
       'A bounce or rejection at one of these levels, especially with other confirmation, can signal a continuation of the original trend.',
     ],
+    entryRules: [
+      'Anchor the tool on the most recent, cleanest impulse swing — a messy or ambiguous swing produces unreliable levels.',
+      'Wait for price to actually reach a key level (38.2%, 50%, or 61.8%), not just approach it.',
+      'Look for a confirming candlestick signal at the level (rejection wick, bullish/bearish reversal candle) rather than entering purely because price touched the line.',
+      'Combining a Fib level with a separate support/resistance zone at roughly the same price ("confluence") meaningfully raises the quality of the signal.',
+    ],
+    exitRules: [
+      'Stop-loss typically goes just beyond the next Fib level down (for a long) or up (for a short) from the entry.',
+      'A common first target is the prior swing high (for a long entry) or swing low (for a short) — i.e. a full retest of the move that started the retracement.',
+      'If price blows through the 61.8%-78.6% zone without holding, that\'s a sign the "retracement" may actually be turning into a full trend reversal — treat it as invalidation, not just a deeper pullback.',
+    ],
+    commonMistakes: [
+      'Drawing Fibonacci on a poorly defined or very short swing, producing levels that don\'t mean much.',
+      'Entering the instant price touches a level instead of waiting for a confirming candle.',
+      'Assuming every retracement will hold — sometimes the trend has genuinely ended, and this is the first leg of a new one.',
+    ],
+    example: 'A forex pair rallies from 1.0800 to 1.1000, then starts pulling back. The 61.8% retracement of that swing sits near 1.0876. Price pulls back to 1.0880, prints a bullish rejection candle, and a trader enters long there, with a stop below the 78.6% level (~1.0843) and a target back at the prior high, 1.1000.',
     whenToUse: 'Works best in a strong, established trend that is pulling back rather than reversing.',
     riskNote: "Fib levels are self-fulfilling because many traders watch them — but they're not guaranteed support. Combine with other signals.",
   },
@@ -74,6 +129,23 @@ export const STRATEGIES: StrategyInfo[] = [
       'Buy near well-tested support, sell/short near well-tested resistance, with a tight stop beyond the level.',
       'If the level finally breaks, it often flips roles — old resistance becomes new support.',
     ],
+    entryRules: [
+      'Mark levels using the wicks/bodies of at least two prior reversals, not just one touch.',
+      'Wait for price to actually arrive back at the level and show a rejection candle before entering — don\'t pre-place an order purely on the line itself unless you fully accept the risk of a clean break.',
+      'Give the level room — treat it as a zone (a small price range), not a single exact price.',
+      'Higher-timeframe support/resistance levels generally carry more weight than ones drawn on a 1-minute chart.',
+    ],
+    exitRules: [
+      'Stop just beyond the far side of the zone — enough room to avoid being stopped out by normal noise, tight enough to cut losses if the level truly fails.',
+      'First target is usually the opposite boundary of the current range (support entry → target the resistance above, and vice versa).',
+      'If the level breaks with a strong close and volume, exit rather than hoping it snaps back — the "old resistance becomes new support" flip is common, but not guaranteed on every break.',
+    ],
+    commonMistakes: [
+      'Treating a level as an exact price rather than a zone, leading to stops that get clipped by normal wicks.',
+      'Fading (trading against) a level that has already broken cleanly, rather than respecting the new trend.',
+      'Drawing too many levels on a chart, diluting which ones actually matter.',
+    ],
+    example: 'A stock has bounced off $120 support three separate times over a month. On the fourth approach, price wicks down to $119.60 and closes back at $121.30 with a long lower wick. A trader buys near the close, stops at $118.50 (below the zone), and targets $128 — the resistance at the top of the recent range.',
     whenToUse: 'Useful in range-bound markets, and as context for almost every other strategy.',
     riskNote: 'Levels are zones, not exact prices. Give trades room rather than using a razor-thin stop right at the line.',
   },
@@ -90,6 +162,23 @@ export const STRATEGIES: StrategyInfo[] = [
       'A "death cross" — fast crossing below slow — signals emerging bearish momentum.',
       'The wider the gap after the cross, the stronger the trend confirmation tends to be.',
     ],
+    entryRules: [
+      'Confirm the cross has actually completed on a closed candle, not mid-formation.',
+      'Check that price itself is also trading on the correct side of both averages — a cross with price still tangled between the two lines is a weaker signal.',
+      'Favor crosses that occur after a period of consolidation (the averages were flat/close together) over crosses happening in an already-choppy market.',
+      'Some traders wait for the gap between the two averages to widen slightly before entering, to filter out crosses that immediately snap back.',
+    ],
+    exitRules: [
+      'A simple exit rule: close the position when the averages cross back the other way.',
+      'A tighter approach: set a stop below the most recent swing low (for a bullish cross) or above the most recent swing high (for a bearish cross).',
+      'Because MAs lag, exits based purely on the reverse cross will give back some profit before triggering — some traders combine this with a trailing stop for a better balance.',
+    ],
+    commonMistakes: [
+      'Using MA crossovers in a choppy, sideways market, where fast/slow averages whipsaw back and forth generating repeated false signals.',
+      'Entering too late after a cross, once most of the move has already happened.',
+      'Ignoring that moving averages are a lagging indicator — they confirm a trend already in progress, they don\'t predict one before it starts.',
+    ],
+    example: 'A crypto asset has been consolidating for weeks with its 9-period and 21-period moving averages tangled together. Price breaks out, and the 9-period MA crosses decisively above the 21-period MA with a widening gap. A trader enters on the confirmed cross, with a stop below the most recent swing low, planning to exit if the MAs cross back the other way.',
     whenToUse: 'Best in trending markets; produces false signals in choppy, sideways conditions.',
     riskNote: 'Moving averages lag price — you will never catch the exact top or bottom with this strategy.',
   },
@@ -106,6 +195,23 @@ export const STRATEGIES: StrategyInfo[] = [
       'A reading below 30 suggests the asset may be oversold and due for a bounce.',
       'The strongest signal comes when RSI crosses back through the 70 or 30 line after being beyond it.',
     ],
+    entryRules: [
+      'Wait for RSI to cross back through the 70 or 30 threshold rather than entering the instant it first crosses beyond it — this filters out entries too early into a still-strong move.',
+      'Look for RSI divergence: price makes a new high/low but RSI does not confirm it with a matching new high/low — a classic warning that momentum is weakening even though price hasn\'t turned yet.',
+      'Favor RSI reversal signals in range-bound conditions; in a strong trend, treat overbought/oversold readings as context, not a standalone trigger.',
+      'Combine with a price-action confirmation (a reversal candle, a break of a short-term trendline) rather than trading the RSI number in isolation.',
+    ],
+    exitRules: [
+      'A common target for an oversold bounce is the midline (RSI 50) or the next resistance level on price.',
+      'Stop-loss goes beyond the recent extreme price low (for a long from oversold) or high (for a short from overbought).',
+      'If RSI pushes to a new extreme without the expected reversal, that\'s a sign of trend strength overriding the oversold/overbought signal — exit or avoid rather than fighting it.',
+    ],
+    commonMistakes: [
+      'Shorting purely because RSI says "overbought" during a genuinely strong uptrend — RSI can stay pinned above 70 for a long time in a strong trend.',
+      'Ignoring RSI divergence, which is often a higher-quality signal than the raw overbought/oversold reading.',
+      'Using RSI as the sole basis for a trade with no price-action or support/resistance confirmation.',
+    ],
+    example: 'A stock rallies hard and RSI pushes to 78, then starts drifting back down toward 70 while price is still near its high — bearish divergence. RSI then crosses back below 70. A trader shorts on that cross, stops above the recent price high, and targets a pullback to the nearest support zone below.',
     whenToUse: 'Most reliable in range-bound markets; in strong trends, RSI can stay "overbought" or "oversold" for a long time.',
     riskNote: "Don't fight a strong trend just because RSI is extreme — confirm with price action before entering.",
   },
