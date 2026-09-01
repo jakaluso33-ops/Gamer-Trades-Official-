@@ -26,6 +26,8 @@ export interface Profile {
   total_losses: number;
   created_at: string;
   skill_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | null;
+  trading_goal: string | null;
+  interested_features: string[];
   completed_lessons: string[];
   quiz_passed_levels: string[];
   trade_passed_levels: string[];

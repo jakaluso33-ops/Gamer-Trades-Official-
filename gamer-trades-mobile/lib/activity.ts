@@ -17,6 +17,7 @@ export type ActivityEventType =
   | 'onboarding_trial_started'
   | 'onboarding_subscribed'
   | 'onboarding_continued_free'
+  | 'onboarding_survey_completed'
   | 'push_token_registered';
 
 export async function logEvent(userId: string, eventType: ActivityEventType, metadata: Record<string, unknown> = {}) {
