@@ -37,7 +37,6 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
   const [read, setRead] = useState<MarketRead | null>(null);
   const [loading, setLoading] = useState(false);
   const [errored, setErrored] = useState(false);
-  const inFlightRef = useRef(false);
   const candlesRef = useRef(candles);
   const symbolRef = useRef(symbol);
   const tickRef = useRef<() => void>(() => {});
@@ -47,10 +46,16 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    // Scoped to this effect instance (one per symbol/skillLevel), not shared across
+    // symbol switches -- a shared ref here previously let an in-flight request for the
+    // PREVIOUS symbol permanently block the new symbol's fetch from ever starting,
+    // leaving the card stuck on "reading..." until the next 45s interval tick (or
+    // indefinitely under rapid symbol switching).
+    let inFlight = false;
 
     const tick = async () => {
-      if (inFlightRef.current) return;
-      inFlightRef.current = true;
+      if (inFlight) return;
+      inFlight = true;
       setLoading(true);
       setErrored(false);
       try {
@@ -62,7 +67,7 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
         console.error('market-read-agent failed', err);
         if (!cancelled) setErrored(true);
       } finally {
-        inFlightRef.current = false;
+        inFlight = false;
         if (!cancelled) setLoading(false);
       }
     };
