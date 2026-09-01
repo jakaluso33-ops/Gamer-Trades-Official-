@@ -89,6 +89,12 @@ export default function OnboardingScreen() {
   const finish = async () => {
     if (!user) return;
     await markOnboarded(user.id);
+    // The root layout's redirect gate decides where to send the user from its own local
+    // `profile` state on every navigation -- without refreshing that state first, it still
+    // sees the stale (pre-update) onboarded_at and immediately bounces straight back to
+    // /onboarding, undoing the replace() below. That's what made this feel like it took
+    // several attempts to actually get into the app.
+    await refreshProfile();
     router.replace('/notification-permission');
   };
 
