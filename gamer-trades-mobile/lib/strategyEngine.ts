@@ -326,3 +326,7 @@ export function scanStrategies(candles: Candle[], enabled: DetectorId[] = Object
     .map(id => DETECTORS[id](candles))
     .filter((s): s is StrategySignal => s !== null);
 }
+
+export function getDetector(id: DetectorId): (candles: Candle[]) => StrategySignal | null {
+  return DETECTORS[id];
+}
