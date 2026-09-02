@@ -6,19 +6,42 @@ import { colors } from '../lib/theme';
 import { ALL_SYMBOLS, ASSET_CLASS_COLOR, ASSET_CLASS_ICON } from '../lib/symbols';
 import { useMarketScanner, ScannedSignal } from '../lib/marketScanner';
 import { getStrategy } from '../lib/strategyContent';
+import { getCandlePattern } from '../lib/candlestickContent';
 import { DetectorId } from '../lib/strategyEngine';
+import { useAuth } from '../lib/AuthContext';
+import { PLANS } from '../lib/plans';
+import { startCheckout } from '../lib/checkout';
 import StrategyIcon from './StrategyIcon';
 
 const MAX_ROWS = 8;
+const PRO_PLAN = PLANS.find(p => p.name === 'pro');
 
-/** Scans every market simultaneously and surfaces whatever's forming right now, across all
- * 6 asset classes at once — tapping a row jumps straight to that setup on the real chart. */
+/** Scans every market simultaneously and surfaces whatever's forming right now — both
+ * strategy setups (free) and candlestick patterns (Pro) — across all 6 asset classes at
+ * once. Tapping a row jumps straight to that setup on the real chart. */
 export default function MasterTraderFeed() {
   const router = useRouter();
+  const { profile } = useAuth();
   const [expanded, setExpanded] = useState(true);
-  const signals = useMarketScanner(ALL_SYMBOLS);
+  const [upgradeBusy, setUpgradeBusy] = useState(false);
+  const allSignals = useMarketScanner(ALL_SYMBOLS);
 
-  const rows = signals.slice(0, MAX_ROWS);
+  const isPro = (profile?.plan ?? 'free') !== 'free';
+  const strategySignals = allSignals.filter(s => s.kind === 'strategy');
+  const candleSignals = allSignals.filter(s => s.kind === 'candle');
+  const visible = isPro ? allSignals : strategySignals;
+  const rows = visible.slice(0, MAX_ROWS);
+  const lockedCandleCount = isPro ? 0 : candleSignals.length;
+
+  const handleUpgrade = async () => {
+    if (!PRO_PLAN?.priceId) return;
+    setUpgradeBusy(true);
+    try {
+      await startCheckout(PRO_PLAN.priceId);
+    } finally {
+      setUpgradeBusy(false);
+    }
+  };
 
   return (
     <Card borderColor={colors.cyan}>
@@ -38,15 +61,17 @@ export default function MasterTraderFeed() {
           {rows.length === 0 ? (
             <BodyText color={colors.muted} size={12}>Scanning every market for a setup...</BodyText>
           ) : (
-            rows.map((row: ScannedSignal) => {
-              const strat = getStrategy(row.signal.strategyId);
+            rows.map((row: ScannedSignal, i) => {
+              const isCandle = row.kind === 'candle';
+              const strat = isCandle ? undefined : getStrategy(row.signal.strategyId);
+              const pattern = isCandle ? getCandlePattern(row.signal.strategyId) : undefined;
               const dirColor = row.signal.direction === 'bullish' ? colors.green : colors.red;
               return (
                 <Pressable
-                  key={row.symbol}
+                  key={`${row.symbol}-${row.kind}-${i}`}
                   onPress={() => router.push({
                     pathname: '/(tabs)/trade-desk',
-                    params: { symbol: row.symbol, focusStrategy: row.signal.strategyId },
+                    params: { symbol: row.symbol, ...(isCandle ? {} : { focusStrategy: row.signal.strategyId }) },
                   } as never)}
                   style={{
                     flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9,
@@ -64,10 +89,14 @@ export default function MasterTraderFeed() {
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <BodyText color={colors.text} size={12} weight="semibold">{row.symbol}</BodyText>
-                      <StrategyIcon id={row.signal.strategyId as DetectorId} color={dirColor} size={11} />
+                      {isCandle ? (
+                        <PixelText size={11}>{pattern?.icon ?? '🕯️'}</PixelText>
+                      ) : (
+                        <StrategyIcon id={row.signal.strategyId as DetectorId} color={dirColor} size={11} />
+                      )}
                     </View>
                     <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }} numberOfLines={1}>
-                      {strat?.name ?? row.signal.strategyId} — {row.signal.label}
+                      {(isCandle ? pattern?.name : strat?.name) ?? row.signal.strategyId} — {row.signal.label}
                     </BodyText>
                   </View>
                   <BodyText color={dirColor} size={11} weight="semibold">
@@ -76,6 +105,22 @@ export default function MasterTraderFeed() {
                 </Pressable>
               );
             })
+          )}
+
+          {lockedCandleCount > 0 && (
+            <Pressable onPress={handleUpgrade} disabled={upgradeBusy} style={{ marginTop: rows.length > 0 ? 10 : 0 }}>
+              <View style={{ padding: 10, backgroundColor: `${colors.gold}0a`, borderWidth: 2, borderColor: `${colors.gold}55`, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <PixelText size={14}>🔒</PixelText>
+                <View style={{ flex: 1 }}>
+                  <BodyText color={colors.gold} size={12} weight="semibold">
+                    {lockedCandleCount} candlestick pattern{lockedCandleCount === 1 ? '' : 's'} forming right now
+                  </BodyText>
+                  <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }}>
+                    {upgradeBusy ? 'Starting checkout...' : `Upgrade to Pro to see them across all 6 markets — ${PRO_PLAN?.price ?? ''}`}
+                  </BodyText>
+                </View>
+              </View>
+            </Pressable>
           )}
         </View>
       )}
