@@ -6,6 +6,10 @@ import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { Candle, DetectorId, StrategySignal, scanStrategies, computeTradePlan } from '../../lib/strategyEngine';
 import { getStrategy } from '../../lib/strategyContent';
+import { detectCandlePattern } from '../../lib/candlePatterns';
+import { getCandlePattern } from '../../lib/candlestickContent';
+import { PLANS } from '../../lib/plans';
+import { startCheckout } from '../../lib/checkout';
 import {
   listOpenTrades,
   listPendingOrders,
@@ -101,6 +105,7 @@ export default function TradeDeskScreen() {
   const [timeframe, setTimeframe] = useState<Timeframe>('1m');
   const candlesRef = useRef<Candle[]>(generateCandles(60, initialSymbol.basePrice));
   const [signals, setSignals] = useState<StrategySignal[]>([]);
+  const [candleSignal, setCandleSignal] = useState<StrategySignal | null>(null);
   const [changes, setChanges] = useState<Record<string, number>>({});
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const chartCaptureRef = useRef<View>(null);
@@ -227,6 +232,7 @@ export default function TradeDeskScreen() {
       };
       candlesRef.current = [...prev.slice(-59), newCandle];
       setSignals(scanStrategies(candlesRef.current, activeStrategies));
+      setCandleSignal(detectCandlePattern(candlesRef.current));
       setLivePrice(p => {
         const delta = (Math.random() - 0.48) * p * volatility;
         return parseFloat(Math.max(0.01, p + delta).toFixed(selected.decimals));
@@ -376,6 +382,18 @@ export default function TradeDeskScreen() {
   const latest = signals[0];
   const tradePlan = useMemo(() => (latest ? computeTradePlan(latest, candlesRef.current) : null), [latest]);
   const [coachInsight, setCoachInsight] = useState<CoachInsight | null>(null);
+  const [candleUpgradeBusy, setCandleUpgradeBusy] = useState(false);
+  const isPro = (profile?.plan ?? 'free') !== 'free';
+  const proPlan = PLANS.find(p => p.name === 'pro');
+  const handleCandleUpgrade = async () => {
+    if (!proPlan?.priceId) return;
+    setCandleUpgradeBusy(true);
+    try {
+      await startCheckout(proPlan.priceId);
+    } finally {
+      setCandleUpgradeBusy(false);
+    }
+  };
   const totalPnl = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
   return (
@@ -434,6 +452,37 @@ export default function TradeDeskScreen() {
         <View style={{ marginTop: 10 }}>
           <AiPatternInsight symbol={selected.symbol} signal={latest ?? null} tradePlan={tradePlan} skillLevel={profile?.skill_level ?? null} onInsight={setCoachInsight} />
         </View>
+      </Card>
+
+      <Card borderColor={colors.gold}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <BodyText color={colors.gold} size={12} weight="semibold" glow>🕯️ CANDLESTICK PATTERNS (LIVE)</BodyText>
+          {!isPro && <PixelText size={13}>🔒</PixelText>}
+        </View>
+
+        {!isPro ? (
+          <Pressable onPress={handleCandleUpgrade} disabled={candleUpgradeBusy}>
+            <View style={{ padding: 10, backgroundColor: `${colors.gold}0a`, borderWidth: 2, borderColor: `${colors.gold}55` }}>
+              <BodyText color={colors.text} size={13} style={{ marginBottom: 6 }}>
+                See hammer, doji, engulfing and other candlestick patterns get flagged live on this chart as they form.
+              </BodyText>
+              <BodyText color={colors.gold} size={12} weight="semibold">
+                {candleUpgradeBusy ? '...' : `★ UPGRADE TO PRO — ${proPlan?.price ?? ''}`}
+              </BodyText>
+            </View>
+          </Pressable>
+        ) : candleSignal ? (() => {
+          const pattern = getCandlePattern(candleSignal.strategyId);
+          const color = candleSignal.direction === 'bullish' ? colors.green : colors.red;
+          return (
+            <View style={{ padding: 10, backgroundColor: `${color}0a`, borderWidth: 2, borderColor: `${color}55` }}>
+              <BodyText color={color} size={13} weight="medium" glow>{pattern?.icon} {pattern?.name ?? candleSignal.strategyId} — {candleSignal.label}</BodyText>
+              <BodyText color={colors.muted} size={12} style={{ marginTop: 6 }}>{candleSignal.detail}</BodyText>
+            </View>
+          );
+        })() : (
+          <BodyText color={colors.muted} size={13}>Scanning the live candles for a pattern...</BodyText>
+        )}
       </Card>
 
       <MarketReadCard symbol={selected.symbol} candles={candlesRef.current} skillLevel={profile?.skill_level ?? null} />
