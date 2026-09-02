@@ -10,7 +10,7 @@ import {
   SENTIMENT_COLOR,
 } from '../lib/marketAgent';
 import { useAuth } from '../lib/AuthContext';
-import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday, PLANS } from '../lib/plans';
+import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday, PLANS, Plan } from '../lib/plans';
 import { startCheckout } from '../lib/checkout';
 
 const PRO_PRICE_ID = PLANS.find(p => p.name === 'pro')?.priceId;
@@ -23,7 +23,7 @@ export default function AIAgentPanel({ symbol, technicalContext }: { symbol: str
   const [runsToday, setRunsToday] = useState(0);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
-  const plan = (profile?.plan ?? 'free') as 'free' | 'pro';
+  const plan = (profile?.plan ?? 'free') as Plan;
   const dailyLimit = aiAnalystDailyLimit(plan);
   const limitReached = dailyLimit != null && runsToday >= dailyLimit;
 

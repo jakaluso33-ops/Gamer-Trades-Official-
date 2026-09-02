@@ -31,6 +31,24 @@ export default function TradingArenaScreen() {
           : 'ALL MARKETS CLOSED RIGHT NOW'}
       </BodyText>
 
+      <Pressable onPress={() => router.push('/(tabs)/bot-builder' as never)}>
+        <Card borderColor={colors.gold} style={{ padding: 18 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <PixelText size={26}>🤖</PixelText>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <PixelText color={colors.gold} size={12} glow>BUILD YOUR BOT</PixelText>
+                <BodyText color={colors.gold} size={9} weight="semibold" style={{ borderWidth: 1, borderColor: colors.gold, paddingHorizontal: 5, paddingVertical: 1 }}>LEGEND</BodyText>
+              </View>
+              <BodyText color={colors.muted} size={11} style={{ marginTop: 4 }}>
+                Combine strategies into your own AI that trades a live market for you, 24/7
+              </BodyText>
+            </View>
+            <PixelText color={colors.gold} size={16}>▶</PixelText>
+          </View>
+        </Card>
+      </Pressable>
+
       <MasterTraderFeed />
 
       <Card>

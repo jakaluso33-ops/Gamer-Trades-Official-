@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type Plan = 'free' | 'pro';
+export type Plan = 'free' | 'pro' | 'legend';
 
 /** Free users get every market, just capped/gated on the social + premium-intel features. */
 export const FREE_AI_ANALYST_DAILY_LIMIT = 2;
@@ -11,6 +11,10 @@ export function canPlayAiBattle(plan: Plan): boolean {
 
 export function canPlayPvp(plan: Plan): boolean {
   return plan !== 'free';
+}
+
+export function canBuildBots(plan: Plan): boolean {
+  return plan === 'legend';
 }
 
 export function aiAnalystDailyLimit(plan: Plan): number | null {
@@ -68,6 +72,26 @@ export const PLANS: {
       'Play vs friends (PvP)',
       '3 daily challenges',
       'Tournament access',
+      'Live candlestick pattern detection',
+    ],
+  },
+  {
+    name: 'legend',
+    price: '$24.99/mo',
+    priceId: 'price_1UBIiz2OMSlqCc2oXaAMjT3o',
+    annualPrice: '$199.99/yr',
+    annualPriceId: 'price_1UBIj12OMSlqCc2oYaK4dSZt',
+    color: '#ffd700',
+    features: [
+      'Everything in Pro',
+      'Build Your Bot — no-code multi-condition strategy builder',
+      'Deploy bots to trade live markets autonomously (paper trading)',
+      'Live 24/7 execution, even while the app is closed',
+      'Priority access to future broker integrations',
     ],
   },
 ];
+
+export function getPlan(name: Plan) {
+  return PLANS.find(p => p.name === name)!;
+}

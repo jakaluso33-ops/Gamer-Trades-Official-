@@ -7,7 +7,7 @@ import PvpBattle from '../../components/PvpBattle';
 import { useAuth } from '../../lib/AuthContext';
 import { logEvent } from '../../lib/activity';
 import { recordAiBattle, AiOpponentId, AiDifficulty } from '../../lib/aiBattles';
-import { canPlayAiBattle, canPlayPvp } from '../../lib/plans';
+import { canPlayAiBattle, canPlayPvp, Plan } from '../../lib/plans';
 import UpgradeGate from '../../components/UpgradeGate';
 import CandlestickChart, { ChartPosition } from '../../components/CandlestickChart';
 import { Candle, DetectorId, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
@@ -315,7 +315,7 @@ export default function BattleScreen() {
   const params = useLocalSearchParams<{ challenge?: string }>();
   const [mode, setMode] = useState<'ai' | 'friend'>(params.challenge ? 'friend' : 'ai');
   const { profile } = useAuth();
-  const plan = (profile?.plan ?? 'free') as 'free' | 'pro';
+  const plan = (profile?.plan ?? 'free') as Plan;
   const locked = mode === 'ai' ? !canPlayAiBattle(plan) : !canPlayPvp(plan);
 
   return (

@@ -5,7 +5,7 @@ import { Card, PixelText, BodyText, PixelButton } from './ui';
 import { colors } from '../lib/theme';
 import { useAuth } from '../lib/AuthContext';
 import { runScreenshotAgent, ScreenshotReview, VERDICT_COLOR, VERDICT_LABEL } from '../lib/screenshotAgent';
-import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday, PLANS } from '../lib/plans';
+import { aiAnalystDailyLimit, getAiAnalystRunsToday, incrementAiAnalystRunsToday, PLANS, Plan } from '../lib/plans';
 import { startCheckout } from '../lib/checkout';
 
 const PRO_PRICE_ID = PLANS.find(p => p.name === 'pro')?.priceId;
@@ -26,7 +26,7 @@ export default function TradeScreenshotAnalyzer({
   const [runsToday, setRunsToday] = useState(0);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
 
-  const plan = (profile?.plan ?? 'free') as 'free' | 'pro';
+  const plan = (profile?.plan ?? 'free') as Plan;
   const dailyLimit = aiAnalystDailyLimit(plan);
 
   const analyze = async () => {
