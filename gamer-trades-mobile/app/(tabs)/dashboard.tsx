@@ -8,6 +8,7 @@ import { depositFunds } from '../../lib/trading';
 import { recordDailyCheckin } from '../../lib/streak';
 import { scheduleStreakSaverReminder } from '../../lib/notifications';
 import PortfolioSwitcher from '../../components/PortfolioSwitcher';
+import DailyStoryCard from '../../components/DailyStoryCard';
 
 export default function DashboardScreen() {
   const { user, profile, activePortfolio, applyPortfolioPatch } = useAuth();
@@ -114,6 +115,8 @@ export default function DashboardScreen() {
           </View>
         </Card>
       </Pressable>
+
+      <DailyStoryCard />
 
       <Modal visible={showDeposit} transparent animationType="fade" onRequestClose={() => !depositBusy && setShowDeposit(false)}>
         <Pressable
