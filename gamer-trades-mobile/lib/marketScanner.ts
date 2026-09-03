@@ -3,14 +3,18 @@ import { Candle, StrategySignal, scanStrategies } from './strategyEngine';
 import { detectCandlePattern } from './candlePatterns';
 import { generateCandles, advanceCandles } from './simulatedCandles';
 import { SymbolInfo, AssetClass } from './symbols';
+import { getStrategy } from './strategyContent';
 
 export interface ScannedSignal {
   symbol: string;
   name: string;
   assetClass: AssetClass;
   signal: StrategySignal;
-  /** 'candle' rows are Pro-gated in the feed UI; 'strategy' rows are free. */
+  /** 'candle' rows are Pro-gated in the feed UI; 'strategy' rows are free unless proOnly. */
   kind: 'strategy' | 'candle';
+  /** True for strategies with a rigorously proven track record (Turtle Trading, Momentum) --
+   * gated to Pro/Legend just like candle rows, even though kind stays 'strategy'. */
+  proOnly?: boolean;
 }
 
 /**
@@ -33,7 +37,16 @@ export function useMarketScanner(symbols: SymbolInfo[], tickMs = 4000): ScannedS
         candlesRef.current.set(s.symbol, candles);
 
         const signals = scanStrategies(candles);
-        if (signals[0]) out.push({ symbol: s.symbol, name: s.name, assetClass: s.class, signal: signals[0], kind: 'strategy' });
+        if (signals[0]) {
+          out.push({
+            symbol: s.symbol,
+            name: s.name,
+            assetClass: s.class,
+            signal: signals[0],
+            kind: 'strategy',
+            proOnly: !!getStrategy(signals[0].strategyId)?.provenProfitable,
+          });
+        }
 
         const candleSignal = detectCandlePattern(candles);
         if (candleSignal) out.push({ symbol: s.symbol, name: s.name, assetClass: s.class, signal: candleSignal, kind: 'candle' });

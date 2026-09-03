@@ -27,11 +27,10 @@ export default function MasterTraderFeed() {
   const allSignals = useMarketScanner(ALL_SYMBOLS);
 
   const isPro = (profile?.plan ?? 'free') !== 'free';
-  const strategySignals = allSignals.filter(s => s.kind === 'strategy');
-  const candleSignals = allSignals.filter(s => s.kind === 'candle');
-  const visible = isPro ? allSignals : strategySignals;
+  const isLocked = (row: ScannedSignal) => row.kind === 'candle' || !!row.proOnly;
+  const visible = isPro ? allSignals : allSignals.filter(s => !isLocked(s));
   const rows = visible.slice(0, MAX_ROWS);
-  const lockedCandleCount = isPro ? 0 : candleSignals.length;
+  const lockedCount = isPro ? 0 : allSignals.filter(isLocked).length;
 
   const handleUpgrade = async () => {
     if (!PRO_PLAN?.priceId) return;
@@ -107,13 +106,13 @@ export default function MasterTraderFeed() {
             })
           )}
 
-          {lockedCandleCount > 0 && (
+          {lockedCount > 0 && (
             <Pressable onPress={handleUpgrade} disabled={upgradeBusy} style={{ marginTop: rows.length > 0 ? 10 : 0 }}>
               <View style={{ padding: 10, backgroundColor: `${colors.gold}0a`, borderWidth: 2, borderColor: `${colors.gold}55`, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <PixelText size={14}>🔒</PixelText>
                 <View style={{ flex: 1 }}>
                   <BodyText color={colors.gold} size={12} weight="semibold">
-                    {lockedCandleCount} candlestick pattern{lockedCandleCount === 1 ? '' : 's'} forming right now
+                    {lockedCount} candlestick pattern{lockedCount === 1 ? '' : 's'} &amp; proven-profitable setup{lockedCount === 1 ? '' : 's'} forming right now
                   </BodyText>
                   <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }}>
                     {upgradeBusy ? 'Starting checkout...' : `Upgrade to Pro to see them across all 6 markets — ${PRO_PLAN?.price ?? ''}`}

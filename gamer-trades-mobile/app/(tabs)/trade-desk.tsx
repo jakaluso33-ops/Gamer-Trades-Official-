@@ -51,6 +51,10 @@ const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
   { id: 'vwap', label: 'VWAP' },
   { id: 'bollinger_squeeze', label: 'BB SQUEEZE' },
   { id: 'macd', label: 'MACD' },
+  { id: 'turtle_breakout', label: 'TURTLE' },
+  { id: 'momentum', label: 'MOMENTUM' },
+  { id: 'ichimoku', label: 'ICHIMOKU' },
+  { id: 'parabolic_sar', label: 'SAR' },
 ];
 
 /** Bigger steps at higher quantities so the stepper stays fast to use across a wide range. */
@@ -105,6 +109,7 @@ export default function TradeDeskScreen() {
   const [log, setLog] = useState<string[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [outcomeBanner, setOutcomeBanner] = useState<TradeOutcome | null>(null);
+  const isPro = (profile?.plan ?? 'free') !== 'free';
   const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(
     initialFocus ? [initialFocus] : SCANNER_STRATEGIES.map(s => s.id)
   );
@@ -216,6 +221,11 @@ export default function TradeDeskScreen() {
     return unsub;
   }, [selected]);
 
+  // Strategies with a rigorously proven track record are Pro/Legend-only -- filtered out
+  // here regardless of what's in activeStrategies, so a free user never sees them detected
+  // even via a stale toggle state or a shared focusStrategy link.
+  const allowedStrategies = activeStrategies.filter(id => isPro || !getStrategy(id)?.provenProfitable);
+
   useEffect(() => {
     // Options are a leveraged proxy of their underlying's move — simulate them noisier.
     const volatility = selected.class === 'OPTIONS' ? 0.006 * (selected.leverage ?? 1) : 0.002;
@@ -237,7 +247,7 @@ export default function TradeDeskScreen() {
         volume: Math.floor(Math.random() * 500000 + 50000),
       };
       candlesRef.current = [...prev.slice(-59), newCandle];
-      setSignals(scanStrategies(candlesRef.current, activeStrategies));
+      setSignals(scanStrategies(candlesRef.current, allowedStrategies));
       setCandleSignal(detectCandlePattern(candlesRef.current));
       setLivePrice(p => {
         const delta = (Math.random() - 0.48) * p * volatility;
@@ -245,7 +255,8 @@ export default function TradeDeskScreen() {
       });
     }, 3000);
     return () => clearInterval(id);
-  }, [activeStrategies, selected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStrategies, isPro, selected]);
 
   // Watches the currently-selected symbol's live price for two things a real trading
   // platform automates: filling a resting limit/stop order once price crosses its trigger,
@@ -392,7 +403,6 @@ export default function TradeDeskScreen() {
   const tradePlan = useMemo(() => (latest ? computeTradePlan(latest, candlesRef.current) : null), [latest]);
   const [coachInsight, setCoachInsight] = useState<CoachInsight | null>(null);
   const [candleUpgradeBusy, setCandleUpgradeBusy] = useState(false);
-  const isPro = (profile?.plan ?? 'free') !== 'free';
   const proPlan = PLANS.find(p => p.name === 'pro');
   const handleCandleUpgrade = async () => {
     if (!proPlan?.priceId) return;
@@ -423,12 +433,16 @@ export default function TradeDeskScreen() {
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
           {SCANNER_STRATEGIES.map(s => {
-            const on = activeStrategies.includes(s.id);
-            const color = on ? colors.purple : colors.muted;
+            const locked = !isPro && !!getStrategy(s.id)?.provenProfitable;
+            const on = activeStrategies.includes(s.id) && !locked;
+            const color = locked ? colors.gold : on ? colors.purple : colors.muted;
             return (
               <Pressable
                 key={s.id}
-                onPress={() => setActiveStrategies(prev => on ? prev.filter(x => x !== s.id) : [...prev, s.id])}
+                onPress={() => {
+                  if (locked) { handleCandleUpgrade(); return; }
+                  setActiveStrategies(prev => on ? prev.filter(x => x !== s.id) : [...prev, s.id]);
+                }}
                 style={{
                   flexBasis: '31%',
                   flexGrow: 1,
@@ -439,10 +453,11 @@ export default function TradeDeskScreen() {
                   borderWidth: 2,
                   borderColor: color,
                   backgroundColor: `${color}1a`,
+                  opacity: locked ? 0.85 : 1,
                 }}
               >
                 <StrategyIcon id={s.id} color={color} size={20} />
-                <PixelText color={color} size={7} glow>{s.label}</PixelText>
+                <PixelText color={color} size={7} glow>{locked ? '🔒 ' : ''}{s.label}</PixelText>
               </Pressable>
             );
           })}

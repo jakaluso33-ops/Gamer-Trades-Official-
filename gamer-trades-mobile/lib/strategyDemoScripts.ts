@@ -125,4 +125,49 @@ export const DEMO_SCRIPTS: Record<DetectorId, DemoScript> = {
       { price: 103, signal: { direction: 'bullish', label: 'MACD BULLISH CROSS' }, caption: 'Price follows momentum higher, confirming the reversal MACD flagged early.' },
     ],
   },
+  turtle_breakout: {
+    basePrice: 100,
+    steps: [
+      { price: 100, caption: 'Range-bound for weeks. The 20-period Donchian high sits at $105.' },
+      { price: 102, caption: 'Tests the range high, pulls back — no close above it yet.' },
+      { price: 99, caption: 'Chops back down inside the range.' },
+      { price: 103, caption: 'Presses up against $105 again...' },
+      { price: 108, signal: { direction: 'bullish', label: 'TURTLE BREAKOUT', level: 105 }, caption: '🐢 Closes above the 20-period Donchian high — the exact entry signal used by the original Turtle Traders.' },
+      { price: 114, signal: { direction: 'bullish', label: 'TURTLE BREAKOUT', level: 105 }, caption: 'The trend runs. This system holds until the FASTER (10-period) channel breaks, not the entry channel.' },
+      { price: 120, signal: { direction: 'bullish', label: 'TURTLE BREAKOUT', level: 105 }, caption: 'Letting winners run this far is the entire edge of the system.' },
+    ],
+  },
+  momentum: {
+    basePrice: 100,
+    steps: [
+      { price: 100, caption: 'Tracking the rate of change over the last 20 candles.' },
+      { price: 106, caption: 'Already outperforming — up 6% and accelerating.' },
+      { price: 114, caption: 'Momentum building. Relative strength climbing fast.' },
+      { price: 122, signal: { direction: 'bullish', label: 'STRONG MOMENTUM' }, caption: '🚄 Up over 5% on the lookback window — the exact signal behind decades of documented momentum-investing outperformance.' },
+      { price: 130, signal: { direction: 'bullish', label: 'STRONG MOMENTUM' }, caption: 'Momentum tends to persist over the following weeks to months — the whole basis of the strategy.' },
+      { price: 136, signal: { direction: 'bullish', label: 'STRONG MOMENTUM' }, caption: 'Still watching for a violation of the trend as the real risk signal, not just a red candle.' },
+    ],
+  },
+  ichimoku: {
+    basePrice: 100,
+    steps: [
+      { price: 100, caption: 'Tenkan-sen (fast) and Kijun-sen (slow) lines are tangled together.' },
+      { price: 97, caption: 'Price drifts lower. Both lines still close together.' },
+      { price: 95, caption: 'Basing out. The fast line starts curling up.' },
+      { price: 99, caption: 'Fast line closing the gap on the slow line...' },
+      { price: 106, signal: { direction: 'bullish', label: 'TK CROSS (BULLISH)' }, caption: '☁️ Tenkan-sen crosses above Kijun-sen — the single most-traded Ichimoku signal, hugely popular in forex and crypto.' },
+      { price: 112, signal: { direction: 'bullish', label: 'TK CROSS (BULLISH)' }, caption: 'The wider the gap after the cross, the more conviction traders give it.' },
+    ],
+  },
+  parabolic_sar: {
+    basePrice: 100,
+    steps: [
+      { price: 100, caption: 'Downtrend — SAR dots sit above price, trailing down.' },
+      { price: 94, caption: 'Price keeps sliding under the dots.' },
+      { price: 90, caption: 'Selling starts to slow near the lows.' },
+      { price: 92, caption: 'First push higher. Getting close to the SAR dot above.' },
+      { price: 97, signal: { direction: 'bullish', label: 'SAR FLIP (BULLISH)' }, caption: '🎯 Price crosses through the SAR dot — the flip from J. Welles Wilder\'s classic trend/trailing-stop system.' },
+      { price: 103, signal: { direction: 'bullish', label: 'SAR FLIP (BULLISH)' }, caption: 'Dots now trail below price, tightening as the new uptrend extends.' },
+    ],
+  },
 };

@@ -413,6 +413,202 @@ export function detectMACDCrossover(candles: Candle[], fastPeriod = 12, slowPeri
   return null;
 }
 
+/** Classic Donchian Channel breakout -- the exact entry rule used by the 1980s "Turtle
+ * Traders", one of the most rigorously documented profitable trend-following systems in
+ * trading history (turned a small group of trainees into consistently profitable traders
+ * managing hundreds of millions). */
+export function detectTurtleBreakout(candles: Candle[], entryPeriod = 20): StrategySignal | null {
+  if (candles.length < entryPeriod + 2) return null;
+  const window = candles.slice(-entryPeriod - 1, -1);
+  const last = candles[candles.length - 1];
+  const donchianHigh = Math.max(...window.map(c => c.high));
+  const donchianLow = Math.min(...window.map(c => c.low));
+
+  if (last.close > donchianHigh) {
+    return {
+      strategyId: 'turtle_breakout',
+      direction: 'bullish',
+      label: 'TURTLE BREAKOUT',
+      detail: `Closed above the ${entryPeriod}-period Donchian high of $${donchianHigh.toFixed(2)} — the exact entry signal used by the original Turtle Traders.`,
+      price: last.close,
+      index: candles.length - 1,
+      level: donchianHigh,
+      level2: donchianLow,
+    };
+  }
+  if (last.close < donchianLow) {
+    return {
+      strategyId: 'turtle_breakout',
+      direction: 'bearish',
+      label: 'TURTLE BREAKDOWN',
+      detail: `Closed below the ${entryPeriod}-period Donchian low of $${donchianLow.toFixed(2)} — the Turtle system's short entry.`,
+      price: last.close,
+      index: candles.length - 1,
+      level: donchianHigh,
+      level2: donchianLow,
+    };
+  }
+  return null;
+}
+
+/** Rate-of-change momentum / relative strength -- the signal behind one of the most
+ * replicated findings in academic finance (Jegadeesh & Titman, 1993): assets that have
+ * recently outperformed tend to keep outperforming over the following months. */
+export function detectMomentum(candles: Candle[], lookback = 20, thresholdPct = 5): StrategySignal | null {
+  if (candles.length < lookback + 1) return null;
+  const last = candles[candles.length - 1];
+  const past = candles[candles.length - 1 - lookback];
+  if (past.close <= 0) return null;
+  const roc = ((last.close - past.close) / past.close) * 100;
+
+  if (roc >= thresholdPct) {
+    return {
+      strategyId: 'momentum',
+      direction: 'bullish',
+      label: 'STRONG MOMENTUM',
+      detail: `Up ${roc.toFixed(1)}% over the last ${lookback} candles — high relative strength, the core signal behind decades of documented momentum-investing outperformance.`,
+      price: last.close,
+      index: candles.length - 1,
+    };
+  }
+  if (roc <= -thresholdPct) {
+    return {
+      strategyId: 'momentum',
+      direction: 'bearish',
+      label: 'STRONG DOWNSIDE MOMENTUM',
+      detail: `Down ${Math.abs(roc).toFixed(1)}% over the last ${lookback} candles — strong negative relative strength.`,
+      price: last.close,
+      index: candles.length - 1,
+    };
+  }
+  return null;
+}
+
+function ichimokuMidpoint(candles: Candle[], period: number): number {
+  const window = candles.slice(-period);
+  const hi = Math.max(...window.map(c => c.high));
+  const lo = Math.min(...window.map(c => c.low));
+  return (hi + lo) / 2;
+}
+
+/** Ichimoku Tenkan-sen / Kijun-sen cross -- one of the most widely used indicators among
+ * retail forex and crypto traders worldwide, prized for combining trend, momentum, and
+ * support/resistance into one system. */
+export function detectIchimokuCross(candles: Candle[], tenkanPeriod = 9, kijunPeriod = 26): StrategySignal | null {
+  const n = candles.length;
+  if (n < kijunPeriod + 2) return null;
+  const tenkanNow = ichimokuMidpoint(candles, tenkanPeriod);
+  const kijunNow = ichimokuMidpoint(candles, kijunPeriod);
+  const prevCandles = candles.slice(0, n - 1);
+  const tenkanPrev = ichimokuMidpoint(prevCandles, tenkanPeriod);
+  const kijunPrev = ichimokuMidpoint(prevCandles, kijunPeriod);
+  const last = candles[n - 1];
+
+  if (tenkanPrev <= kijunPrev && tenkanNow > kijunNow) {
+    return {
+      strategyId: 'ichimoku',
+      direction: 'bullish',
+      label: 'TK CROSS (BULLISH)',
+      detail: `Tenkan-sen crossed above Kijun-sen at $${kijunNow.toFixed(2)} — a classic Ichimoku bullish signal.`,
+      price: last.close,
+      index: n - 1,
+      level: kijunNow,
+    };
+  }
+  if (tenkanPrev >= kijunPrev && tenkanNow < kijunNow) {
+    return {
+      strategyId: 'ichimoku',
+      direction: 'bearish',
+      label: 'TK CROSS (BEARISH)',
+      detail: `Tenkan-sen crossed below Kijun-sen at $${kijunNow.toFixed(2)} — a classic Ichimoku bearish signal.`,
+      price: last.close,
+      index: n - 1,
+      level: kijunNow,
+    };
+  }
+  return null;
+}
+
+interface SarPoint { sar: number; trend: 'up' | 'down' }
+
+function computeParabolicSAR(candles: Candle[], afStart = 0.02, afStep = 0.02, afMax = 0.2): SarPoint[] {
+  const result: SarPoint[] = [];
+  if (candles.length < 2) return result;
+  let trend: 'up' | 'down' = candles[1].close >= candles[0].close ? 'up' : 'down';
+  let sar = trend === 'up' ? candles[0].low : candles[0].high;
+  let ep = trend === 'up' ? candles[0].high : candles[0].low;
+  let af = afStart;
+  result.push({ sar, trend });
+
+  for (let i = 1; i < candles.length; i++) {
+    const c = candles[i];
+    let nextSar = sar + af * (ep - sar);
+    if (trend === 'up') {
+      const priorLow = Math.min(candles[i - 1].low, i >= 2 ? candles[i - 2].low : candles[i - 1].low);
+      nextSar = Math.min(nextSar, priorLow);
+      if (c.low < nextSar) {
+        trend = 'down';
+        nextSar = ep;
+        ep = c.low;
+        af = afStart;
+      } else if (c.high > ep) {
+        ep = c.high;
+        af = Math.min(afMax, af + afStep);
+      }
+    } else {
+      const priorHigh = Math.max(candles[i - 1].high, i >= 2 ? candles[i - 2].high : candles[i - 1].high);
+      nextSar = Math.max(nextSar, priorHigh);
+      if (c.high > nextSar) {
+        trend = 'up';
+        nextSar = ep;
+        ep = c.high;
+        af = afStart;
+      } else if (c.low < ep) {
+        ep = c.low;
+        af = Math.min(afMax, af + afStep);
+      }
+    }
+    sar = nextSar;
+    result.push({ sar, trend });
+  }
+  return result;
+}
+
+/** Parabolic SAR trend flip -- a Welles Wilder indicator (same creator as RSI) still in
+ * standard use for trailing stops and trend-reversal timing decades after its introduction. */
+export function detectParabolicSARFlip(candles: Candle[]): StrategySignal | null {
+  if (candles.length < 10) return null;
+  const points = computeParabolicSAR(candles);
+  const n = points.length;
+  const curr = points[n - 1];
+  const prev = points[n - 2];
+  const last = candles[candles.length - 1];
+
+  if (prev.trend === 'down' && curr.trend === 'up') {
+    return {
+      strategyId: 'parabolic_sar',
+      direction: 'bullish',
+      label: 'SAR FLIP (BULLISH)',
+      detail: `Parabolic SAR flipped below price to $${curr.sar.toFixed(2)} — trend reversal to the upside.`,
+      price: last.close,
+      index: candles.length - 1,
+      level: curr.sar,
+    };
+  }
+  if (prev.trend === 'up' && curr.trend === 'down') {
+    return {
+      strategyId: 'parabolic_sar',
+      direction: 'bearish',
+      label: 'SAR FLIP (BEARISH)',
+      detail: `Parabolic SAR flipped above price to $${curr.sar.toFixed(2)} — trend reversal to the downside.`,
+      price: last.close,
+      index: candles.length - 1,
+      level: curr.sar,
+    };
+  }
+  return null;
+}
+
 export interface TradePlan {
   entry: number;
   stopLoss: number;
@@ -450,7 +646,7 @@ export function computeTradePlan(signal: StrategySignal, candles: Candle[]): Tra
   const riskDist = Math.max(0.01, Math.abs(entry - stopLoss));
 
   let takeProfit: number;
-  if ((signal.strategyId === 'breakout' || signal.strategyId === 'orb' || signal.strategyId === 'bollinger_squeeze') && signal.level != null && signal.level2 != null) {
+  if ((signal.strategyId === 'breakout' || signal.strategyId === 'orb' || signal.strategyId === 'bollinger_squeeze' || signal.strategyId === 'turtle_breakout') && signal.level != null && signal.level2 != null) {
     const rangeHeight = Math.abs(signal.level - signal.level2);
     const multiple = signal.strategyId === 'orb' ? 2 : 1;
     takeProfit = entry + (bullish ? 1 : -1) * rangeHeight * multiple;
@@ -481,7 +677,11 @@ export type DetectorId =
   | 'rsi_reversal'
   | 'vwap'
   | 'bollinger_squeeze'
-  | 'macd';
+  | 'macd'
+  | 'turtle_breakout'
+  | 'momentum'
+  | 'ichimoku'
+  | 'parabolic_sar';
 
 const DETECTORS: Record<DetectorId, (candles: Candle[]) => StrategySignal | null> = {
   breakout: detectBreakout,
@@ -493,6 +693,10 @@ const DETECTORS: Record<DetectorId, (candles: Candle[]) => StrategySignal | null
   vwap: detectVWAPBounce,
   bollinger_squeeze: detectBollingerSqueeze,
   macd: detectMACDCrossover,
+  turtle_breakout: detectTurtleBreakout,
+  momentum: detectMomentum,
+  ichimoku: detectIchimokuCross,
+  parabolic_sar: detectParabolicSARFlip,
 };
 
 export function scanStrategies(candles: Candle[], enabled: DetectorId[] = Object.keys(DETECTORS) as DetectorId[]): StrategySignal[] {

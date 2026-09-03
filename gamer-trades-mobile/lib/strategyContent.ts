@@ -14,6 +14,15 @@ export interface StrategyInfo {
   example: string;
   whenToUse: string;
   riskNote: string;
+  /** Among the most commonly used/discussed strategies by retail traders -- shown with a
+   * "🔥 POPULAR" badge. Independent of provenProfitable -- popularity and rigorous proof
+   * of edge are two different things, which is exactly why both are labeled separately. */
+  popular?: boolean;
+  /** Strategies with a genuinely rigorous, long-documented track record of profitability
+   * (decades of live fund performance, or peer-reviewed academic evidence) rather than just
+   * being widely used. Gated to Pro/Legend -- both the full write-up here and live detection
+   * on the Trade Desk / Master Trader Scanner. */
+  provenProfitable?: boolean;
 }
 
 export const STRATEGIES: StrategyInfo[] = [
@@ -49,6 +58,7 @@ export const STRATEGIES: StrategyInfo[] = [
     example: 'A stock coils under $50 resistance for two weeks, testing it three times without breaking. On the fourth test, it closes at $50.80 on volume 2x the daily average. A trader enters at the close, with a stop at $49.50 (back inside the old range) and a first target near $53 — the approximate height of the prior consolidation projected upward.',
     whenToUse: 'Best in trending or consolidating markets that are coiling near a clear range boundary.',
     riskNote: 'Watch for "fakeouts" — a quick break that reverses. A stop just back inside the old range limits the damage.',
+    popular: true,
   },
   {
     id: 'orb',
@@ -148,6 +158,7 @@ export const STRATEGIES: StrategyInfo[] = [
     example: 'A stock has bounced off $120 support three separate times over a month. On the fourth approach, price wicks down to $119.60 and closes back at $121.30 with a long lower wick. A trader buys near the close, stops at $118.50 (below the zone), and targets $128 — the resistance at the top of the recent range.',
     whenToUse: 'Useful in range-bound markets, and as context for almost every other strategy.',
     riskNote: 'Levels are zones, not exact prices. Give trades room rather than using a razor-thin stop right at the line.',
+    popular: true,
   },
   {
     id: 'ma_crossover',
@@ -181,6 +192,7 @@ export const STRATEGIES: StrategyInfo[] = [
     example: 'A crypto asset has been consolidating for weeks with its 9-period and 21-period moving averages tangled together. Price breaks out, and the 9-period MA crosses decisively above the 21-period MA with a widening gap. A trader enters on the confirmed cross, with a stop below the most recent swing low, planning to exit if the MAs cross back the other way.',
     whenToUse: 'Best in trending markets; produces false signals in choppy, sideways conditions.',
     riskNote: 'Moving averages lag price — you will never catch the exact top or bottom with this strategy.',
+    popular: true,
   },
   {
     id: 'rsi_reversal',
@@ -214,6 +226,7 @@ export const STRATEGIES: StrategyInfo[] = [
     example: 'A stock rallies hard and RSI pushes to 78, then starts drifting back down toward 70 while price is still near its high — bearish divergence. RSI then crosses back below 70. A trader shorts on that cross, stops above the recent price high, and targets a pullback to the nearest support zone below.',
     whenToUse: 'Most reliable in range-bound markets; in strong trends, RSI can stay "overbought" or "oversold" for a long time.',
     riskNote: "Don't fight a strong trend just because RSI is extreme — confirm with price action before entering.",
+    popular: true,
   },
   {
     id: 'vwap',
@@ -247,6 +260,7 @@ export const STRATEGIES: StrategyInfo[] = [
     example: 'A stock opens and rallies, trading well above its rising VWAP all morning. Around midday it pulls back and closes a candle just below VWAP at $84.20. A trader shorts on that close, stops above the recent high at $85.10, and targets the prior swing low near $82.50 where buyers previously stepped in.',
     whenToUse: 'Most useful intraday, in range-bound or mean-reverting conditions — session-anchored, so it resets and is most meaningful on shorter timeframes.',
     riskNote: 'In a strong one-directional trend day, price can stay far from VWAP for hours — don\'t assume every stretch must snap back immediately.',
+    popular: true,
   },
   {
     id: 'bollinger_squeeze',
@@ -313,6 +327,142 @@ export const STRATEGIES: StrategyInfo[] = [
     example: 'A stock has been declining for weeks. Price prints a lower low, but the MACD histogram prints a HIGHER low than its prior swing — bearish momentum is fading even as price ekes out a new low (bullish divergence). Days later, the MACD line crosses above its signal line, both still below zero. A trader treats this as an early trend-reversal signal, enters on the cross, and stops below the recent low.',
     whenToUse: 'Most informative on higher timeframes and trending markets; the divergence signal in particular is a favorite among more experienced traders for catching reversals early.',
     riskNote: 'MACD is a lagging indicator built on lagging indicators — it will never call an exact top or bottom, and works best combined with other confirmation rather than traded in isolation.',
+  },
+  {
+    id: 'turtle_breakout',
+    name: 'TURTLE TRADING (DONCHIAN BREAKOUT)',
+    icon: '🐢',
+    color: '#22d3ee',
+    difficulty: 'EXPERT',
+    summary: 'The exact system that turned a group of trainees with no trading experience into some of the most successful trend-followers in history.',
+    howItWorks: [
+      'In 1983, legendary trader Richard Dennis trained a group of ordinary people ("the Turtles") in a rules-based trend-following system to settle a bet about whether trading skill could be taught.',
+      'The core entry rule: buy when price closes above its highest high of the last 20 periods (the "Donchian Channel"); sell short when it closes below the lowest low of the last 20 periods.',
+      'The Turtles went on to generate hundreds of millions of dollars in real, audited trading profits over the following years — one of the most rigorously documented proofs that a simple, mechanical breakout system can have a genuine, durable edge.',
+      'The system has no opinion about WHY price is breaking out — it simply follows the breakout wherever it goes, exiting only when the trend genuinely reverses.',
+    ],
+    entryRules: [
+      'Track the rolling 20-period high and low (the Donchian Channel) on your instrument and timeframe of choice.',
+      'Enter long the moment price closes above the 20-period high; enter short the moment it closes below the 20-period low.',
+      'The original system used a SECOND, shorter breakout (a 10-period channel) as a faster "system 1" alongside the slower 20-period "system 2" — many modern adaptations stick to just the slower one to reduce false signals.',
+      'Position size was originally based on volatility (the "N" / average true range) so that a single unit risks a consistent amount regardless of how volatile the instrument is — a core piece of why the system survived so many different market regimes.',
+    ],
+    exitRules: [
+      'The classic exit is the OPPOSITE, shorter channel: exit a long when price closes below the 10-period low (not the 20-period low used for entry).',
+      'This asymmetry — slow channel to get in, fast channel to get out — lets winning trends run much further than the initial entry signal alone would suggest.',
+      'Because this is a trend-following system, most individual trades lose money — the entire edge comes from a smaller number of large winners running far longer than the losers cost, so cutting losers fast on the exit channel is essential, not optional.',
+    ],
+    commonMistakes: [
+      'Abandoning the system after a string of losses — trend-following systems are designed to have a lower win rate than they "feel" like they should, and second-guessing the mechanical rules is exactly how traders give up the edge right before a big trend arrives.',
+      "Ignoring position sizing/volatility — the original system's survival depended as much on disciplined, volatility-adjusted sizing as on the entry rule itself.",
+      'Applying it to a choppy, range-bound market with no real trends — pure breakout systems are structurally suited to trending conditions and will bleed small losses in a sideways market.',
+    ],
+    example: 'A commodity has been range-bound for months. Price finally closes above its 20-period high at $52.40. A trader enters long there. The trend runs for weeks; when price eventually closes below the 10-period low at $58.10, the trader exits — a textbook Turtle-style trade capturing the bulk of a sustained move.',
+    whenToUse: 'Works across virtually any liquid, trending market and timeframe — historically applied to commodities, futures, currencies, and stock indices alike.',
+    riskNote: 'Expect a win rate well under 50% — the edge comes entirely from letting winners run far longer than losers cost, which requires real discipline to sit through.',
+    provenProfitable: true,
+  },
+  {
+    id: 'momentum',
+    name: 'MOMENTUM / RELATIVE STRENGTH',
+    icon: '🚄',
+    color: '#f97316',
+    difficulty: 'ADVANCED',
+    summary: 'Buy what has already been going up, sell what has already been going down — one of the most replicated findings in all of academic finance.',
+    howItWorks: [
+      'Momentum investing rests on a simple, uncomfortable-sounding premise: assets that have outperformed over the recent past (commonly 3-12 months) tend to keep outperforming over the following months, and vice versa for laggards.',
+      'This was formally documented by Jegadeesh & Titman in a landmark 1993 study, and has since been replicated across nearly every major asset class and market in the world — one of the most robust, repeatedly-confirmed anomalies in finance research.',
+      'The mechanism isn\'t fully agreed on, but leading explanations include investor underreaction to new information and slow-moving capital chasing recent winners — both of which take time to fully play out, which is exactly the window momentum strategies exploit.',
+      'Unlike most technical setups which look for a specific chart pattern, momentum is a relative-strength ranking exercise: measure the rate of change over your lookback window and rank/trade in the direction of the strongest movers.',
+    ],
+    entryRules: [
+      'Measure the percentage rate of change over a lookback window (commonly 20-250 periods depending on timeframe) rather than eyeballing "it looks strong."',
+      'Enter in the direction of unusually strong recent performance — a large positive rate of change for a long, a large negative one for a short.',
+      'Momentum works best evaluated RELATIVE to a peer group or benchmark (is this outperforming similar assets, not just moving in absolute terms) — the single-asset version used here is a simplified read of the same underlying idea.',
+      'Combine with a trend or volume filter to avoid entering right as an extended move exhausts itself — pure momentum entries can chase a move that is about to stall.',
+    ],
+    exitRules: [
+      'Academic momentum studies typically hold for a fixed period (e.g. 3-12 months) and simply re-rank — a much longer holding horizon than most technical setups on this list.',
+      'A practical stop is a violation of the trend that generated the signal (e.g. price closing back below the level it broke out from).',
+      'Momentum is well documented to occasionally suffer sharp, fast reversals ("momentum crashes") — using a real stop-loss, not just letting a momentum trade run indefinitely, is important precisely because the historical outperformance comes with real tail risk.',
+    ],
+    commonMistakes: [
+      'Confusing momentum with simply "buying something that went up a little" — the documented edge is about relative strength over a meaningful lookback window, not a single green candle.',
+      'Ignoring the well-known "momentum crash" risk — sharp reversals after extended runs are a real, documented feature of this strategy, not a bug.',
+      'Chasing momentum without any risk control, on the assumption that "it\'s proven to work" — the academic edge is a statistical tendency across many trades and long periods, not a guarantee on any single one.',
+    ],
+    example: 'Over the past 6 months, an asset has outperformed its peers by a wide margin — up 45% versus a 12% average for similar assets. A momentum trader takes a position expecting the outperformance to persist over the following months, with a stop below the recent trend structure in case the move stalls.',
+    whenToUse: 'Historically documented across stocks, commodities, currencies, and international markets, on multi-week to multi-month holding horizons — not a fast intraday setup.',
+    riskNote: '"Momentum crashes" — sharp, fast reversals after extended winning streaks — are a well-documented risk of this exact strategy. Always trade it with a real stop.',
+    provenProfitable: true,
+  },
+  {
+    id: 'ichimoku',
+    name: 'ICHIMOKU CLOUD (TK CROSS)',
+    icon: '☁️',
+    color: '#a78bfa',
+    difficulty: 'ADVANCED',
+    summary: 'One of the most widely used systems among retail forex and crypto traders worldwide — a full trend/momentum/support-resistance system built from Japanese candlestick-era analysis.',
+    howItWorks: [
+      'Ichimoku ("one glance") combines five lines from simple period-based high/low midpoints into a single system meant to show trend direction, momentum, and support/resistance all at once.',
+      'The Tenkan-sen ("conversion line", 9-period) and Kijun-sen ("base line", 26-period) are the two most-watched — when the faster Tenkan-sen crosses above the slower Kijun-sen, it\'s read as a bullish signal (and the reverse for bearish), similar in spirit to a moving average cross but built from high/low midpoints instead of closes.',
+      'The full system also plots a shaded "cloud" (Kumo) projected forward in time, used as a dynamic support/resistance zone — this simplified version focuses on the TK cross, the single most commonly traded Ichimoku signal.',
+      'Ichimoku is especially popular in forex and crypto communities specifically because it packages trend + momentum + key levels into one glance, which is where its name comes from.',
+    ],
+    entryRules: [
+      'Wait for a confirmed Tenkan-sen/Kijun-sen cross on a closed candle, not mid-formation.',
+      'Many Ichimoku traders only take TK crosses that align with the direction of the broader cloud (price above the cloud favors longs, below favors shorts) — this simplified version doesn\'t check cloud position, so treat a cross against the higher-timeframe trend with extra caution.',
+      'A cross happening further from the current cloud (a bigger gap between the two lines resolving) is generally read as a stronger signal than a cross with the lines barely separating.',
+      'Because Ichimoku packages several concepts at once, many traders treat it as a full system rather than picking just one signal — the TK cross alone is a simplification of the complete method.',
+    ],
+    exitRules: [
+      'A straightforward exit is the reverse TK cross.',
+      'Some traders instead use the Kijun-sen line itself as a trailing stop reference once in profit.',
+      'As with any moving-average-style cross, exits based purely on the reverse signal will give back some profit versus the ideal exit point — a real stop-loss based on price structure is still worth using alongside it.',
+    ],
+    commonMistakes: [
+      'Trading the TK cross in isolation without any awareness of the broader cloud/trend context, which the full system was actually designed around.',
+      'Treating Ichimoku as a magic all-in-one system rather than one more trend/momentum tool that still needs risk management like any other.',
+      'Using it on very short timeframes where the 9/26-period lines produce a lot of noisy whipsaws — Ichimoku is traditionally applied on daily charts, though it\'s widely adapted to shorter ones too.',
+    ],
+    example: 'A crypto asset has been consolidating. The 9-period Tenkan-sen crosses above the 26-period Kijun-sen, with price also trading above the cloud. A trader treats this as confirmation of a bullish TK cross and enters long, using the Kijun-sen line as a trailing reference for managing the position.',
+    whenToUse: 'Extremely popular in forex and crypto, most traditionally on daily charts, though widely adapted across timeframes.',
+    riskNote: 'The TK cross alone is a simplification — the full Ichimoku system uses the cloud for context, and trading the cross in isolation loses some of that filtering.',
+    popular: true,
+  },
+  {
+    id: 'parabolic_sar',
+    name: 'PARABOLIC SAR',
+    icon: '🎯',
+    color: '#facc15',
+    difficulty: 'INTERMEDIATE',
+    summary: 'A dot-based trend and trailing-stop system from the same creator as RSI, still in everyday use decades after its introduction.',
+    howItWorks: [
+      'Parabolic SAR ("Stop And Reverse") was developed by J. Welles Wilder — the same technical analyst who created RSI and the ATR indicator — and plots a series of dots above or below price that flip sides when the trend reverses.',
+      'While price is trending up, the dots sit below price and creep upward, accelerating as the trend continues — designed to function as a trailing stop that tightens the longer a trend runs.',
+      'When price crosses through the dots, SAR "flips" to the other side — this flip is the entry/exit signal: dots moving from above to below price is bullish, the reverse is bearish.',
+      'The "parabolic" name comes from the accelerating curve the dots trace as a trend extends, which is also why the indicator performs poorly in sideways, non-trending markets — it keeps flipping back and forth.',
+    ],
+    entryRules: [
+      'Wait for a confirmed SAR flip — dots switching from above price to below (bullish) or below to above (bearish).',
+      'SAR works best used as a trend-following filter alongside another indicator, rather than as a standalone entry trigger — it was designed primarily as a trailing-stop mechanism, not a standalone entry system.',
+      'A flip that happens after a long, clean trending run is generally more meaningful than one in a choppy, directionless market where SAR whipsaws constantly.',
+      'Some traders wait for price to close beyond the new SAR level (not just touch it) before treating the flip as confirmed.',
+    ],
+    exitRules: [
+      'This is the indicator\'s original purpose: use the current SAR dot itself as a continuously-trailing stop-loss level, exiting (or reversing) whenever price crosses it.',
+      'Because the dots accelerate the longer a trend runs, SAR naturally tightens your stop as a winning trade matures — locking in more of the move automatically.',
+      'In a strong trend, SAR can trail quite far behind price early on — some traders use a fixed initial stop until the trend is established, switching to SAR once it "catches up".',
+    ],
+    commonMistakes: [
+      'Using Parabolic SAR in a sideways, range-bound market, where the constant flipping generates a stream of false signals — this is by far its most common misuse.',
+      'Treating every flip as a fresh, high-conviction entry signal rather than what it was actually designed for: a trailing stop and rough trend-direction filter.',
+      'Ignoring that SAR is a lagging indicator like any moving-average-based tool — it confirms a reversal after it has already begun, not before.',
+    ],
+    example: 'A stock is in a clean uptrend, its SAR dots trailing below price and rising each period. Price finally dips through the SAR level, flipping the dots above price. A trader treats this flip as their trailing stop being hit, exiting the long position with much of the trend\'s gains already locked in.',
+    whenToUse: 'Best in trending markets, and specifically well-suited as a trailing-stop mechanism for a position entered via another strategy.',
+    riskNote: 'Performs poorly and generates frequent false flips in sideways, range-bound conditions — confirm there is an actual trend before relying on it.',
+    popular: true,
   },
 ];
 

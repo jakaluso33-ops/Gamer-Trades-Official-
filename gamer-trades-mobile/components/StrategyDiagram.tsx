@@ -1,4 +1,4 @@
-import Svg, { Rect, Line, Text as SvgText, Path, G } from 'react-native-svg';
+import Svg, { Rect, Line, Text as SvgText, Path, G, Circle } from 'react-native-svg';
 import { colors } from '../lib/theme';
 import { DetectorId } from '../lib/strategyEngine';
 
@@ -212,6 +212,92 @@ export default function StrategyDiagram({ id, height = 150 }: { id: DetectorId; 
         <Path d="M 20 138 Q 80 140 120 138 Q 170 128 260 112" stroke={colors.gold} strokeWidth={1.5} fill="none" opacity={0.8} />
         <SvgText x="150" y="150" fontSize="8" fill={colors.blue}>MACD</SvgText>
         <ArrowLabel x={225} y={70} up label="CROSS UP" color={colors.green} />
+      </Svg>
+    );
+  }
+
+  if (id === 'turtle_breakout') {
+    const candles: Candle[] = [
+      { o: 92, h: 84, l: 98, c: 88 },
+      { o: 88, h: 82, l: 94, c: 86 },
+      { o: 86, h: 80, l: 92, c: 84 },
+      { o: 84, h: 78, l: 90, c: 82 },
+      { o: 82, h: 76, l: 88, c: 80 },
+      { o: 80, h: 40, l: 84, c: 44 },
+      { o: 44, h: 24, l: 48, c: 28 },
+    ];
+    return (
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+        <Line x1="12" y1="76" x2="270" y2="76" stroke={colors.cyan} strokeWidth={1.5} strokeDasharray="4,3" />
+        <SvgText x="14" y="70" fontSize="9" fill={colors.cyan}>20-PERIOD DONCHIAN HIGH</SvgText>
+        <CandleShapes candles={candles} />
+        <ArrowLabel x={255} y={36} up label="TURTLE ENTRY" color={colors.green} />
+      </Svg>
+    );
+  }
+
+  if (id === 'momentum') {
+    const candles: Candle[] = [
+      { o: 96, h: 90, l: 100, c: 92 },
+      { o: 92, h: 84, l: 96, c: 86 },
+      { o: 86, h: 76, l: 90, c: 78 },
+      { o: 78, h: 66, l: 82, c: 68 },
+      { o: 68, h: 54, l: 72, c: 56 },
+      { o: 56, h: 40, l: 60, c: 42 },
+      { o: 42, h: 24, l: 46, c: 26 },
+    ];
+    return (
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+        <CandleShapes candles={candles} />
+        <Path d="M 20 96 L 260 26" stroke={colors.gold} strokeWidth={1.5} strokeDasharray="4,3" opacity={0.8} />
+        <SvgText x="150" y="60" fontSize="9" fill={colors.gold}>STRONG RELATIVE STRENGTH</SvgText>
+        <ArrowLabel x={255} y={20} up label="MOMENTUM" color={colors.green} />
+      </Svg>
+    );
+  }
+
+  if (id === 'ichimoku') {
+    return (
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+        <CandleShapes
+          candles={[
+            { o: 90, h: 84, l: 96, c: 88 },
+            { o: 88, h: 82, l: 92, c: 84 },
+            { o: 84, h: 78, l: 90, c: 80 },
+            { o: 80, h: 60, l: 86, c: 64 },
+            { o: 64, h: 44, l: 70, c: 48 },
+            { o: 48, h: 30, l: 54, c: 34 },
+            { o: 34, h: 18, l: 40, c: 22 },
+          ]}
+        />
+        <Path d="M 20 88 Q 100 82 140 68 Q 200 46 260 20" stroke={colors.purple} strokeWidth={2} fill="none" />
+        <Path d="M 20 78 Q 100 76 140 74 Q 200 62 260 40" stroke={colors.gold} strokeWidth={2} fill="none" opacity={0.85} />
+        <SvgText x="150" y="88" fontSize="8" fill={colors.purple}>TENKAN-SEN (9)</SvgText>
+        <SvgText x="150" y="100" fontSize="8" fill={colors.gold}>KIJUN-SEN (26)</SvgText>
+        <ArrowLabel x={230} y={35} up label="TK CROSS" color={colors.green} />
+      </Svg>
+    );
+  }
+
+  if (id === 'parabolic_sar') {
+    const candles: Candle[] = [
+      { o: 96, h: 90, l: 100, c: 92 },
+      { o: 92, h: 84, l: 96, c: 86 },
+      { o: 86, h: 76, l: 90, c: 78 },
+      { o: 78, h: 66, l: 82, c: 68 },
+      { o: 68, h: 54, l: 72, c: 56 },
+      { o: 56, h: 40, l: 60, c: 42 },
+      { o: 42, h: 24, l: 46, c: 26 },
+    ];
+    const dots = [
+      { x: 30, y: 104 }, { x: 65, y: 98 }, { x: 100, y: 90 },
+      { x: 135, y: 80 }, { x: 170, y: 66 }, { x: 205, y: 50 }, { x: 240, y: 32 },
+    ];
+    return (
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+        <CandleShapes candles={candles} />
+        {dots.map((d, i) => <Circle key={i} cx={d.x} cy={d.y} r={3} fill={colors.gold} />)}
+        <SvgText x="150" y="130" fontSize="9" fill={colors.gold} textAnchor="middle">SAR DOTS TRAIL BELOW IN AN UPTREND</SvgText>
       </Svg>
     );
   }
