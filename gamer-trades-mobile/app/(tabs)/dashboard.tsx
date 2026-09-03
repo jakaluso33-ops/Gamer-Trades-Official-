@@ -9,6 +9,7 @@ import { recordDailyCheckin } from '../../lib/streak';
 import { scheduleStreakSaverReminder } from '../../lib/notifications';
 import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 import DailyStoryCard from '../../components/DailyStoryCard';
+import WeeklyChallengeSection from '../../components/WeeklyChallengeCard';
 
 export default function DashboardScreen() {
   const { user, profile, activePortfolio, applyPortfolioPatch } = useAuth();
@@ -65,6 +66,8 @@ export default function DashboardScreen() {
         </View>
         <PortfolioSwitcher />
       </View>
+
+      <WeeklyChallengeSection />
 
       {/* Add Funds */}
       <Pressable onPress={() => setShowDeposit(true)}>

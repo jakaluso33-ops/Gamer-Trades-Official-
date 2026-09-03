@@ -37,6 +37,7 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
   const [read, setRead] = useState<MarketRead | null>(null);
   const [loading, setLoading] = useState(false);
   const [errored, setErrored] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const candlesRef = useRef(candles);
   const symbolRef = useRef(symbol);
   const tickRef = useRef<() => void>(() => {});
@@ -58,6 +59,7 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
       inFlight = true;
       setLoading(true);
       setErrored(false);
+      setErrorMsg(null);
       try {
         const snapshot = summarizeMarket(candlesRef.current);
         if (!snapshot) return;
@@ -65,7 +67,10 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
         if (!cancelled) setRead(result);
       } catch (err) {
         console.error('market-read-agent failed', err);
-        if (!cancelled) setErrored(true);
+        if (!cancelled) {
+          setErrored(true);
+          setErrorMsg(err instanceof Error ? err.message : null);
+        }
       } finally {
         inFlight = false;
         if (!cancelled) setLoading(false);
@@ -95,7 +100,7 @@ export default function MarketReadCard({ symbol, candles, skillLevel }: Props) {
       {errored && !read && (
         <View>
           <BodyText color={colors.muted} size={12} style={{ marginBottom: 8 }}>
-            Couldn't reach the market-read agent just now.
+            {errorMsg ?? "Couldn't reach the market-read agent just now."}
           </BodyText>
           <PixelButton color={colors.blue} onPress={() => tickRef.current()} style={{ alignSelf: 'flex-start', paddingHorizontal: 16 }}>
             ↻ RETRY

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, unwrapFunctionError } from './supabase';
 import { MarketSnapshot } from './marketRead';
 import { SkillLevel } from './curriculum';
 
@@ -14,7 +14,7 @@ export async function runMarketReadAgent(symbol: string, snapshot: MarketSnapsho
   const { data, error } = await supabase.functions.invoke('market-read-agent', {
     body: { symbol, snapshot, skillLevel: skillLevel ?? 'beginner' },
   });
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   if (data?.error) throw new Error(data.error);
   return (data as { read: MarketRead }).read;
 }

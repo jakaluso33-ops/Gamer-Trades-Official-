@@ -34,15 +34,21 @@ export interface ChallengeLeaderboardRow {
 }
 
 export async function getActiveChallenge(): Promise<WeeklyChallenge | null> {
+  const all = await getActiveChallenges();
+  return all[0] ?? null;
+}
+
+/** All of this week's live challenges -- there can be more than one running at once
+ * (e.g. an open one and a themed single-market one), and every user should be able
+ * to join any/all of them. */
+export async function getActiveChallenges(): Promise<WeeklyChallenge[]> {
   const { data, error } = await supabase
     .from('weekly_challenges')
     .select('*')
     .eq('status', 'active')
-    .order('week_start', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order('week_start', { ascending: false });
   if (error) throw error;
-  return data as WeeklyChallenge | null;
+  return (data ?? []) as WeeklyChallenge[];
 }
 
 export async function getMyEntry(userId: string, challengeId: string): Promise<ChallengeEntry | null> {

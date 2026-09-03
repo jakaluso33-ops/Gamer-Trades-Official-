@@ -15,6 +15,24 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// supabase-js's FunctionsHttpError.message is always the generic
+// "Edge Function returned a non-2xx status code" -- the actual reason lives in
+// the response body (error.context is the raw Response). Unwrap it so callers
+// can surface the real cause instead of that useless string.
+export async function unwrapFunctionError(error: any): Promise<Error> {
+  const context = error?.context;
+  if (context && typeof context.json === 'function') {
+    try {
+      const clone = typeof context.clone === 'function' ? context.clone() : context;
+      const body = await clone.json();
+      if (body?.error) return new Error(body.error);
+    } catch {
+      // body wasn't JSON -- fall through to the generic message
+    }
+  }
+  return error instanceof Error ? error : new Error(String(error));
+}
+
 export interface Profile {
   id: string;
   username: string;

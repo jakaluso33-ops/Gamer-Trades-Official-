@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, unwrapFunctionError } from './supabase';
 import { SkillLevel } from './curriculum';
 
 export type TradeVerdict = 'take' | 'skip' | 'wait';
@@ -33,7 +33,7 @@ export async function runScreenshotAgent(
   const { data, error } = await supabase.functions.invoke('screenshot-trade-agent', {
     body: { imageBase64, mediaType: 'image/png', symbol, livePrice, skillLevel: skillLevel ?? 'beginner' },
   });
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   if (data?.error) throw new Error(data.error);
   return (data as { review: ScreenshotReview }).review;
 }
