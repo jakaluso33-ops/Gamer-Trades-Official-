@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, View, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as StoreReview from 'expo-store-review';
 import { Card, PixelText, BodyText, PixelButton, Avatar } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
@@ -8,12 +9,22 @@ import { deleteAccount } from '../../lib/account';
 import { requestNotificationPermission, setNotificationsEnabled } from '../../lib/notifications';
 import PlanComparisonGrid from '../../components/PlanComparisonGrid';
 import { Plan } from '../../lib/plans';
+import FeedbackModal from '../../components/FeedbackModal';
 
 export default function ProfileScreen() {
   const { profile, user, signOut, refreshProfile } = useAuth();
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  const handleRateApp = async () => {
+    if (await StoreReview.hasAction()) {
+      await StoreReview.requestReview();
+    } else {
+      Alert.alert("Not live yet", "We'll take you straight to the App Store review page once GamerTrades is publicly listed there.");
+    }
+  };
 
   const toggleNotifications = async () => {
     if (!user) return;
@@ -117,6 +128,17 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
+      <Card borderColor={colors.cyan}>
+        <BodyText color={colors.cyan} size={13} weight="semibold" glow style={{ marginBottom: 10 }}>💬 RATE &amp; FEEDBACK</BodyText>
+        <BodyText color={colors.muted} size={12} style={{ marginBottom: 12 }}>
+          Loving GamerTrades? Found a bug? Want a feature? We read every single one.
+        </BodyText>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <PixelButton color={colors.gold} onPress={handleRateApp} style={{ flex: 1 }}>⭐ RATE APP</PixelButton>
+          <PixelButton color={colors.cyan} onPress={() => setShowFeedback(true)} style={{ flex: 1 }}>💬 FEEDBACK</PixelButton>
+        </View>
+      </Card>
+
       <PixelButton color={colors.red} onPress={signOut}>✕ SIGN OUT</PixelButton>
 
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14 }}>
@@ -134,6 +156,8 @@ export default function ProfileScreen() {
           {deleting ? 'DELETING...' : '🗑 DELETE ACCOUNT'}
         </PixelButton>
       </Card>
+
+      <FeedbackModal visible={showFeedback} onClose={() => setShowFeedback(false)} />
     </ScrollView>
   );
 }

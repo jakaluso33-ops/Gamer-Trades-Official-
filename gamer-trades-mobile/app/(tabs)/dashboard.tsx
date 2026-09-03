@@ -7,6 +7,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { depositFunds } from '../../lib/trading';
 import { recordDailyCheckin } from '../../lib/streak';
 import { scheduleStreakSaverReminder } from '../../lib/notifications';
+import { maybePromptReview } from '../../lib/reviewPrompt';
 import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 import DailyStoryCard from '../../components/DailyStoryCard';
 import WeeklyChallengeSection from '../../components/WeeklyChallengeCard';
@@ -29,6 +30,7 @@ export default function DashboardScreen() {
       .then(({ streakCount }) => {
         setStreak(streakCount);
         if (profile?.notifications_enabled) scheduleStreakSaverReminder(streakCount);
+        if (streakCount >= 3) maybePromptReview(user.id);
       })
       .catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps

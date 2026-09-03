@@ -10,6 +10,7 @@ import { detectCandlePattern } from '../../lib/candlePatterns';
 import { getCandlePattern } from '../../lib/candlestickContent';
 import { PLANS } from '../../lib/plans';
 import { startCheckout } from '../../lib/checkout';
+import { maybePromptReview } from '../../lib/reviewPrompt';
 import {
   listOpenTrades,
   listPendingOrders,
@@ -377,6 +378,7 @@ export default function TradeDeskScreen() {
       setOpenTrades(prev => prev.filter(x => x.id !== t.id));
       applyPortfolioPatch({ ...portfolio, cash_balance: portfolio.cash_balance + t.quantity * t.entry_price + pnl });
       setLog(prev => [`CLOSED ${t.symbol} @ $${exitPrice.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`, ...prev.slice(0, 9)]);
+      if (pnl > 0) maybePromptReview(user.id);
     } catch (err) {
       console.error(err);
     }
