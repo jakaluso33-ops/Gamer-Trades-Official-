@@ -11,6 +11,7 @@ import { getCandlePattern } from '../../lib/candlestickContent';
 import { PLANS } from '../../lib/plans';
 import { startCheckout } from '../../lib/checkout';
 import { maybePromptReview } from '../../lib/reviewPrompt';
+import TradeOutcomeBanner, { TradeOutcome } from '../../components/TradeOutcomeBanner';
 import {
   listOpenTrades,
   listPendingOrders,
@@ -103,6 +104,7 @@ export default function TradeDeskScreen() {
   const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
   const [log, setLog] = useState<string[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [outcomeBanner, setOutcomeBanner] = useState<TradeOutcome | null>(null);
   const [activeStrategies, setActiveStrategies] = useState<DetectorId[]>(
     initialFocus ? [initialFocus] : SCANNER_STRATEGIES.map(s => s.id)
   );
@@ -288,6 +290,8 @@ export default function TradeDeskScreen() {
             `${hit.reason === 'stop_loss' ? '⛔ STOP LOSS' : '✓ TAKE PROFIT'} HIT: ${trade.symbol} @ $${hit.price.toFixed(2)} (${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)})`,
             ...prev.slice(0, 9),
           ]);
+          setOutcomeBanner(hit.reason === 'stop_loss' ? 'stop_loss' : 'take_profit');
+          if (hit.reason !== 'stop_loss') maybePromptReview(user.id);
         } catch (err) {
           console.error(err);
         }
@@ -402,6 +406,7 @@ export default function TradeDeskScreen() {
   const totalPnl = openTrades.reduce((sum, t) => sum + computePnl(t, priceForSymbol(t.symbol)), 0);
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <PixelText color={colors.blue} size={13} glow>◈ TRADE DESK</PixelText>
@@ -851,5 +856,7 @@ export default function TradeDeskScreen() {
         }
       </Card>
     </ScrollView>
+    <TradeOutcomeBanner outcome={outcomeBanner} onDone={() => setOutcomeBanner(null)} />
+    </View>
   );
 }

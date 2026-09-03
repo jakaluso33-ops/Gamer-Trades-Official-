@@ -93,6 +93,10 @@ interface Props {
   editingLevel?: 'stop' | 'profit' | null;
   onChangeStopLoss?: (price: number) => void;
   onChangeTakeProfit?: (price: number) => void;
+  /** Fires with the full internal candle series on mount and every new candle -- lets a
+   * parent run its own live strategy detection against exactly what's drawn (e.g. Home's
+   * live chart), instead of duplicating the candle-generation logic to scan independently. */
+  onCandlesUpdate?: (candles: Candle[]) => void;
 }
 
 function touchDistance(touches: { pageX: number; pageY: number }[]): number {
@@ -118,6 +122,7 @@ export default function CandlestickChart({
   editingLevel = null,
   onChangeStopLoss,
   onChangeTakeProfit,
+  onCandlesUpdate,
 }: Props) {
   const barMs = TIMEFRAME_MS[timeframe];
   // Caches generated history per symbol+timeframe so flipping between timeframes shows the
@@ -133,6 +138,8 @@ export default function CandlestickChart({
   const [priceZoom, setPriceZoom] = useState(1);
   const livePriceRef = useRef(livePrice);
   useEffect(() => { livePriceRef.current = livePrice; }, [livePrice]);
+  const onCandlesUpdateRef = useRef(onCandlesUpdate);
+  useEffect(() => { onCandlesUpdateRef.current = onCandlesUpdate; }, [onCandlesUpdate]);
   const pinchStartDist = useRef<number | null>(null);
   const pinchStartZoom = useRef(zoom);
   const pinchStartPriceZoom = useRef(priceZoom);
@@ -171,6 +178,7 @@ export default function CandlestickChart({
     }
     setCandles(existing);
     setPriceZoom(1);
+    onCandlesUpdateRef.current?.(existing);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol, timeframe]);
 
@@ -195,6 +203,7 @@ export default function CandlestickChart({
         };
         const next = [...prev.slice(-(MAX_HISTORY - 1)), newCandle];
         historyRef.current.set(key, next);
+        onCandlesUpdateRef.current?.(next);
         return next;
       });
     }, tickMs);
