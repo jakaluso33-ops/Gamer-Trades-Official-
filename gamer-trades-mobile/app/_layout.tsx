@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '../lib/AuthContext';
 import { colors } from '../lib/theme';
 import DisclaimerGate from '../components/DisclaimerGate';
 import ErrorBoundary from '../components/ErrorBoundary';
+import UpgradeNudgeModal from '../components/UpgradeNudgeModal';
 
 // Fire-and-forget: the SDK queues ad requests internally until this resolves, so nothing
 // downstream needs to await it. On iOS, Apple requires the App Tracking Transparency prompt
@@ -26,10 +27,10 @@ function RootNavigation() {
   const { session, profile, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const inAuthGroup = segments[0] === '(tabs)';
 
   useEffect(() => {
     if (loading) return;
-    const inAuthGroup = segments[0] === '(tabs)';
     const inOnboarding = segments[0] === 'onboarding';
     const inNotificationPrompt = segments[0] === 'notification-permission';
     const isPublicRoute = segments[0] === 'privacy' || segments[0] === 'terms' || segments[0] === 'reset-password';
@@ -81,6 +82,7 @@ function RootNavigation() {
         <Stack.Screen name="(tabs)" />
       </Stack>
       <DisclaimerGate />
+      {inAuthGroup && <UpgradeNudgeModal />}
     </>
   );
 }

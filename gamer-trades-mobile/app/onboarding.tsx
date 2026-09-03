@@ -11,6 +11,7 @@ import { logEvent } from '../lib/activity';
 import { assignOnboardingVariants, OnboardingVariants } from '../lib/experiments';
 import { PLANS } from '../lib/plans';
 import { SkillLevel } from '../lib/curriculum';
+import PlanComparisonGrid from '../components/PlanComparisonGrid';
 
 const PRO_FEATURES = PLANS.find(p => p.name === 'pro')?.features ?? [];
 
@@ -294,6 +295,18 @@ export default function OnboardingScreen() {
       >
         {busy === 'free' ? '...' : 'Continue with the free plan'}
       </BodyText>
+
+      <BodyText color={colors.muted} size={11} weight="semibold" style={{ textAlign: 'center', marginTop: 18 }}>
+        HOW ALL THE PLANS COMPARE
+      </BodyText>
+      <PlanComparisonGrid
+        currentPlan="free"
+        excludePlans={['pro']}
+        onUpgradeComplete={async () => {
+          await waitForPlanUpgrade(refreshProfile, () => profile?.plan ?? 'free');
+          await finish();
+        }}
+      />
     </ScrollView>
   );
 }

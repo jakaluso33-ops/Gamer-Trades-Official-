@@ -5,16 +5,14 @@ import { Card, PixelText, BodyText, PixelButton, Avatar } from '../../components
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { deleteAccount } from '../../lib/account';
-import { PLANS } from '../../lib/plans';
-import { startCheckout } from '../../lib/checkout';
 import { requestNotificationPermission, setNotificationsEnabled } from '../../lib/notifications';
+import PlanComparisonGrid from '../../components/PlanComparisonGrid';
+import { Plan } from '../../lib/plans';
 
 export default function ProfileScreen() {
   const { profile, user, signOut, refreshProfile } = useAuth();
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [notifBusy, setNotifBusy] = useState(false);
 
   const toggleNotifications = async () => {
@@ -33,17 +31,6 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleUpgrade = async (priceId: string) => {
-    setCheckoutError(null);
-    setCheckoutBusy(true);
-    try {
-      await startCheckout(priceId);
-    } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : 'Could not start checkout');
-    } finally {
-      setCheckoutBusy(false);
-    }
-  };
   const xpForLevel = (level: number) => level * 250;
   const xpNeeded = xpForLevel(profile?.level ?? 1);
 
@@ -108,40 +95,7 @@ export default function ProfileScreen() {
 
       <View>
         <PixelText color={colors.gold} size={11} glow style={{ marginBottom: 10 }}>★ PLANS</PixelText>
-        {PLANS.map(plan => {
-          const isCurrent = (profile?.plan ?? 'free') === plan.name.toLowerCase();
-          return (
-            <Card key={plan.name} borderColor={isCurrent ? colors.border : plan.color} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <BodyText color={plan.color} size={13} weight="semibold" glow>{plan.name.toUpperCase()}</BodyText>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <BodyText color={colors.gold} size={13} weight="medium">{plan.price}</BodyText>
-                  {plan.annualPrice && <BodyText color={colors.green} size={11}>or {plan.annualPrice}</BodyText>}
-                </View>
-              </View>
-              {plan.features.map(f => (
-                <BodyText key={f} color={colors.muted} size={12} style={{ marginBottom: 3 }}>▶ {f}</BodyText>
-              ))}
-              {!isCurrent && plan.priceId && (
-                <View style={{ marginTop: 10, gap: 6 }}>
-                  <PixelButton color={plan.color} disabled={checkoutBusy} onPress={() => handleUpgrade(plan.priceId!)}>
-                    {checkoutBusy ? '...' : `UPGRADE ${plan.annualPriceId ? '(MONTHLY)' : ''}`}
-                  </PixelButton>
-                  {plan.annualPriceId && (
-                    <PixelButton color={colors.green} disabled={checkoutBusy} onPress={() => handleUpgrade(plan.annualPriceId!)}>
-                      {checkoutBusy ? '...' : 'UPGRADE (ANNUAL — SAVE)'}
-                    </PixelButton>
-                  )}
-                </View>
-              )}
-            </Card>
-          );
-        })}
-        {checkoutError && (
-          <View style={{ padding: 8, backgroundColor: '#ff335511', borderWidth: 1, borderColor: '#ff335544' }}>
-            <BodyText color={colors.red} size={12}>⚠ {checkoutError}</BodyText>
-          </View>
-        )}
+        <PlanComparisonGrid currentPlan={(profile?.plan ?? 'free') as Plan} />
       </View>
 
       <Card borderColor={colors.gold}>
