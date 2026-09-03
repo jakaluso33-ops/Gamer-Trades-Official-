@@ -4,7 +4,7 @@
     "slug": "gamer-trades-mobile",
     "owner": "jmoneytradess-team",
     "scheme": "gamertrades",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -12,7 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gamertrades.app",
-      "buildNumber": "7",
+      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
