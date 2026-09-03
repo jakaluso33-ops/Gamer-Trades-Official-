@@ -39,7 +39,8 @@ const PRACTICE_SYMBOL = 'BTC/USD (practice)';
 export default function ChartClassroom({ userId, level, color, topicStats, onTopicStatsChange }: Props) {
   const lessons = CURRICULUM[level];
   const topics = topicsForLevel(level);
-  const detectorIds = Array.from(new Set(lessons.map(l => l.chartConcept).filter((d): d is DetectorId => !!d)));
+  const chartConcepts: (DetectorId | undefined)[] = lessons.map(l => l.chartConcept);
+  const detectorIds: DetectorId[] = Array.from(new Set(chartConcepts.filter((d): d is DetectorId => d != null)));
   const candlesRef = useRef<Candle[]>(generateCandles(60, BASE_PRICE));
   const [livePrice, setLivePrice] = useState(BASE_PRICE);
   const [, forceTick] = useState(0);

@@ -46,6 +46,9 @@ const SCANNER_STRATEGIES: { id: DetectorId; label: string }[] = [
   { id: 'support_resistance', label: 'S/R' },
   { id: 'ma_crossover', label: 'MA CROSS' },
   { id: 'rsi_reversal', label: 'RSI' },
+  { id: 'vwap', label: 'VWAP' },
+  { id: 'bollinger_squeeze', label: 'BB SQUEEZE' },
+  { id: 'macd', label: 'MACD' },
 ];
 
 /** Bigger steps at higher quantities so the stepper stays fast to use across a wide range. */

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { logEvent } from './activity';
+import { DetectorId } from './strategyEngine';
 
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
@@ -38,8 +39,6 @@ export interface QuizQuestion {
   options: string[];
   correctIndex: number;
 }
-
-export type DetectorId = 'breakout' | 'orb' | 'fibonacci' | 'support_resistance' | 'ma_crossover' | 'rsi_reversal';
 
 export interface Lesson {
   id: string;
@@ -522,6 +521,41 @@ export const CURRICULUM: Record<SkillLevel, Lesson[]> = {
         options: ['Guaranteed sideways action forever', 'A period of unusually low volatility, often followed by a bigger move', 'A market holiday', 'Nothing meaningful'],
         correctIndex: 1,
       },
+      chartConcept: 'bollinger_squeeze',
+    },
+    {
+      id: 'a_vwap',
+      title: 'VWAP — What Institutions Watch',
+      icon: '📊',
+      body: [
+        'VWAP (Volume-Weighted Average Price) is the average price paid for an asset so far in the session, weighted by how much volume traded at each price — a more "honest" average than a simple moving average.',
+        'Institutional orders are frequently benchmarked against VWAP — a large fund buying "at or better than VWAP" is considered to have executed well, which is exactly why so many big orders cluster around it.',
+        'Because of that, VWAP tends to act like a magnet and a battleground: price often reverts toward it, and reclaiming or losing it as support/resistance can flip short-term control between buyers and sellers.',
+        'See the full VWAP guide in the Academy tab, and check the LIVE SIGNALS panel on the Trade Desk to watch it happen on a real chart.',
+      ],
+      quiz: {
+        question: 'VWAP is different from a simple moving average because it is weighted by...',
+        options: ['Time of day only', 'Volume traded at each price', 'The asset\'s market cap', 'Nothing — they are the same thing'],
+        correctIndex: 1,
+      },
+      chartConcept: 'vwap',
+    },
+    {
+      id: 'a_macd',
+      title: 'MACD — Momentum Beyond a Simple Cross',
+      icon: '📉',
+      body: [
+        'MACD (Moving Average Convergence Divergence) is built from two EMAs of price — the "MACD line" — plotted against a smoothed "signal line" of itself.',
+        'When the MACD line crosses above its signal line, that\'s read as bullish momentum; crossing below is bearish — similar in spirit to a moving average cross, but reacting somewhat faster to changing momentum.',
+        'One of the highest-value MACD signals is DIVERGENCE: price making a new high/low that MACD does NOT confirm with a matching new extreme — an early warning that momentum is fading before price itself turns.',
+        'See the full MACD guide in the Academy tab for entry/exit rules and how divergence is spotted in practice.',
+      ],
+      quiz: {
+        question: 'MACD "divergence" refers to...',
+        options: ['MACD and price always moving together', 'Price making a new high/low that MACD does not confirm', 'A guaranteed reversal signal', 'MACD only working on forex'],
+        correctIndex: 1,
+      },
+      chartConcept: 'macd',
     },
   ],
   expert: [

@@ -251,6 +251,168 @@ export function detectRSIReversal(candles: Candle[], period = 14, overbought = 7
   return null;
 }
 
+export function ema(candles: Candle[], period: number): (number | null)[] {
+  const k = 2 / (period + 1);
+  const out: (number | null)[] = [];
+  let prev: number | null = null;
+  candles.forEach((c, i) => {
+    if (i < period - 1) { out.push(null); return; }
+    if (prev == null) {
+      prev = avg(candles.slice(i - period + 1, i + 1).map(x => x.close));
+    } else {
+      prev = c.close * k + prev * (1 - k);
+    }
+    out.push(prev);
+  });
+  return out;
+}
+
+/** Session-anchored VWAP (volume-weighted average price) over the full candle window given —
+ * the standard intraday "fair value" line institutions trade around. */
+export function computeVWAP(candles: Candle[]): (number | null)[] {
+  let cumPV = 0, cumVol = 0;
+  return candles.map(c => {
+    const typicalPrice = (c.high + c.low + c.close) / 3;
+    cumPV += typicalPrice * c.volume;
+    cumVol += c.volume;
+    return cumVol > 0 ? cumPV / cumVol : null;
+  });
+}
+
+export function detectVWAPBounce(candles: Candle[], minBars = 15): StrategySignal | null {
+  if (candles.length < minBars) return null;
+  const vwap = computeVWAP(candles);
+  const n = candles.length;
+  const vPrev = vwap[n - 2], vCurr = vwap[n - 1];
+  if (vPrev == null || vCurr == null) return null;
+  const prev = candles[n - 2];
+  const last = candles[n - 1];
+
+  if (prev.close <= vPrev && last.close > vCurr) {
+    return {
+      strategyId: 'vwap',
+      direction: 'bullish',
+      label: 'VWAP RECLAIM',
+      detail: `Price closed back above VWAP ($${vCurr.toFixed(2)}) after trading below it — institutional buyers stepping back in at "fair value".`,
+      price: last.close,
+      index: n - 1,
+      level: vCurr,
+    };
+  }
+  if (prev.close >= vPrev && last.close < vCurr) {
+    return {
+      strategyId: 'vwap',
+      direction: 'bearish',
+      label: 'VWAP REJECTION',
+      detail: `Price closed back below VWAP ($${vCurr.toFixed(2)}) after trading above it — sellers defending "fair value" from above.`,
+      price: last.close,
+      index: n - 1,
+      level: vCurr,
+    };
+  }
+  return null;
+}
+
+interface BollingerBands { middle: number; upper: number; lower: number; bandwidthPct: number }
+
+export function computeBollingerBands(candles: Candle[], period = 20, stdevMult = 2): BollingerBands | null {
+  if (candles.length < period) return null;
+  const window = candles.slice(-period).map(c => c.close);
+  const mean = avg(window);
+  const variance = avg(window.map(c => (c - mean) ** 2));
+  const stdev = Math.sqrt(variance);
+  const upper = mean + stdev * stdevMult;
+  const lower = mean - stdev * stdevMult;
+  return { middle: mean, upper, lower, bandwidthPct: mean > 0 ? ((upper - lower) / mean) * 100 : 0 };
+}
+
+export function detectBollingerSqueeze(candles: Candle[], period = 20, lookback = 30, squeezePercentile = 0.3): StrategySignal | null {
+  if (candles.length < period + lookback) return null;
+  const bandwidths: number[] = [];
+  for (let i = candles.length - lookback; i < candles.length; i++) {
+    const bb = computeBollingerBands(candles.slice(0, i + 1), period);
+    if (bb) bandwidths.push(bb.bandwidthPct);
+  }
+  if (bandwidths.length < lookback * 0.8) return null;
+  const sorted = [...bandwidths].sort((a, b) => a - b);
+  const threshold = sorted[Math.floor(sorted.length * squeezePercentile)];
+  const wasSqueezed = bandwidths.slice(-6, -1).some(bw => bw <= threshold);
+  if (!wasSqueezed) return null;
+
+  const bb = computeBollingerBands(candles, period);
+  if (!bb) return null;
+  const last = candles[candles.length - 1];
+
+  if (last.close > bb.upper) {
+    return {
+      strategyId: 'bollinger_squeeze',
+      direction: 'bullish',
+      label: 'SQUEEZE BREAKOUT',
+      detail: `Bands had tightened to a low-volatility squeeze, then price broke above the upper band ($${bb.upper.toFixed(2)}) — a volatility expansion to the upside.`,
+      price: last.close,
+      index: candles.length - 1,
+      level: bb.upper,
+      level2: bb.lower,
+    };
+  }
+  if (last.close < bb.lower) {
+    return {
+      strategyId: 'bollinger_squeeze',
+      direction: 'bearish',
+      label: 'SQUEEZE BREAKDOWN',
+      detail: `Bands had tightened to a low-volatility squeeze, then price broke below the lower band ($${bb.lower.toFixed(2)}) — a volatility expansion to the downside.`,
+      price: last.close,
+      index: candles.length - 1,
+      level: bb.upper,
+      level2: bb.lower,
+    };
+  }
+  return null;
+}
+
+export function detectMACDCrossover(candles: Candle[], fastPeriod = 12, slowPeriod = 26, signalPeriod = 9): StrategySignal | null {
+  if (candles.length < slowPeriod + signalPeriod) return null;
+  const fastEma = ema(candles, fastPeriod);
+  const slowEma = ema(candles, slowPeriod);
+  const macdLine: (number | null)[] = candles.map((_, i) => {
+    const f = fastEma[i], s = slowEma[i];
+    return f != null && s != null ? f - s : null;
+  });
+  const validStart = macdLine.findIndex(v => v != null);
+  if (validStart === -1) return null;
+  const macdCandles: Candle[] = macdLine.slice(validStart).map((v, i) => ({ time: i, open: v!, high: v!, low: v!, close: v!, volume: 0 }));
+  if (macdCandles.length < signalPeriod) return null;
+  const signalEma = ema(macdCandles, signalPeriod);
+
+  const n = macdCandles.length;
+  const mPrev = macdCandles[n - 2]?.close, mCurr = macdCandles[n - 1]?.close;
+  const sPrev = signalEma[n - 2], sCurr = signalEma[n - 1];
+  if (mPrev == null || mCurr == null || sPrev == null || sCurr == null) return null;
+
+  const last = candles[candles.length - 1];
+  if (mPrev <= sPrev && mCurr > sCurr) {
+    return {
+      strategyId: 'macd',
+      direction: 'bullish',
+      label: 'MACD BULLISH CROSS',
+      detail: `MACD line crossed above its signal line${mCurr < 0 ? ' below zero — early-stage momentum shift' : ' — momentum turning up'}.`,
+      price: last.close,
+      index: candles.length - 1,
+    };
+  }
+  if (mPrev >= sPrev && mCurr < sCurr) {
+    return {
+      strategyId: 'macd',
+      direction: 'bearish',
+      label: 'MACD BEARISH CROSS',
+      detail: `MACD line crossed below its signal line${mCurr > 0 ? ' above zero — early-stage momentum shift' : ' — momentum turning down'}.`,
+      price: last.close,
+      index: candles.length - 1,
+    };
+  }
+  return null;
+}
+
 export interface TradePlan {
   entry: number;
   stopLoss: number;
@@ -288,7 +450,7 @@ export function computeTradePlan(signal: StrategySignal, candles: Candle[]): Tra
   const riskDist = Math.max(0.01, Math.abs(entry - stopLoss));
 
   let takeProfit: number;
-  if ((signal.strategyId === 'breakout' || signal.strategyId === 'orb') && signal.level != null && signal.level2 != null) {
+  if ((signal.strategyId === 'breakout' || signal.strategyId === 'orb' || signal.strategyId === 'bollinger_squeeze') && signal.level != null && signal.level2 != null) {
     const rangeHeight = Math.abs(signal.level - signal.level2);
     const multiple = signal.strategyId === 'orb' ? 2 : 1;
     takeProfit = entry + (bullish ? 1 : -1) * rangeHeight * multiple;
@@ -310,7 +472,16 @@ export function computeTradePlan(signal: StrategySignal, candles: Candle[]): Tra
   return { entry, stopLoss, takeProfit, riskRewardRatio };
 }
 
-export type DetectorId = 'breakout' | 'orb' | 'fibonacci' | 'support_resistance' | 'ma_crossover' | 'rsi_reversal';
+export type DetectorId =
+  | 'breakout'
+  | 'orb'
+  | 'fibonacci'
+  | 'support_resistance'
+  | 'ma_crossover'
+  | 'rsi_reversal'
+  | 'vwap'
+  | 'bollinger_squeeze'
+  | 'macd';
 
 const DETECTORS: Record<DetectorId, (candles: Candle[]) => StrategySignal | null> = {
   breakout: detectBreakout,
@@ -319,6 +490,9 @@ const DETECTORS: Record<DetectorId, (candles: Candle[]) => StrategySignal | null
   support_resistance: detectSupportResistance,
   ma_crossover: detectMACrossover,
   rsi_reversal: detectRSIReversal,
+  vwap: detectVWAPBounce,
+  bollinger_squeeze: detectBollingerSqueeze,
+  macd: detectMACDCrossover,
 };
 
 export function scanStrategies(candles: Candle[], enabled: DetectorId[] = Object.keys(DETECTORS) as DetectorId[]): StrategySignal[] {

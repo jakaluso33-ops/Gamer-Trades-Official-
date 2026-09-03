@@ -92,4 +92,37 @@ export const DEMO_SCRIPTS: Record<DetectorId, DemoScript> = {
       { price: 92, signal: { direction: 'bullish', label: 'OVERSOLD' }, caption: 'Bounce confirmed. This is the reversal RSI flagged.' },
     ],
   },
+  vwap: {
+    basePrice: 100,
+    steps: [
+      { price: 100, caption: "Session opens. VWAP starts tracking the volume-weighted average price." },
+      { price: 104, caption: 'Price rallies above VWAP — buyers in control, trading above "fair value".' },
+      { price: 102, caption: 'Pulls back but stays above VWAP — the trend is intact.' },
+      { price: 98, caption: 'Sharper pullback now — price dips right down toward VWAP.' },
+      { price: 96, signal: { direction: 'bearish', label: 'VWAP REJECTION', level: 99 }, caption: '📊 Closes back below VWAP after trading above it — sellers defending fair value from above.' },
+      { price: 93, signal: { direction: 'bearish', label: 'VWAP REJECTION', level: 99 }, caption: 'Momentum follows through to the downside, confirming the rejection.' },
+    ],
+  },
+  bollinger_squeeze: {
+    basePrice: 100,
+    steps: [
+      { price: 100, caption: 'Volatility has dried up — the bands are pinched tight around price.' },
+      { price: 100.5, caption: 'Still coiling. Bandwidth is sitting near its lowest level in weeks.' },
+      { price: 99.5, caption: 'A textbook squeeze — the calm before an expansion.' },
+      { price: 100.2, caption: 'Price is barely moving. The bands can\'t compress much further.' },
+      { price: 106, signal: { direction: 'bullish', label: 'SQUEEZE BREAKOUT', level: 102, level2: 98 }, caption: '🎈 Closes above the upper band — the squeeze finally resolves to the upside.' },
+      { price: 111, signal: { direction: 'bullish', label: 'SQUEEZE BREAKOUT', level: 102, level2: 98 }, caption: 'Volatility expansion carries through — this is the move the squeeze was building toward.' },
+    ],
+  },
+  macd: {
+    basePrice: 100,
+    steps: [
+      { price: 100, caption: 'Downtrend in progress. MACD line is running below its signal line, both below zero.' },
+      { price: 94, caption: 'Price grinds to a new low...' },
+      { price: 92, caption: '...but momentum is quietly fading — the MACD histogram is shrinking even as price falls.' },
+      { price: 93, caption: 'Bullish divergence: price made a lower low, MACD did not confirm it. An early warning sign.' },
+      { price: 97, signal: { direction: 'bullish', label: 'MACD BULLISH CROSS' }, caption: '📉 MACD line crosses above its signal line, still below zero — an early-stage momentum shift.' },
+      { price: 103, signal: { direction: 'bullish', label: 'MACD BULLISH CROSS' }, caption: 'Price follows momentum higher, confirming the reversal MACD flagged early.' },
+    ],
+  },
 };

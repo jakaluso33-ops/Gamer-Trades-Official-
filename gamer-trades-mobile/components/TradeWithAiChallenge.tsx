@@ -33,7 +33,8 @@ function generateCandles(count: number, basePrice: number): Candle[] {
 const BASE_PRICE = 67500;
 
 export default function TradeWithAiChallenge({ level, color, alreadyPassed, onPass }: Props) {
-  const detectorIds = Array.from(new Set(CURRICULUM[level].map(l => l.chartConcept).filter((d): d is DetectorId => !!d)));
+  const chartConcepts: (DetectorId | undefined)[] = CURRICULUM[level].map(l => l.chartConcept);
+  const detectorIds: DetectorId[] = Array.from(new Set(chartConcepts.filter((d): d is DetectorId => d != null)));
   const candlesRef = useRef<Candle[]>(generateCandles(60, BASE_PRICE));
   const [livePrice, setLivePrice] = useState(BASE_PRICE);
   const [, forceTick] = useState(0);

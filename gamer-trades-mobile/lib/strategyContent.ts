@@ -1,4 +1,4 @@
-export type StrategyDifficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export type StrategyDifficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
 
 export interface StrategyInfo {
   id: string;
@@ -214,6 +214,105 @@ export const STRATEGIES: StrategyInfo[] = [
     example: 'A stock rallies hard and RSI pushes to 78, then starts drifting back down toward 70 while price is still near its high — bearish divergence. RSI then crosses back below 70. A trader shorts on that cross, stops above the recent price high, and targets a pullback to the nearest support zone below.',
     whenToUse: 'Most reliable in range-bound markets; in strong trends, RSI can stay "overbought" or "oversold" for a long time.',
     riskNote: "Don't fight a strong trend just because RSI is extreme — confirm with price action before entering.",
+  },
+  {
+    id: 'vwap',
+    name: 'VWAP BOUNCE / REJECTION',
+    icon: '📊',
+    color: '#00e0c0',
+    difficulty: 'INTERMEDIATE',
+    summary: 'Trade around VWAP (Volume-Weighted Average Price) — the price level institutions treat as "fair value" for the session.',
+    howItWorks: [
+      "VWAP is the average price paid for an asset so far in the session, weighted by how much volume traded at each price — not just a simple average, a volume-honest one.",
+      'Big institutional orders are often benchmarked against VWAP — a fund buying "at or better than VWAP" is considered to have gotten a good fill.',
+      'Because of that, VWAP tends to act like a magnet and a battleground: price often reverts toward it, and reclaiming or losing it can flip short-term control between buyers and sellers.',
+      'A reclaim of VWAP from below (closing back above it) suggests buyers regaining control; losing VWAP from above suggests sellers taking over.',
+    ],
+    entryRules: [
+      'Watch price relative to VWAP, not just its raw value — is price approaching from above or below, and how fast?',
+      'For a long: wait for a candle to close back above VWAP after trading below it, ideally with volume picking up on the reclaim.',
+      'For a short: wait for a candle to close back below VWAP after trading above it.',
+      "Beginners: treat VWAP like a moving support/resistance line on the chart. Experts: watch how price behaves on approach (slowing down vs. slicing through) as a read on order-flow strength, and combine with VWAP standard-deviation bands for statistically stretched entries.",
+    ],
+    exitRules: [
+      'A common stop is the recent swing low/high just before the VWAP reclaim/rejection candle.',
+      'A conservative target is a return to the most recent swing high/low; a stretch target is the first VWAP standard-deviation band.',
+      'If price chops back and forth across VWAP repeatedly, that is a sign of an indecisive, low-conviction session — many traders reduce size or stand aside.',
+    ],
+    commonMistakes: [
+      'Confusing VWAP with a simple moving average — VWAP resets each session and weights by volume, which is precisely why institutions watch it and a plain MA does not carry the same weight.',
+      'Trading VWAP crosses in a straight-line trending market, where price can ride far above/below VWAP all session without ever truly reverting.',
+      'Ignoring volume on the reclaim/rejection candle — a low-volume cross back over VWAP is a much weaker signal than one with participation behind it.',
+    ],
+    example: 'A stock opens and rallies, trading well above its rising VWAP all morning. Around midday it pulls back and closes a candle just below VWAP at $84.20. A trader shorts on that close, stops above the recent high at $85.10, and targets the prior swing low near $82.50 where buyers previously stepped in.',
+    whenToUse: 'Most useful intraday, in range-bound or mean-reverting conditions — session-anchored, so it resets and is most meaningful on shorter timeframes.',
+    riskNote: 'In a strong one-directional trend day, price can stay far from VWAP for hours — don\'t assume every stretch must snap back immediately.',
+  },
+  {
+    id: 'bollinger_squeeze',
+    name: 'BOLLINGER BAND SQUEEZE',
+    icon: '🎈',
+    color: '#38bdf8',
+    difficulty: 'ADVANCED',
+    summary: 'Trade the volatility expansion that follows a period of unusually tight, low-volatility price action.',
+    howItWorks: [
+      'Bollinger Bands wrap a moving average with an upper and lower band set a couple of standard deviations away — they widen when volatility rises and narrow when it falls.',
+      'A "squeeze" is when the bands compress to their tightest range in weeks — the market is coiling, volume and volatility have dried up.',
+      'Volatility is cyclical: periods of calm are reliably followed by periods of expansion, even though the direction of that expansion is not predictable in advance.',
+      'The breakout direction — the close that finally pushes outside a band after a squeeze — is treated as the signal for which way the expansion is likely to run.',
+    ],
+    entryRules: [
+      'Identify a genuine squeeze first: bandwidth (the % distance between bands) sitting near its lowest levels over the past several weeks, not just "looking a bit tight".',
+      'Wait for a confirmed close outside either band after the squeeze — that is the trigger, not the squeeze itself (you cannot know the direction in advance).',
+      'Confirm with volume expanding on the breakout candle — a squeeze breakout on dead volume is a much weaker signal.',
+      'Advanced/expert refinement: watch for a false breakout in one direction that quickly reverses back inside the bands — this "fakeout, then real move the other way" is a well-documented squeeze failure pattern worth recognizing rather than trading blindly.',
+    ],
+    exitRules: [
+      'Initial stop back on the other side of the band range (the opposite band level) — if price re-enters the squeeze zone, the expansion has likely failed.',
+      'A common target uses the width of the squeeze itself, projected from the breakout point (a measured move, same logic as a breakout trade).',
+      'Because the move after a genuine squeeze can run hard and fast, many traders trail their stop aggressively once the move is confirmed rather than using a single fixed target.',
+    ],
+    commonMistakes: [
+      'Guessing the breakout direction before it happens and entering inside the squeeze — the entire point of this strategy is that direction is unknowable until price actually breaks a band.',
+      'Confusing a normal narrow range with a true statistical squeeze — compare current bandwidth against its own recent history, not against a fixed number.',
+      'Ignoring the failed-breakout pattern — an early band-poke that snaps back is a classic trap for traders entering on the very first close outside the band.',
+    ],
+    example: 'A crypto pair chops in an extremely tight range for two weeks, its Bollinger Bandwidth sitting at its lowest reading in three months. Price then closes decisively above the upper band on a volume spike. A trader enters on that close, with a stop back at the lower band and a target equal to the width of the squeeze range projected upward from the breakout.',
+    whenToUse: 'Works on any timeframe wherever a market has visibly gone quiet after a period of normal activity — the tighter and longer the squeeze, the more significant the eventual expansion tends to be.',
+    riskNote: 'The bands tell you volatility is coming, never which direction — always wait for the actual breakout close before committing.',
+  },
+  {
+    id: 'macd',
+    name: 'MACD CROSSOVER',
+    icon: '📉',
+    color: '#c084fc',
+    difficulty: 'EXPERT',
+    summary: 'Use the MACD (Moving Average Convergence Divergence) indicator to catch momentum shifts earlier than a simple price-based moving average cross.',
+    howItWorks: [
+      'MACD is built from two moving averages of price (typically 12-period and 26-period EMAs) — the "MACD line" is the difference between them.',
+      'A "signal line" (a 9-period EMA of the MACD line itself) is plotted alongside it — when the MACD line crosses the signal line, that is the trade trigger.',
+      'The MACD line crossing above zero means the fast EMA has moved above the slow EMA (bullish momentum regime); crossing below zero is the reverse.',
+      "Because MACD is built from moving averages of moving averages, it reacts to changing momentum with less lag than watching a single MA cross on price alone, though it is still fundamentally a lagging, trend-following tool.",
+    ],
+    entryRules: [
+      'Confirm the MACD line has closed above (bullish) or below (bearish) the signal line on a completed bar.',
+      'Check whether the cross happens above or below the zero line: a bullish cross below zero is an earlier, higher-risk "momentum turning up from a downtrend" signal, while a bullish cross above zero confirms an already-established uptrend — treat them differently.',
+      "Expert-level refinement: watch for MACD divergence — price making a new high/low that the MACD histogram does NOT confirm with a matching new extreme. This is one of the more reliable early-warning signs of a weakening trend, well before the cross itself fires.",
+      'Combine with the histogram (the gap between the MACD and signal lines): a shrinking histogram ahead of the cross shows momentum already fading, giving more confidence in the signal once it prints.',
+    ],
+    exitRules: [
+      'A straightforward exit is the opposite MACD/signal cross — but because MACD lags, this gives back some profit versus the ideal exit point.',
+      'Many traders instead exit on histogram deceleration (the gap between MACD and signal starting to shrink) rather than waiting for the full reverse cross.',
+      'Stop-loss placement should still come from price structure (recent swing high/low), since MACD itself has no fixed price level to anchor a stop to.',
+    ],
+    commonMistakes: [
+      'Treating every MACD cross as equally strong — a cross far above/below the zero line, after an already-extended move, is a much weaker signal than one near the zero line at the start of a new trend.',
+      'Ignoring divergence, which is often the highest-quality information MACD provides and is missed by traders who only watch for the cross.',
+      'Using MACD alone with no price-action or support/resistance context — like any lagging indicator, it confirms what has already started rather than predicting what is about to happen.',
+    ],
+    example: 'A stock has been declining for weeks. Price prints a lower low, but the MACD histogram prints a HIGHER low than its prior swing — bearish momentum is fading even as price ekes out a new low (bullish divergence). Days later, the MACD line crosses above its signal line, both still below zero. A trader treats this as an early trend-reversal signal, enters on the cross, and stops below the recent low.',
+    whenToUse: 'Most informative on higher timeframes and trending markets; the divergence signal in particular is a favorite among more experienced traders for catching reversals early.',
+    riskNote: 'MACD is a lagging indicator built on lagging indicators — it will never call an exact top or bottom, and works best combined with other confirmation rather than traded in isolation.',
   },
 ];
 

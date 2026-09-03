@@ -17,6 +17,7 @@ const DIFF_COLOR: Record<StrategyDifficulty, string> = {
   BEGINNER: colors.green,
   INTERMEDIATE: colors.gold,
   ADVANCED: colors.red,
+  EXPERT: colors.purple,
 };
 
 type Mode = 'strategies' | 'candles';

@@ -150,6 +150,72 @@ export default function StrategyDiagram({ id, height = 150 }: { id: DetectorId; 
     );
   }
 
+  if (id === 'vwap') {
+    const candles: Candle[] = [
+      { o: 60, h: 54, l: 66, c: 62 },
+      { o: 62, h: 56, l: 70, c: 66 },
+      { o: 66, h: 58, l: 72, c: 60 },
+      { o: 60, h: 52, l: 64, c: 54 },
+      { o: 54, h: 46, l: 58, c: 50 },
+      { o: 50, h: 38, l: 54, c: 42 },
+      { o: 42, h: 26, l: 46, c: 30 },
+    ];
+    return (
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+        <Line x1="12" y1="56" x2="270" y2="56" stroke={colors.gold} strokeWidth={1.5} strokeDasharray="4,3" />
+        <SvgText x="14" y="50" fontSize="10" fill={colors.gold}>VWAP</SvgText>
+        <CandleShapes candles={candles} />
+        <ArrowLabel x={230} y={40} up label="REJECTION" color={colors.red} />
+      </Svg>
+    );
+  }
+
+  if (id === 'bollinger_squeeze') {
+    return (
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+        <Path d="M 20 20 Q 100 50 150 66 Q 200 74 260 20" stroke={colors.muted} strokeWidth={1.2} fill="none" opacity={0.6} />
+        <Path d="M 20 110 Q 100 80 150 66 Q 200 58 260 118" stroke={colors.muted} strokeWidth={1.2} fill="none" opacity={0.6} />
+        <SvgText x="150" y="90" fontSize="9" fill={colors.blue} textAnchor="middle">SQUEEZE</SvgText>
+        <CandleShapes
+          candles={[
+            { o: 70, h: 60, l: 76, c: 66 },
+            { o: 66, h: 62, l: 72, c: 68 },
+            { o: 68, h: 64, l: 72, c: 66 },
+            { o: 66, h: 62, l: 70, c: 64 },
+            { o: 64, h: 60, l: 68, c: 62 },
+            { o: 62, h: 40, l: 66, c: 44 },
+            { o: 44, h: 20, l: 48, c: 24 },
+          ]}
+        />
+        <ArrowLabel x={260} y={40} up label="EXPANSION" color={colors.green} />
+      </Svg>
+    );
+  }
+
+  if (id === 'macd') {
+    return (
+      <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+        <CandleShapes
+          candles={[
+            { o: 92, h: 86, l: 98, c: 90 },
+            { o: 90, h: 82, l: 96, c: 84 },
+            { o: 84, h: 74, l: 90, c: 78 },
+            { o: 78, h: 62, l: 82, c: 66 },
+            { o: 66, h: 50, l: 70, c: 54 },
+            { o: 54, h: 38, l: 60, c: 42 },
+            { o: 42, h: 24, l: 48, c: 28 },
+          ]}
+        />
+        <Line x1="12" y1="132" x2="270" y2="132" stroke={colors.muted} strokeWidth={1} strokeDasharray="3,2" />
+        <SvgText x="14" y="129" fontSize="8" fill={colors.muted}>ZERO LINE</SvgText>
+        <Path d="M 20 140 Q 80 138 120 132 Q 170 122 260 100" stroke={colors.blue} strokeWidth={2} fill="none" />
+        <Path d="M 20 138 Q 80 140 120 138 Q 170 128 260 112" stroke={colors.gold} strokeWidth={1.5} fill="none" opacity={0.8} />
+        <SvgText x="150" y="150" fontSize="8" fill={colors.blue}>MACD</SvgText>
+        <ArrowLabel x={225} y={70} up label="CROSS UP" color={colors.green} />
+      </Svg>
+    );
+  }
+
   // rsi_reversal
   const candles: Candle[] = [
     { o: 70, h: 60, l: 76, c: 64 },
