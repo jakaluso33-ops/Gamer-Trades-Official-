@@ -10,6 +10,7 @@ import { scheduleStreakSaverReminder } from '../../lib/notifications';
 import { maybePromptReview } from '../../lib/reviewPrompt';
 import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 import DailyStoryCard from '../../components/DailyStoryCard';
+import LiveMarketChart from '../../components/LiveMarketChart';
 import WeeklyChallengeSection from '../../components/WeeklyChallengeCard';
 import FreeTierBannerAd from '../../components/FreeTierBannerAd';
 
@@ -125,6 +126,8 @@ export default function DashboardScreen() {
       </Pressable>
 
       <DailyStoryCard />
+
+      <LiveMarketChart />
 
       <Modal visible={showDeposit} transparent animationType="fade" onRequestClose={() => !depositBusy && setShowDeposit(false)}>
         <Pressable
