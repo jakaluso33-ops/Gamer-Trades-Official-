@@ -10,6 +10,7 @@ import { scheduleStreakSaverReminder } from '../../lib/notifications';
 import PortfolioSwitcher from '../../components/PortfolioSwitcher';
 import DailyStoryCard from '../../components/DailyStoryCard';
 import WeeklyChallengeSection from '../../components/WeeklyChallengeCard';
+import FreeTierBannerAd from '../../components/FreeTierBannerAd';
 
 export default function DashboardScreen() {
   const { user, profile, activePortfolio, applyPortfolioPatch } = useAuth();
@@ -66,6 +67,8 @@ export default function DashboardScreen() {
         </View>
         <PortfolioSwitcher />
       </View>
+
+      <FreeTierBannerAd />
 
       <WeeklyChallengeSection />
 

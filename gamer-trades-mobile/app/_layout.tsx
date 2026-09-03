@@ -3,10 +3,24 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { View, ActivityIndicator } from 'react-native';
+import { Platform } from 'react-native';
+import mobileAds from 'react-native-google-mobile-ads';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { AuthProvider, useAuth } from '../lib/AuthContext';
 import { colors } from '../lib/theme';
 import DisclaimerGate from '../components/DisclaimerGate';
 import ErrorBoundary from '../components/ErrorBoundary';
+
+// Fire-and-forget: the SDK queues ad requests internally until this resolves, so nothing
+// downstream needs to await it. On iOS, Apple requires the App Tracking Transparency prompt
+// before any ad SDK may request the IDFA -- ads still serve (untargeted) if the user declines.
+async function initAds() {
+  if (Platform.OS === 'ios') {
+    await requestTrackingPermissionsAsync().catch(() => {});
+  }
+  await mobileAds().initialize();
+}
+initAds();
 
 function RootNavigation() {
   const { session, profile, loading } = useAuth();

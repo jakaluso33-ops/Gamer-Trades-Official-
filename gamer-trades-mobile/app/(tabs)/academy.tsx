@@ -12,6 +12,7 @@ import { DetectorId, getDetector } from '../../lib/strategyEngine';
 import { detectCandlePattern } from '../../lib/candlePatterns';
 import SkillPathCard from '../../components/SkillPathCard';
 import TradingForDummiesCard from '../../components/TradingForDummiesCard';
+import FreeTierBannerAd from '../../components/FreeTierBannerAd';
 
 const DIFF_COLOR: Record<StrategyDifficulty, string> = {
   BEGINNER: colors.green,
@@ -30,6 +31,8 @@ export default function AcademyScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <TradingForDummiesCard />
+
+      <FreeTierBannerAd />
 
       <View>
         <BodyText color={colors.muted} size={12}>🧠 AI STRATEGY ACADEMY</BodyText>

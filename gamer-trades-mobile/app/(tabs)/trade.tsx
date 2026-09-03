@@ -6,6 +6,7 @@ import { colors } from '../../lib/theme';
 import { ASSET_CLASS_LABEL, ASSET_CLASS_COLOR, ASSET_CLASS_ICON, SYMBOL_ICON, SYMBOLS_BY_CLASS, AssetClass } from '../../lib/symbols';
 import { isMarketOpen } from '../../lib/marketHours';
 import MasterTraderFeed from '../../components/MasterTraderFeed';
+import FreeTierBannerAd from '../../components/FreeTierBannerAd';
 
 const ASSET_CLASSES: AssetClass[] = ['CRYPTO', 'STOCK', 'FOREX', 'INDEX', 'FUTURES', 'OPTIONS'];
 
@@ -48,6 +49,8 @@ export default function TradingArenaScreen() {
           </View>
         </Card>
       </Pressable>
+
+      <FreeTierBannerAd />
 
       <MasterTraderFeed />
 
