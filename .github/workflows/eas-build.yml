@@ -99,4 +99,6 @@ jobs:
 
       - name: Submit to TestFlight
         if: ${{ !inputs.local && inputs.submit && (inputs.platform == 'ios' || inputs.platform == 'all') }}
+        env:
+          EXPO_DEBUG: true
         run: eas submit --platform ios --latest --non-interactive
