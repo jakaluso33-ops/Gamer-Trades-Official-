@@ -5,6 +5,7 @@ import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { getLeaderboard, LeaderboardEntry } from '../../lib/leaderboard';
 import WeeklyChallengeSection from '../../components/WeeklyChallengeCard';
+import TournamentCard from '../../components/TournamentCard';
 
 const RANK_COLORS = [colors.gold, '#94a3b8', '#cd7f32'];
 
@@ -19,6 +20,9 @@ export default function LeaderboardScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
       <PixelText color={colors.gold} size={13} glow>♛ LEADERBOARD</PixelText>
+
+      <BodyText color={colors.gold} size={12} weight="semibold">🏆 MONTHLY TOURNAMENT</BodyText>
+      <TournamentCard />
 
       <WeeklyChallengeSection />
 

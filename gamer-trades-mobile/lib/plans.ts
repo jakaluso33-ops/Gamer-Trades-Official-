@@ -21,6 +21,14 @@ export function aiAnalystDailyLimit(plan: Plan): number | null {
   return plan === 'free' ? FREE_AI_ANALYST_DAILY_LIMIT : null;
 }
 
+/** Max concurrently-active goals (each active goal generates one daily/weekly/monthly task
+ * in Goals & Tasks) -- this is the actual mechanism behind the "1 daily challenge" (free) vs
+ * "3 daily challenges" (Pro/Legend) line in the plan comparison, previously just marketing
+ * copy with no code enforcing it. */
+export function maxActiveGoals(plan: Plan): number {
+  return plan === 'free' ? 1 : 3;
+}
+
 function aiRunsKey(userId: string): string {
   const today = new Date().toISOString().slice(0, 10);
   return `gt_ai_runs_${userId}_${today}`;
@@ -70,9 +78,10 @@ export const PLANS: {
       'Unlimited AI news analysis',
       'Play vs AI opponents',
       'Play vs friends (PvP)',
-      '3 daily challenges',
-      'Tournament access',
+      '3 active goals (vs 1 free)',
+      'Monthly Pro tournament — bigger starting balance, real leaderboard',
       'Live candlestick pattern detection',
+      'Proven-profitable strategies (Turtle Trading, Momentum)',
     ],
   },
   {

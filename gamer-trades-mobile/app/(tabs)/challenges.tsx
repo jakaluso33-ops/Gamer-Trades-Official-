@@ -2,14 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
+import { useRouter } from 'expo-router';
 import { supabase, TradingGoal, Task } from '../../lib/supabase';
 import { GOAL_TEMPLATES, syncTasks, TaskPeriod } from '../../lib/goals';
 import { useAuth } from '../../lib/AuthContext';
+import { maxActiveGoals, Plan, PLANS } from '../../lib/plans';
 
 const PERIODS: TaskPeriod[] = ['daily', 'weekly', 'monthly'];
 
 export default function ChallengesScreen() {
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
+  const router = useRouter();
+  const plan = (profile?.plan ?? 'free') as Plan;
+  const goalCap = maxActiveGoals(plan);
+  const proPlan = PLANS.find(p => p.name === 'pro');
   const [goals, setGoals] = useState<TradingGoal[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [period, setPeriod] = useState<TaskPeriod>('daily');
@@ -77,7 +83,7 @@ export default function ChallengesScreen() {
       <Card borderColor={colors.purple}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <BodyText color={colors.purple} size={13} weight="semibold" glow>★ YOUR GOALS</BodyText>
-          {goals.length < 3 && availableTemplates.length > 0 && (
+          {goals.length < goalCap && availableTemplates.length > 0 && (
             <PixelButton color={colors.blue} onPress={() => setShowPicker(v => !v)} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
               {showPicker ? '✕ CLOSE' : '+ ADD'}
             </PixelButton>
@@ -88,6 +94,19 @@ export default function ChallengesScreen() {
           <BodyText color={colors.muted} size={13} style={{ textAlign: 'center', padding: 12 }}>
             Pick a goal below to get tasks tailored to it.
           </BodyText>
+        )}
+
+        {goals.length >= goalCap && plan === 'free' && (
+          <Pressable onPress={() => router.push('/(tabs)/profile' as never)} style={{ marginTop: goals.length > 0 ? 10 : 0 }}>
+            <View style={{ padding: 10, backgroundColor: `${colors.gold}0a`, borderWidth: 2, borderColor: `${colors.gold}55` }}>
+              <BodyText color={colors.gold} size={12} weight="semibold">
+                🔒 Free plan: 1 active goal at a time
+              </BodyText>
+              <BodyText color={colors.muted} size={11} style={{ marginTop: 2 }}>
+                Upgrade to Pro for 3 goals running at once — {proPlan?.price ?? ''}
+              </BodyText>
+            </View>
+          </Pressable>
         )}
 
         <View style={{ gap: 8 }}>

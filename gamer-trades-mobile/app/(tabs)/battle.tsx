@@ -10,7 +10,7 @@ import { recordAiBattle, AiOpponentId, AiDifficulty } from '../../lib/aiBattles'
 import { canPlayAiBattle, canPlayPvp, Plan } from '../../lib/plans';
 import UpgradeGate from '../../components/UpgradeGate';
 import CandlestickChart, { ChartPosition } from '../../components/CandlestickChart';
-import { Candle, DetectorId, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
+import { Candle, StrategySignal, scanStrategies } from '../../lib/strategyEngine';
 import { getStrategy } from '../../lib/strategyContent';
 
 const AI_OPPONENTS: { id: AiOpponentId; name: string; icon: string; difficulty: AiDifficulty; color: string; qty: number; holdTicks: number }[] = [
@@ -22,7 +22,6 @@ const AI_OPPONENTS: { id: AiOpponentId; name: string; icon: string; difficulty: 
 const BATTLE_DURATION_SECONDS = 300;
 const CANDLE_TICK_MS = 2000;
 const PLAYER_QTY = 3;
-const ALL_DETECTORS = Object.keys({ breakout: 0, orb: 0, fibonacci: 0, support_resistance: 0, ma_crossover: 0, rsi_reversal: 0 }) as DetectorId[];
 const BASE_PRICE = 100;
 
 function generateCandles(count: number, basePrice: number): Candle[] {
@@ -103,7 +102,7 @@ function AiBattle() {
       candlesRef.current = [...prev.slice(-119), newCandle];
       setLivePrice(close);
 
-      const signals = scanStrategies(candlesRef.current, ALL_DETECTORS);
+      const signals = scanStrategies(candlesRef.current);
       const signal = signals[0] ?? null;
       setActiveSignal(signal);
 
