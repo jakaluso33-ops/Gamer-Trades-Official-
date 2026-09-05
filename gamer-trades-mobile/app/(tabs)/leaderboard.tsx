@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { getLeaderboard, LeaderboardEntry } from '../../lib/leaderboard';
 import WeeklyChallengeSection from '../../components/WeeklyChallengeCard';
 import TournamentCard from '../../components/TournamentCard';
+import BacktestChallengeCard from '../../components/BacktestChallengeCard';
 
 const RANK_COLORS = [colors.gold, '#94a3b8', '#cd7f32'];
 
@@ -25,6 +26,8 @@ export default function LeaderboardScreen() {
       <TournamentCard />
 
       <WeeklyChallengeSection />
+
+      <BacktestChallengeCard />
 
       <BodyText color={colors.gold} size={12} weight="semibold" style={{ marginTop: 4 }}>ALL-TIME RANKINGS</BodyText>
 

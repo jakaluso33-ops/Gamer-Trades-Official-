@@ -30,6 +30,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="leaderboard" options={{ href: null }} />
       <Tabs.Screen name="challenges" options={{ href: null }} />
       <Tabs.Screen name="bot-builder" options={{ href: null }} />
+      <Tabs.Screen name="journal" options={{ href: null }} />
+      <Tabs.Screen name="backtest-play" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -119,6 +119,24 @@ export default function TradeHistoryScreen() {
         <BodyText color={colors.muted} size={11} onPress={() => router.back()}>◀ BACK</BodyText>
       </View>
 
+      <Pressable onPress={() => router.push('/(tabs)/journal' as never)}>
+        <Card borderColor={colors.gold} style={{ padding: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <PixelText size={20}>📓</PixelText>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <PixelText color={colors.gold} size={11} glow>TRADING JOURNAL</PixelText>
+                <BodyText color={colors.gold} size={9} weight="semibold" style={{ borderWidth: 1, borderColor: colors.gold, paddingHorizontal: 5, paddingVertical: 1 }}>LEGEND</BodyText>
+              </View>
+              <BodyText color={colors.muted} size={11} style={{ marginTop: 4 }}>
+                Log the reasoning and emotions behind every trade, then AI-backtest why it hit TP or SL
+              </BodyText>
+            </View>
+            <PixelText color={colors.gold} size={14}>▶</PixelText>
+          </View>
+        </Card>
+      </Pressable>
+
       <Card borderColor={realizedTotal >= 0 ? colors.green : colors.red}>
         <BodyText color={colors.muted} size={11}>TOTAL REALIZED P&amp;L</BodyText>
         <PixelText color={realizedTotal >= 0 ? colors.green : colors.red} size={16} glow style={{ marginTop: 6 }}>
