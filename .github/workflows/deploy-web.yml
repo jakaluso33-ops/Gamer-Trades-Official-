@@ -1,0 +1,62 @@
+name: Deploy web app to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/continued-conversation-67sehg
+    paths:
+      - "gamer-trades/**"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gamer-trades
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: gamer-trades/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        env:
+          NODE_ENV: production
+          # Public client-side values (protected by Supabase RLS), safe to bake into the build.
+          NEXT_PUBLIC_SUPABASE_URL: https://gtpgaarroytjaseuqvbf.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0cGdhYXJyb3l0amFzZXVxdmJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyMDQyODYsImV4cCI6MjEwMDc4MDI4Nn0.ampPVpgo1hYwOYCmQLPKdbAnRa8EB5WRoo4vBU5Tpjc
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: gamer-trades/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

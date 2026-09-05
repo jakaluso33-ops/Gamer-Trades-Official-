@@ -36,7 +36,7 @@ export default function AchievementBadge({ achievement }: { achievement: Achieve
       <div>
         <div
           style={{
-            fontSize: '6px',
+            fontSize: '10px',
             color: achievement.unlocked ? color : '#64748b',
             textShadow: achievement.unlocked ? `0 0 6px ${color}` : 'none',
             marginBottom: '3px',
@@ -44,7 +44,7 @@ export default function AchievementBadge({ achievement }: { achievement: Achieve
         >
           {achievement.name}
         </div>
-        <div style={{ fontSize: '5px', color: '#64748b' }}>{achievement.desc}</div>
+        <div style={{ fontSize: '9px', color: '#64748b' }}>{achievement.desc}</div>
       </div>
     </div>
   );

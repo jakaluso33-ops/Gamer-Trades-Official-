@@ -1,73 +1,203 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MiniChart from '@/components/trading/MiniChart';
+import PnlIcon from '@/components/gamification/PnlIcon';
+import { useAuth } from '@/lib/AuthContext';
+import { getPortfolio, listOpenTrades, listClosedTrades, computePnl, depositFunds, Portfolio, DbTrade } from '@/lib/trading';
+import { getBasePrice, getSymbolInfo, ASSET_CLASS_COLOR, AssetClass } from '@/lib/symbols';
 
-const HOLDINGS = [
-  { symbol: 'AAPL', qty: 50, avgCost: 178.40, current: 182.34, sector: 'TECH', class: 'STOCK' },
-  { symbol: 'TSLA', qty: 20, avgCost: 251.00, current: 245.67, sector: 'AUTO', class: 'STOCK' },
-  { symbol: 'BTC', qty: 0.5, avgCost: 64200, current: 67420, sector: 'CRYPTO', class: 'CRYPTO' },
-  { symbol: 'NVDA', qty: 15, avgCost: 890.00, current: 875.20, sector: 'TECH', class: 'STOCK' },
-  { symbol: 'ETH', qty: 2, avgCost: 3400, current: 3521, sector: 'CRYPTO', class: 'CRYPTO' },
-  { symbol: 'SPY', qty: 10, avgCost: 515.00, current: 520.88, sector: 'ETF', class: 'STOCK' },
-];
+interface Holding {
+  symbol: string;
+  qty: number;
+  avgCost: number;
+  current: number;
+  class: AssetClass;
+}
 
-const TRADE_HISTORY = [
-  { id: 1, date: '06/15 09:32', symbol: 'AAPL', side: 'BUY', qty: 50, entry: 178.40, exit: 182.34, pnl: 197.00, status: 'OPEN' },
-  { id: 2, date: '06/14 14:11', symbol: 'TSLA', side: 'SELL', qty: 10, entry: 255.00, exit: 248.50, pnl: 65.00, status: 'CLOSED' },
-  { id: 3, date: '06/14 10:05', symbol: 'BTC', side: 'BUY', qty: 0.25, entry: 65000, exit: 67420, pnl: 605.00, status: 'CLOSED' },
-  { id: 4, date: '06/13 15:47', symbol: 'NVDA', side: 'BUY', qty: 5, entry: 900.00, exit: 875.20, pnl: -124.00, status: 'CLOSED' },
-  { id: 5, date: '06/13 11:20', symbol: 'ETH', side: 'BUY', qty: 1, entry: 3550, exit: 3521, pnl: -29.00, status: 'CLOSED' },
-  { id: 6, date: '06/12 09:45', symbol: 'AAPL', side: 'BUY', qty: 20, entry: 176.00, exit: 181.50, pnl: 110.00, status: 'CLOSED' },
-  { id: 7, date: '06/11 13:30', symbol: 'SPY', side: 'BUY', qty: 10, entry: 512.00, exit: 520.88, pnl: 88.80, status: 'CLOSED' },
-];
-
-const CLASS_COLORS: Record<string, string> = { STOCK: '#00aaff', CRYPTO: '#ffd700', FOREX: '#00ff88', ETF: '#8b5cf6' };
+function aggregateHoldings(openTrades: DbTrade[]): Holding[] {
+  const bySymbol = new Map<string, { qty: number; cost: number }>();
+  for (const t of openTrades) {
+    const entry = bySymbol.get(t.symbol) ?? { qty: 0, cost: 0 };
+    entry.qty += t.quantity;
+    entry.cost += t.quantity * t.entry_price;
+    bySymbol.set(t.symbol, entry);
+  }
+  return Array.from(bySymbol.entries()).map(([symbol, { qty, cost }]) => ({
+    symbol,
+    qty,
+    avgCost: cost / qty,
+    current: getBasePrice(symbol) || cost / qty,
+    class: getSymbolInfo(symbol)?.class ?? 'STOCK',
+  }));
+}
 
 export default function PortfolioPage() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<'overview' | 'holdings' | 'history'>('overview');
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+  const [openTrades, setOpenTrades] = useState<DbTrade[]>([]);
+  const [closedTrades, setClosedTrades] = useState<DbTrade[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositBusy, setDepositBusy] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
 
-  const totalValue = HOLDINGS.reduce((s, h) => s + h.current * h.qty, 0);
-  const totalCost = HOLDINGS.reduce((s, h) => s + h.avgCost * h.qty, 0);
-  const totalPnL = totalValue - totalCost;
-  const totalPct = ((totalPnL / totalCost) * 100).toFixed(2);
-  const cashBalance = 5830.50;
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([getPortfolio(user.id), listOpenTrades(user.id), listClosedTrades(user.id)])
+      .then(([p, open, closed]) => {
+        setPortfolio(p);
+        setOpenTrades(open);
+        setClosedTrades(closed);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  const handleDeposit = async () => {
+    if (!user || !portfolio) return;
+    const amount = parseFloat(depositAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setDepositError('Enter an amount greater than $0');
+      return;
+    }
+    setDepositBusy(true);
+    setDepositError(null);
+    try {
+      const updated = await depositFunds(user.id, portfolio, amount);
+      setPortfolio(updated);
+      setShowDeposit(false);
+      setDepositAmount('');
+    } catch (err) {
+      setDepositError(err instanceof Error ? err.message : 'Could not deposit funds');
+    } finally {
+      setDepositBusy(false);
+    }
+  };
+
+  const holdings = aggregateHoldings(openTrades);
+  const totalValue = holdings.reduce((s, h) => s + h.current * h.qty, 0);
+  const unrealizedPnl = openTrades.reduce((s, t) => s + computePnl(t, getBasePrice(t.symbol) || t.entry_price), 0);
+  const totalCost = holdings.reduce((s, h) => s + h.avgCost * h.qty, 0);
+  const totalPct = totalCost > 0 ? ((unrealizedPnl / totalCost) * 100).toFixed(2) : '0.00';
+  const cashBalance = portfolio?.cash_balance ?? 0;
   const netWorth = totalValue + cashBalance;
 
-  const winners = TRADE_HISTORY.filter(t => t.pnl > 0 && t.status === 'CLOSED').length;
-  const losers = TRADE_HISTORY.filter(t => t.pnl < 0 && t.status === 'CLOSED').length;
-  const totalRealized = TRADE_HISTORY.filter(t => t.status === 'CLOSED').reduce((s, t) => s + t.pnl, 0);
+  const winners = closedTrades.filter(t => (t.pnl ?? 0) > 0).length;
+  const losers = closedTrades.filter(t => (t.pnl ?? 0) < 0).length;
+  const totalRealized = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0);
+  const winRate = winners + losers > 0 ? Math.round((winners / (winners + losers)) * 100) : 0;
+  const avgWin = winners > 0 ? closedTrades.filter(t => (t.pnl ?? 0) > 0).reduce((s, t) => s + (t.pnl ?? 0), 0) / winners : 0;
+  const avgLoss = losers > 0 ? closedTrades.filter(t => (t.pnl ?? 0) < 0).reduce((s, t) => s + (t.pnl ?? 0), 0) / losers : 0;
+  const grossWin = closedTrades.filter(t => (t.pnl ?? 0) > 0).reduce((s, t) => s + (t.pnl ?? 0), 0);
+  const grossLoss = Math.abs(closedTrades.filter(t => (t.pnl ?? 0) < 0).reduce((s, t) => s + (t.pnl ?? 0), 0));
+  const profitFactor = grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0;
+  const bestTrade = closedTrades.reduce((best, t) => (best === null || (t.pnl ?? 0) > (best.pnl ?? 0) ? t : best), null as DbTrade | null);
+  const worstTrade = closedTrades.reduce((worst, t) => (worst === null || (t.pnl ?? 0) < (worst.pnl ?? 0) ? t : worst), null as DbTrade | null);
+
+  const history = [...openTrades, ...closedTrades].sort(
+    (a, b) => new Date(b.opened_at).getTime() - new Date(a.opened_at).getTime()
+  );
+
+  if (loading) {
+    return (
+      <div className="grid-bg" style={{ minHeight: '100%', padding: '20px' }}>
+        <div style={{ fontSize: '11px', color: '#64748b' }}>Loading portfolio...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid-bg" style={{ minHeight: '100%' }}>
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '4px' }}>◉ PORTFOLIO</div>
-          <h1 style={{ fontSize: '13px', color: '#00ffff', textShadow: '0 0 10px #00ffff', margin: 0 }}>
+          <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px' }}>◉ PORTFOLIO</div>
+          <h1 className="font-pixel" style={{ fontSize: '11px', color: '#00ffff', textShadow: '0 0 10px #00ffff', margin: 0 }}>
             YOUR HOLDINGS
           </h1>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '2px' }}>NET WORTH</div>
-          <div style={{ fontSize: '14px', color: '#ffd700', textShadow: '0 0 12px #ffd700' }}>
+          <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '2px' }}>NET WORTH</div>
+          <div className="font-pixel" style={{ fontSize: '12px', color: '#ffd700', textShadow: '0 0 12px #ffd700' }}>
             ${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
+          <button
+            onClick={() => setShowDeposit(true)}
+            className="pixel-btn pixel-btn-green"
+            style={{ fontSize: '9px', padding: '6px 10px', marginTop: '8px' }}
+          >
+            + ADD FUNDS
+          </button>
         </div>
       </div>
+
+      {showDeposit && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+          onClick={() => !depositBusy && setShowDeposit(false)}
+        >
+          <div className="retro-card" style={{ padding: '24px', width: '300px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '12px', color: '#00ff88', textShadow: '0 0 10px #00ff88', marginBottom: '16px' }}>💰 ADD FUNDS</div>
+            <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '14px', lineHeight: 1.8 }}>
+              Top up your paper-trading balance with any amount. This is simulated money — no real charge.
+            </div>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              autoFocus
+              placeholder="Amount (USD)"
+              value={depositAmount}
+              onChange={e => { setDepositAmount(e.target.value); setDepositError(null); }}
+              onKeyDown={e => { if (e.key === 'Enter') handleDeposit(); }}
+              style={{
+                width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', fontSize: '13px', padding: '10px',
+                background: '#0a0e1a', color: '#e2e8f0', border: '2px solid #1e3a5f', outline: 'none', marginBottom: '10px',
+              }}
+            />
+            {depositError && (
+              <div style={{ fontSize: '10px', color: '#ff3355', marginBottom: '10px' }}>⚠ {depositError}</div>
+            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setShowDeposit(false)}
+                disabled={depositBusy}
+                className="pixel-btn"
+                style={{ flex: 1, fontSize: '10px', padding: '10px', opacity: depositBusy ? 0.6 : 1 }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleDeposit}
+                disabled={depositBusy}
+                className="pixel-btn pixel-btn-green"
+                style={{ flex: 1, fontSize: '10px', padding: '10px', opacity: depositBusy ? 0.6 : 1 }}
+              >
+                {depositBusy ? '...' : 'CONFIRM'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Top stat strip */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
         {[
           { k: 'TOTAL EQUITY', v: '$' + totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 }), c: '#00aaff', icon: '◈' },
-          { k: 'UNREALIZED P&L', v: `${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)}`, c: totalPnL >= 0 ? '#00ff88' : '#ff3355', icon: '📈' },
-          { k: 'TOTAL RETURN', v: `${totalPnL >= 0 ? '+' : ''}${totalPct}%`, c: totalPnL >= 0 ? '#00ff88' : '#ff3355', icon: '%' },
-          { k: 'REALIZED P&L', v: `+$${totalRealized.toFixed(2)}`, c: '#00ff88', icon: '✓' },
+          { k: 'UNREALIZED P&L', v: `${unrealizedPnl >= 0 ? '+' : ''}$${unrealizedPnl.toFixed(2)}`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355', icon: '📈', pnl: unrealizedPnl },
+          { k: 'TOTAL RETURN', v: `${unrealizedPnl >= 0 ? '+' : ''}${totalPct}%`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355', icon: '%' },
+          { k: 'REALIZED P&L', v: `${totalRealized >= 0 ? '+' : ''}$${totalRealized.toFixed(2)}`, c: totalRealized >= 0 ? '#00ff88' : '#ff3355', icon: '✓', pnl: totalRealized },
           { k: 'CASH', v: '$' + cashBalance.toFixed(2), c: '#64748b', icon: '💰' },
-          { k: 'WIN RATE', v: `${Math.round((winners / (winners + losers)) * 100)}%`, c: '#ffd700', icon: '★' },
+          { k: 'WIN RATE', v: `${winRate}%`, c: '#ffd700', icon: '★' },
         ].map(s => (
           <div key={s.k} className="retro-card" style={{ padding: '10px 14px', flex: '1 1 120px' }}>
-            <div style={{ fontSize: '6px', color: '#64748b', marginBottom: '6px' }}>{s.icon} {s.k}</div>
-            <div style={{ fontSize: '10px', color: s.c, textShadow: `0 0 8px ${s.c}` }}>{s.v}</div>
+            <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '6px' }}>{s.icon} {s.k}</div>
+            <div style={{ fontSize: '9px', color: s.c, textShadow: `0 0 8px ${s.c}` }}>
+              {s.v}
+              {s.pnl !== undefined && <PnlIcon pnl={s.pnl} />}
+            </div>
           </div>
         ))}
       </div>
@@ -77,7 +207,7 @@ export default function PortfolioPage() {
         {(['overview', 'holdings', 'history'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className="pixel-btn"
             style={{
-              fontSize: '7px', padding: '8px 14px',
+              fontSize: '11px', padding: '8px 14px',
               background: tab === t ? '#001133' : '#0a0e1a',
               color: tab === t ? '#00aaff' : '#64748b',
               borderColor: tab === t ? '#00aaff' : '#1e3a5f',
@@ -93,26 +223,27 @@ export default function PortfolioPage() {
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '10px' }}>EQUITY CHART</div>
-            <MiniChart positive={true} color="#00aaff" height={120} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '6px' }}>
-              <span style={{ color: '#64748b' }}>30D HIGH: <span style={{ color: '#00ff88' }}>$26,400</span></span>
-              <span style={{ color: '#64748b' }}>30D LOW: <span style={{ color: '#ff3355' }}>$22,100</span></span>
+            <div style={{ fontSize: '11px', color: '#00aaff', textShadow: '0 0 8px #00aaff', marginBottom: '10px' }}>EQUITY CHART</div>
+            <MiniChart positive={unrealizedPnl >= 0} color="#00aaff" height={120} />
+            <div style={{ fontSize: '9px', color: '#64748b', marginTop: '8px' }}>
+              Illustrative — historical equity tracking coming soon.
             </div>
           </div>
 
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '10px' }}>ALLOCATION</div>
-            {HOLDINGS.map(h => {
-              const pct = ((h.current * h.qty) / totalValue) * 100;
+            <div style={{ fontSize: '11px', color: '#ffd700', textShadow: '0 0 8px #ffd700', marginBottom: '10px' }}>ALLOCATION</div>
+            {holdings.length === 0 ? (
+              <div style={{ fontSize: '10px', color: '#1e3a5f' }}>No open positions</div>
+            ) : holdings.map(h => {
+              const pct = totalValue > 0 ? ((h.current * h.qty) / totalValue) * 100 : 0;
               return (
                 <div key={h.symbol} style={{ marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '6px', marginBottom: '3px' }}>
-                    <span style={{ color: CLASS_COLORS[h.class] }}>{h.symbol}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '3px' }}>
+                    <span style={{ color: ASSET_CLASS_COLOR[h.class] }}>{h.symbol}</span>
                     <span style={{ color: '#64748b' }}>{pct.toFixed(1)}%</span>
                   </div>
                   <div style={{ height: '5px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: CLASS_COLORS[h.class], boxShadow: `0 0 4px ${CLASS_COLORS[h.class]}` }} />
+                    <div style={{ width: `${pct}%`, height: '100%', background: ASSET_CLASS_COLOR[h.class], boxShadow: `0 0 4px ${ASSET_CLASS_COLOR[h.class]}` }} />
                   </div>
                 </div>
               );
@@ -120,16 +251,14 @@ export default function PortfolioPage() {
           </div>
 
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>PERFORMANCE</div>
+            <div style={{ fontSize: '11px', color: '#8b5cf6', textShadow: '0 0 8px #8b5cf6', marginBottom: '10px' }}>PERFORMANCE</div>
             {[
-              { k: 'Today', v: '+$830.50', c: '#00ff88' },
-              { k: 'This Week', v: '+$1,240.00', c: '#00ff88' },
-              { k: 'This Month', v: '+$2,100.80', c: '#00ff88' },
-              { k: 'All Time', v: '+$4,830.50', c: '#00ff88' },
-              { k: 'Best Trade', v: '+$605.00 BTC', c: '#ffd700' },
-              { k: 'Worst Trade', v: '-$124.00 NVDA', c: '#ff3355' },
+              { k: 'Realized (All Time)', v: `${totalRealized >= 0 ? '+' : ''}$${totalRealized.toFixed(2)}`, c: totalRealized >= 0 ? '#00ff88' : '#ff3355' },
+              { k: 'Unrealized (Open)', v: `${unrealizedPnl >= 0 ? '+' : ''}$${unrealizedPnl.toFixed(2)}`, c: unrealizedPnl >= 0 ? '#00ff88' : '#ff3355' },
+              { k: 'Best Trade', v: bestTrade ? `${(bestTrade.pnl ?? 0) >= 0 ? '+' : ''}$${(bestTrade.pnl ?? 0).toFixed(2)} ${bestTrade.symbol}` : '—', c: '#ffd700' },
+              { k: 'Worst Trade', v: worstTrade ? `${(worstTrade.pnl ?? 0) >= 0 ? '+' : ''}$${(worstTrade.pnl ?? 0).toFixed(2)} ${worstTrade.symbol}` : '—', c: '#ff3355' },
             ].map(({ k, v, c }) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '10px' }}>
                 <span style={{ color: '#64748b' }}>{k}</span>
                 <span style={{ color: c }}>{v}</span>
               </div>
@@ -137,17 +266,17 @@ export default function PortfolioPage() {
           </div>
 
           <div className="retro-card" style={{ padding: '14px' }}>
-            <div style={{ fontSize: '7px', color: '#00ff88', textShadow: '0 0 8px #00ff88', marginBottom: '10px' }}>TRADE STATS</div>
+            <div style={{ fontSize: '11px', color: '#00ff88', textShadow: '0 0 8px #00ff88', marginBottom: '10px' }}>TRADE STATS</div>
             {[
-              { k: 'Total Trades', v: `${winners + losers}` },
+              { k: 'Total Closed Trades', v: `${winners + losers}` },
               { k: 'Winners', v: `${winners}`, c: '#00ff88' },
               { k: 'Losers', v: `${losers}`, c: '#ff3355' },
-              { k: 'Win Rate', v: `${Math.round((winners / (winners + losers)) * 100)}%`, c: '#ffd700' },
-              { k: 'Avg Win', v: '+$213.20', c: '#00ff88' },
-              { k: 'Avg Loss', v: '-$76.50', c: '#ff3355' },
-              { k: 'Profit Factor', v: '2.8x', c: '#8b5cf6' },
+              { k: 'Win Rate', v: `${winRate}%`, c: '#ffd700' },
+              { k: 'Avg Win', v: winners > 0 ? `+$${avgWin.toFixed(2)}` : '—', c: '#00ff88' },
+              { k: 'Avg Loss', v: losers > 0 ? `$${avgLoss.toFixed(2)}` : '—', c: '#ff3355' },
+              { k: 'Profit Factor', v: profitFactor === Infinity ? '∞' : `${profitFactor.toFixed(2)}x`, c: '#8b5cf6' },
             ].map(({ k, v, c }) => (
-              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '6px' }}>
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0f1629', fontSize: '10px' }}>
                 <span style={{ color: '#64748b' }}>{k}</span>
                 <span style={{ color: c ?? '#e2e8f0' }}>{v}</span>
               </div>
@@ -159,17 +288,19 @@ export default function PortfolioPage() {
       {/* HOLDINGS */}
       {tab === 'holdings' && (
         <div className="retro-card" style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '5px', color: '#64748b' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '9px', color: '#64748b' }}>
             <span>SYMBOL</span><span>CLASS</span><span>QTY</span><span>AVG COST</span><span>CURRENT</span><span>VALUE</span><span>P&L</span><span>RETURN</span>
           </div>
-          {HOLDINGS.map(h => {
+          {holdings.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', fontSize: '11px', color: '#1e3a5f' }}>NO HOLDINGS</div>
+          ) : holdings.map(h => {
             const pnl = (h.current - h.avgCost) * h.qty;
             const pct = ((h.current - h.avgCost) / h.avgCost) * 100;
             const up = pnl >= 0;
             return (
-              <div key={h.symbol} style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '9px 12px', borderBottom: '1px solid #0f1629', fontSize: '7px', alignItems: 'center' }}>
-                <span style={{ color: CLASS_COLORS[h.class], textShadow: `0 0 6px ${CLASS_COLORS[h.class]}` }}>{h.symbol}</span>
-                <span style={{ fontSize: '5px', color: CLASS_COLORS[h.class], border: `1px solid ${CLASS_COLORS[h.class]}44`, padding: '2px 3px', display: 'inline-block' }}>{h.class}</span>
+              <div key={h.symbol} style={{ display: 'grid', gridTemplateColumns: '80px 60px 80px 90px 90px 80px 80px 70px', gap: '4px', padding: '9px 12px', borderBottom: '1px solid #0f1629', fontSize: '11px', alignItems: 'center' }}>
+                <span style={{ color: ASSET_CLASS_COLOR[h.class], textShadow: `0 0 6px ${ASSET_CLASS_COLOR[h.class]}` }}>{h.symbol}</span>
+                <span style={{ fontSize: '9px', color: ASSET_CLASS_COLOR[h.class], border: `1px solid ${ASSET_CLASS_COLOR[h.class]}44`, padding: '2px 3px', display: 'inline-block' }}>{h.class}</span>
                 <span style={{ color: '#e2e8f0' }}>{h.qty}</span>
                 <span style={{ color: '#64748b' }}>${h.avgCost.toLocaleString()}</span>
                 <span style={{ color: '#e2e8f0' }}>${h.current.toLocaleString()}</span>
@@ -189,22 +320,24 @@ export default function PortfolioPage() {
       {/* HISTORY */}
       {tab === 'history' && (
         <div className="retro-card" style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '5px', color: '#64748b' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '7px 12px', borderBottom: '2px solid #1e3a5f', fontSize: '9px', color: '#64748b' }}>
             <span>DATE</span><span>SYMBOL</span><span>SIDE</span><span>QTY</span><span>ENTRY</span><span>EXIT</span><span>P&L</span><span>STATUS</span>
           </div>
-          {TRADE_HISTORY.map(t => (
-            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '8px 12px', borderBottom: '1px solid #0f1629', fontSize: '6px', alignItems: 'center' }}>
-              <span style={{ color: '#64748b' }}>{t.date}</span>
+          {history.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', fontSize: '11px', color: '#1e3a5f' }}>NO TRADE HISTORY YET</div>
+          ) : history.map(t => (
+            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '90px 70px 50px 50px 80px 80px 80px 70px', gap: '4px', padding: '8px 12px', borderBottom: '1px solid #0f1629', fontSize: '10px', alignItems: 'center' }}>
+              <span style={{ color: '#64748b' }}>{new Date(t.opened_at).toLocaleString(undefined, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
               <span style={{ color: '#00aaff' }}>{t.symbol}</span>
-              <span style={{ color: t.side === 'BUY' ? '#00ff88' : '#ff3355' }}>{t.side}</span>
-              <span style={{ color: '#e2e8f0' }}>{t.qty}</span>
-              <span style={{ color: '#64748b' }}>${t.entry.toLocaleString()}</span>
-              <span style={{ color: '#e2e8f0' }}>${t.exit.toLocaleString()}</span>
-              <span style={{ color: t.pnl >= 0 ? '#00ff88' : '#ff3355', textShadow: `0 0 6px ${t.pnl >= 0 ? '#00ff88' : '#ff3355'}` }}>
-                {t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}
+              <span style={{ color: t.direction === 'long' ? '#00ff88' : '#ff3355' }}>{t.direction === 'long' ? 'BUY' : 'SELL'}</span>
+              <span style={{ color: '#e2e8f0' }}>{t.quantity}</span>
+              <span style={{ color: '#64748b' }}>${t.entry_price.toLocaleString()}</span>
+              <span style={{ color: '#e2e8f0' }}>{t.exit_price != null ? `$${t.exit_price.toLocaleString()}` : '—'}</span>
+              <span style={{ color: (t.pnl ?? 0) >= 0 ? '#00ff88' : '#ff3355', textShadow: `0 0 6px ${(t.pnl ?? 0) >= 0 ? '#00ff88' : '#ff3355'}` }}>
+                {t.pnl != null ? `${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}` : '—'}
               </span>
-              <span style={{ fontSize: '5px', color: t.status === 'OPEN' ? '#ffd700' : '#64748b', border: `1px solid ${t.status === 'OPEN' ? '#ffd700' : '#1e3a5f'}`, padding: '2px 4px', display: 'inline-block' }}>
-                {t.status}
+              <span style={{ fontSize: '9px', color: t.status === 'open' ? '#ffd700' : '#64748b', border: `1px solid ${t.status === 'open' ? '#ffd700' : '#1e3a5f'}`, padding: '2px 4px', display: 'inline-block' }}>
+                {t.status.toUpperCase()}
               </span>
             </div>
           ))}

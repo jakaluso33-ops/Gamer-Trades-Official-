@@ -50,14 +50,14 @@ export default function OrderPanel({ symbol, currentPrice, onOrder }: Props) {
     border: '2px solid #1e3a5f',
     color: '#e2e8f0',
     fontFamily: "'Press Start 2P', monospace",
-    fontSize: '8px',
+    fontSize: '12px',
     padding: '8px',
     outline: 'none',
     boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: '6px',
+    fontSize: '10px',
     color: '#64748b',
     display: 'block',
     marginBottom: '4px',
@@ -75,7 +75,7 @@ export default function OrderPanel({ symbol, currentPrice, onOrder }: Props) {
             className="pixel-btn"
             style={{
               flex: 1,
-              fontSize: '6px',
+              fontSize: '10px',
               padding: '6px 4px',
               background: orderType === t ? '#001133' : '#0a0e1a',
               color: orderType === t ? '#00aaff' : '#64748b',
@@ -95,7 +95,7 @@ export default function OrderPanel({ symbol, currentPrice, onOrder }: Props) {
           className="pixel-btn"
           style={{
             flex: 1,
-            fontSize: '8px',
+            fontSize: '12px',
             padding: '10px',
             background: side === 'BUY' ? '#003322' : '#0a0e1a',
             color: side === 'BUY' ? '#00ff88' : '#64748b',
@@ -110,7 +110,7 @@ export default function OrderPanel({ symbol, currentPrice, onOrder }: Props) {
           className="pixel-btn"
           style={{
             flex: 1,
-            fontSize: '8px',
+            fontSize: '12px',
             padding: '10px',
             background: side === 'SELL' ? '#330011' : '#0a0e1a',
             color: side === 'SELL' ? '#ff3355' : '#64748b',
@@ -176,15 +176,15 @@ export default function OrderPanel({ symbol, currentPrice, onOrder }: Props) {
 
       {/* Order summary */}
       <div style={{ padding: '8px', background: '#0a0e1a', border: '1px solid #1e3a5f' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '6px', color: '#64748b', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748b', marginBottom: '4px' }}>
           <span>MARKET PRICE</span>
           <span style={{ color: '#e2e8f0' }}>${currentPrice.toFixed(2)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '6px', color: '#64748b', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748b', marginBottom: '4px' }}>
           <span>QTY</span>
           <span style={{ color: '#e2e8f0' }}>{qty || 0}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '7px', borderTop: '1px solid #1e3a5f', paddingTop: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', borderTop: '1px solid #1e3a5f', paddingTop: '4px' }}>
           <span style={{ color: '#64748b' }}>TOTAL</span>
           <span style={{ color: '#ffd700', textShadow: '0 0 6px #ffd700' }}>${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
         </div>
