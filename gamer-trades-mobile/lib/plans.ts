@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TRADERGPT_FREE_DAILY_LIMIT } from './traderGpt';
 
 export type Plan = 'free' | 'pro' | 'legend';
 
@@ -64,6 +65,7 @@ export const PLANS: {
       `${FREE_AI_ANALYST_DAILY_LIMIT} AI news analyses/day`,
       'View leaderboard',
       '1 daily challenge',
+      `${TRADERGPT_FREE_DAILY_LIMIT} TraderGPT questions/day`,
     ],
   },
   {
@@ -82,6 +84,8 @@ export const PLANS: {
       'Monthly Pro tournament — bigger starting balance, real leaderboard',
       'Live candlestick pattern detection',
       'Proven-profitable strategies (Turtle Trading, Momentum)',
+      'Unlimited TraderGPT — ask AI anything about trading',
+      'Practice Mode — backtest any strategy risk-free',
     ],
   },
   {

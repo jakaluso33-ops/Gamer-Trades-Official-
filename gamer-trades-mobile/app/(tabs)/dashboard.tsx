@@ -125,6 +125,24 @@ export default function DashboardScreen() {
         </Card>
       </Pressable>
 
+      {/* TraderGPT */}
+      <Pressable onPress={() => router.push('/(tabs)/trader-gpt' as never)}>
+        <Card borderColor={colors.cyan} style={{ padding: 22 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <PixelText size={30}>🤖</PixelText>
+            <View style={{ flex: 1 }}>
+              <PixelText color={colors.cyan} size={13} glow>TRADERGPT</PixelText>
+              <BodyText color={colors.muted} size={12} style={{ marginTop: 6 }}>
+                {(profile?.plan ?? 'free') === 'free'
+                  ? 'Ask AI anything about trading — 2 free questions/day'
+                  : 'Ask AI anything about trading — unlimited on your plan'}
+              </BodyText>
+            </View>
+            <PixelText color={colors.cyan} size={16}>▶</PixelText>
+          </View>
+        </Card>
+      </Pressable>
+
       <DailyStoryCard />
 
       <LiveMarketChart />

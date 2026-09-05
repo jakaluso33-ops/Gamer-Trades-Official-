@@ -25,7 +25,7 @@ export async function unwrapFunctionError(error: any): Promise<Error> {
     try {
       const clone = typeof context.clone === 'function' ? context.clone() : context;
       const body = await clone.json();
-      if (body?.error) return new Error(body.error);
+      if (body?.message || body?.error) return new Error(body.message ?? body.error);
     } catch {
       // body wasn't JSON -- fall through to the generic message
     }

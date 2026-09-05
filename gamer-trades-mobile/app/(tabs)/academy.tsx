@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, View, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Card, PixelText, BodyText, PixelButton } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { STRATEGIES, StrategyDifficulty } from '../../lib/strategyContent';
@@ -31,6 +32,7 @@ const PRO_PLAN = PLANS.find(p => p.name === 'pro');
 
 export default function AcademyScreen() {
   const { profile } = useAuth();
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>('strategies');
   const [selected, setSelected] = useState(STRATEGIES[0]);
   const [selectedPattern, setSelectedPattern] = useState(CANDLE_PATTERNS[0]);
@@ -194,6 +196,26 @@ export default function AcademyScreen() {
             <Card borderColor={selected.color}>
               <StrategyLiveDemo key={selected.id} id={selected.id as DetectorId} color={selected.color} />
             </Card>
+          )}
+
+          {!locked && (
+            isPro ? (
+              <PixelButton
+                color={selected.color}
+                onPress={() => router.push({ pathname: '/(tabs)/practice-strategy', params: { strategyId: selected.id } } as never)}
+              >
+                🎮 PRACTICE THIS STRATEGY
+              </PixelButton>
+            ) : (
+              <Card borderColor={colors.border} style={{ alignItems: 'center', padding: 14 }}>
+                <BodyText color={colors.muted} size={12} style={{ textAlign: 'center', marginBottom: 10 }}>
+                  🔒 Practice mode — test this strategy against a backtested market — is a Pro/Legend feature.
+                </BodyText>
+                <PixelButton color={colors.gold} onPress={handleUpgrade} disabled={upgradeBusy}>
+                  {upgradeBusy ? '...' : `★ UPGRADE TO PRO — ${PRO_PLAN?.price ?? ''}`}
+                </PixelButton>
+              </Card>
+            )
           )}
         </>
       )}
