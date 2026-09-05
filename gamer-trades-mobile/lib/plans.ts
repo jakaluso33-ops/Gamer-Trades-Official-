@@ -47,6 +47,29 @@ export async function incrementAiAnalystRunsToday(userId: string): Promise<numbe
   return next;
 }
 
+/** In Practice Mode, revealing the exact computed entry/stop/target for the strategy's
+ * currently-firing signal is the "answer key" -- Pro gets one reveal per day (nudges them to
+ * actually try reading the setup themselves first), Legend gets unlimited reveals. */
+export function practiceRevealDailyLimit(plan: Plan): number | null {
+  return plan === 'pro' ? 1 : null;
+}
+
+function practiceRevealKey(userId: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  return `gt_practice_reveal_${userId}_${today}`;
+}
+
+export async function getPracticeRevealsToday(userId: string): Promise<number> {
+  const v = await AsyncStorage.getItem(practiceRevealKey(userId));
+  return parseInt(v ?? '0', 10);
+}
+
+export async function incrementPracticeRevealsToday(userId: string): Promise<number> {
+  const next = (await getPracticeRevealsToday(userId)) + 1;
+  await AsyncStorage.setItem(practiceRevealKey(userId), String(next));
+  return next;
+}
+
 export const PLANS: {
   name: Plan;
   price: string;
@@ -86,6 +109,7 @@ export const PLANS: {
       'Proven-profitable strategies (Turtle Trading, Momentum)',
       'Unlimited TraderGPT — ask AI anything about trading',
       'Practice Mode — backtest any strategy risk-free',
+      '1 entry/exit reveal/day in Practice Mode',
     ],
   },
   {
@@ -101,6 +125,7 @@ export const PLANS: {
       'Deploy bots to trade live markets autonomously (paper trading)',
       'Live 24/7 execution, even while the app is closed',
       'Priority access to future broker integrations',
+      'Unlimited entry/exit reveals in Practice Mode',
     ],
   },
 ];

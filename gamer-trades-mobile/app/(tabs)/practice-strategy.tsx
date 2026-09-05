@@ -7,8 +7,9 @@ import UpgradeGate from '../../components/UpgradeGate';
 import { colors } from '../../lib/theme';
 import { useAuth } from '../../lib/AuthContext';
 import { generateSeededCandles } from '../../lib/seededCandles';
-import { scanStrategies, DetectorId, Candle } from '../../lib/strategyEngine';
+import { scanStrategies, computeTradePlan, DetectorId, Candle, TradePlan } from '../../lib/strategyEngine';
 import { getStrategy } from '../../lib/strategyContent';
+import { Plan, practiceRevealDailyLimit, getPracticeRevealsToday, incrementPracticeRevealsToday } from '../../lib/plans';
 
 const STARTING_BALANCE = 10000;
 const CANDLE_COUNT = 140;
@@ -54,10 +55,12 @@ function MiniCandles({ candles, highlightLast }: { candles: Candle[]; highlightL
 
 export default function PracticeStrategyScreen() {
   const { strategyId } = useLocalSearchParams<{ strategyId: string }>();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const router = useRouter();
-  const isPro = (profile?.plan ?? 'free') !== 'free';
+  const plan = (profile?.plan as Plan) ?? 'free';
+  const isPro = plan !== 'free';
   const strategy = getStrategy(strategyId ?? '');
+  const revealLimit = practiceRevealDailyLimit(plan);
 
   const [seed, setSeed] = useState(() => Date.now());
   const fullSeries = useMemo(() => generateSeededCandles(seed, CANDLE_COUNT, 100), [seed]);
@@ -69,6 +72,15 @@ export default function PracticeStrategyScreen() {
   const [signalsFollowed, setSignalsFollowed] = useState(0);
   const [countedRevealIdx, setCountedRevealIdx] = useState(-1);
   const [flash, setFlash] = useState<string | null>(null);
+  const [revealsUsedToday, setRevealsUsedToday] = useState<number | null>(null);
+  const [revealedPlan, setRevealedPlan] = useState<TradePlan | null>(null);
+
+  useEffect(() => {
+    if (user && revealLimit != null) {
+      getPracticeRevealsToday(user.id).then(setRevealsUsedToday).catch(console.error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const visibleSeries = fullSeries.slice(0, revealed);
   const lastPrice = visibleSeries[visibleSeries.length - 1]?.close ?? 0;
@@ -85,6 +97,10 @@ export default function PracticeStrategyScreen() {
     setCountedRevealIdx(revealed);
     if (currentSignal) setSignalsSeen(s => s + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed]);
+
+  useEffect(() => {
+    setRevealedPlan(null);
   }, [revealed]);
 
   if (!strategy) {
@@ -154,9 +170,21 @@ export default function PracticeStrategyScreen() {
     setSignalsFollowed(0);
     setCountedRevealIdx(-1);
     setFlash(null);
+    setRevealedPlan(null);
   };
 
   const adherence = signalsSeen > 0 ? Math.round((signalsFollowed / signalsSeen) * 100) : null;
+  const revealsRemaining = revealLimit == null ? null : Math.max(0, revealLimit - (revealsUsedToday ?? 0));
+  const revealBlocked = revealLimit != null && revealsRemaining === 0;
+
+  const handleReveal = async () => {
+    if (!currentSignal || revealBlocked) return;
+    if (revealLimit != null && user) {
+      const next = await incrementPracticeRevealsToday(user.id);
+      setRevealsUsedToday(next);
+    }
+    setRevealedPlan(computeTradePlan(currentSignal, visibleSeries));
+  };
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 100 }}>
@@ -200,6 +228,30 @@ export default function PracticeStrategyScreen() {
           <BodyText color={colors.gold} size={12} weight="semibold" style={{ textAlign: 'center' }}>
             🔎 SIGNAL FIRING: {currentSignal.direction.toUpperCase()} — {currentSignal.detail}
           </BodyText>
+
+          {revealedPlan ? (
+            <View style={{ marginTop: 10, gap: 4 }}>
+              <BodyText color={colors.text} size={12}>Entry: <BodyText color={colors.gold} size={12} weight="semibold">${revealedPlan.entry.toFixed(2)}</BodyText></BodyText>
+              <BodyText color={colors.text} size={12}>Stop Loss: <BodyText color={colors.red} size={12} weight="semibold">${revealedPlan.stopLoss.toFixed(2)}</BodyText></BodyText>
+              <BodyText color={colors.text} size={12}>Take Profit: <BodyText color={colors.green} size={12} weight="semibold">${revealedPlan.takeProfit.toFixed(2)}</BodyText></BodyText>
+              <BodyText color={colors.muted} size={11}>Risk:Reward — 1:{revealedPlan.riskRewardRatio.toFixed(1)}</BodyText>
+            </View>
+          ) : (
+            <PixelButton
+              color={colors.gold}
+              onPress={handleReveal}
+              disabled={revealBlocked}
+              style={{ marginTop: 10 }}
+            >
+              {revealBlocked ? '🔒 UPGRADE TO LEGEND FOR UNLIMITED' : '👁 REVEAL ENTRY/EXIT'}
+            </PixelButton>
+          )}
+
+          {revealLimit != null && (
+            <BodyText color={colors.muted} size={10} style={{ textAlign: 'center', marginTop: 6 }}>
+              {revealsRemaining}/{revealLimit} reveal{revealLimit === 1 ? '' : 's'} left today — Legend gets unlimited
+            </BodyText>
+          )}
         </Card>
       )}
 
